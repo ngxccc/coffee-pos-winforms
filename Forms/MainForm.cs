@@ -8,56 +8,91 @@ namespace CoffeePOS.Forms;
 
 public partial class MainForm : Form
 {
+    // DEPENDENCIES & CONTROLS
     private readonly IBillRepository _billRepo;
-    private UC_Sidebar? _ucSidebar;
-    private UC_Billing _ucBilling = new();
-    private Panel? _pnlMainWorkspace;
-    private readonly Dictionary<int, bool> _tableStates = [];
 
-    private void InitializeComponent()
+    // UI Components
+    private readonly UC_Sidebar _ucSidebar = new();
+    private readonly UC_Billing _ucBilling = new();
+    private Panel _pnlMainWorkspace = new();
+    private FlowLayoutPanel _flowTableList = new();
+
+    // Logic Components
+    private System.Windows.Forms.Timer? _masterTimer;
+
+    private readonly Dictionary<int, UC_Table> _tableMap = [];
+
+    // CONSTRUCTOR & INIT
+    public MainForm(IBillRepository billRepo)
+    {
+        InitializeFormProperties();
+
+        _billRepo = billRepo;
+
+        // Setup các thành phần giao diện
+        SetupTimer();
+        SetupSidebar();
+        SetupBilling();
+        SetupWorkspace();
+
+        // Ráp nối Layout
+        AssembleLayout();
+
+        // Load dữ liệu bàn
+        LoadTableMap();
+    }
+
+    // UI SETUP METHODS
+
+    private void InitializeFormProperties()
     {
         Text = "CoffeePOS - Code Chay Edition";
         AutoScaleMode = AutoScaleMode.Font;
         ClientSize = new Size(1280, 800);
         StartPosition = FormStartPosition.CenterScreen;
+        BackColor = Color.White;
     }
 
-    public MainForm(IBillRepository billRepo)
+    private void SetupTimer()
     {
-        InitializeComponent();
-        _billRepo = billRepo;
-        InitLayout();
+        _masterTimer = new System.Windows.Forms.Timer { Interval = 60000 };
+        _masterTimer.Tick += MasterTimer_Tick;
+        _masterTimer.Start();
     }
 
-    private new void InitLayout()
+    private void SetupSidebar()
     {
-        // SIDE PANEL
-        _ucSidebar = new UC_Sidebar();
         _ucSidebar.OnHomeClicked += (s, e) => SwitchToHome();
+    }
 
-        // BILLING PANEL
-        // _ucBilling = new UC_Billing();
-
+    private void SetupBilling()
+    {
         _ucBilling.AddItemToBill(101, "Cafe Đen Đá", 1, 20000, "Ít đường");
-        _ucBilling.AddItemToBill(101, "Cafe Đen Đá", 1, 20000, "Ít đường");
-        _ucBilling.AddItemToBill(102, "Cafe Đen Đá XL", 1, 30000, "Nhiều đá");
-
         _ucBilling.OnPayClicked += (s, e) => ProcessPayment();
+    }
 
-        // WORKSPACE
-        _pnlMainWorkspace = new()
+    private void SetupWorkspace()
+    {
+        _pnlMainWorkspace = new Panel
         {
             Dock = DockStyle.Fill,
             BackColor = Color.FromArgb(245, 245, 245)
         };
 
-        // CONTROLS
+        _flowTableList = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            AutoScroll = true,
+            Padding = new Padding(20),
+        };
+
+        _pnlMainWorkspace.Controls.Add(_flowTableList);
+    }
+
+    private void AssembleLayout()
+    {
         Controls.Add(_ucSidebar);
-
         Controls.Add(_ucBilling);
-
-        LoadTableMap();
-
         Controls.Add(_pnlMainWorkspace);
 
         _pnlMainWorkspace.BringToFront();
@@ -65,34 +100,30 @@ public partial class MainForm : Form
 
     private void LoadTableMap()
     {
-        FlowLayoutPanel flowTableList = new()
-        {
-            Dock = DockStyle.Fill,
-            AutoScroll = true,
-            Padding = new Padding(20),
-        };
+        _flowTableList.Controls.Clear();
+        _tableMap.Clear();
 
         for (int i = 1; i <= 20; i++)
         {
-            _tableStates[i] = false;
-
             UC_Table table = new(i, $"Bàn {i:00}", TableStatus.Empty);
 
             table.Click += (s, e) => HandleTableClick(table);
 
-            flowTableList.Controls.Add(table);
-        }
+            _tableMap.Add(i, table);
 
-        _pnlMainWorkspace?.Controls.Add(flowTableList);
+            _flowTableList.Controls.Add(table);
+        }
     }
+
+    // BUSINESS LOGIC
 
     private void HandleTableClick(UC_Table table)
     {
-        bool isOccupied = _tableStates[table.TableId];
+        bool isOccupied = table.Status == TableStatus.Occupied;
 
         if (isOccupied)
         {
-            // KỊCH BẢN BÀN ĐỎ (ĐANG CÓ KHÁCH)
+            // --- BÀN CÓ KHÁCH ---
             DialogResult result = MessageBox.Show(
                 $"Bàn {table.TableId} đang có khách.\n\n" +
                 "- YES: Order thêm món (Bill mới)\n" +
@@ -103,22 +134,19 @@ public partial class MainForm : Form
 
             if (result == DialogResult.No)
             {
-                // Dọn bàn -> Xanh
-                _tableStates[table.TableId] = false;
-                table.Status = TableStatus.Empty;
-                table.UpdateColor();
+                // Dọn bàn
+                ResetTableStatus(table);
                 _ucBilling.ClearOrder();
-                return;
             }
             else if (result == DialogResult.Yes)
             {
-                // Order thêm -> Vẫn giữ bàn đỏ, nhưng reset bill bên phải để nhập món mới
+                // Gọi thêm
                 _ucBilling.SetTableInfo(table.TableId, $"Bàn {table.TableId} (Gọi thêm)");
             }
         }
         else
         {
-            // KỊCH BẢN BÀN XANH (KHÁCH MỚI)
+            // --- BÀN TRỐNG ---
             _ucBilling.SetTableInfo(table.TableId, $"Order cho Bàn {table.TableId}");
         }
     }
@@ -132,35 +160,45 @@ public partial class MainForm : Form
             return;
         }
 
-        // 1. Lưu Bill xuống DB (Status = Paid)
+        // 1. Lưu DB (Giả lập)
         // _billRepo.CreateBill(...)
 
-        // 2. Cập nhật trạng thái bàn -> ĐỎ
-        _tableStates[tableId] = true;
-
-        // 3. Update màu trên giao diện (Tìm cái UCTable tương ứng để đổi màu)
-        // (Đây là điểm yếu của Code Chay: Phải loop tìm control để update)
-        if (_pnlMainWorkspace?.Controls.Count > 0)
+        if (_tableMap.TryGetValue(tableId, out UC_Table? targetTable))
         {
-            foreach (Control c in _pnlMainWorkspace.Controls[0].Controls) // Controls[0] là cái FlowLayout
-            {
-                if (c is UC_Table t && t.TableId == tableId)
-                {
-                    t.Status = TableStatus.Occupied;
-                    t.UpdateColor();
-                    break;
-                }
-            }
+            targetTable.Status = TableStatus.Occupied;
+            targetTable.StartTime = DateTime.Now;
+
+            targetTable.UpdateColor();
+            targetTable.UpdateDuration();
+
+            MessageBox.Show($"Thanh toán Bàn {tableId} thành công!");
+        }
+        else
+        {
+            MessageBox.Show("Lỗi: Không tìm thấy bàn này trong bản đồ!");
         }
 
-        MessageBox.Show("Thanh toán thành công! In hóa đơn...");
-
-        // 4. Reset Billing Panel để đón khách tiếp theo
         _ucBilling.ClearOrder();
+    }
+
+    private static void ResetTableStatus(UC_Table table)
+    {
+        table.Status = TableStatus.Empty;
+        table.StartTime = null;
+        table.UpdateColor();
+        table.UpdateDuration();
     }
 
     private static void SwitchToHome()
     {
         MessageBox.Show("Đã chuyển sang trang Home");
+    }
+
+    private void MasterTimer_Tick(object? sender, EventArgs e)
+    {
+        foreach (var table in _tableMap.Values)
+        {
+            table.UpdateDuration();
+        }
     }
 }
