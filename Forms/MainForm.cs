@@ -21,6 +21,7 @@ public partial class MainForm : Form
     private System.Windows.Forms.Timer? _masterTimer;
 
     private readonly Dictionary<int, UC_Table> _tableMap = [];
+    private readonly List<UC_Table> _activeTables = [];
 
     // CONSTRUCTOR & INIT
     public MainForm(IBillRepository billRepo)
@@ -102,6 +103,7 @@ public partial class MainForm : Form
     {
         _flowTableList.Controls.Clear();
         _tableMap.Clear();
+        _activeTables.Clear();
 
         for (int i = 1; i <= 20; i++)
         {
@@ -171,6 +173,12 @@ public partial class MainForm : Form
             targetTable.UpdateColor();
             targetTable.UpdateDuration();
 
+            // tránh add trùng
+            if (!_activeTables.Contains(targetTable))
+            {
+                _activeTables.Add(targetTable);
+            }
+
             MessageBox.Show($"Thanh toán Bàn {tableId} thành công!");
         }
         else
@@ -181,12 +189,14 @@ public partial class MainForm : Form
         _ucBilling.ClearOrder();
     }
 
-    private static void ResetTableStatus(UC_Table table)
+    private void ResetTableStatus(UC_Table table)
     {
         table.Status = TableStatus.Empty;
         table.StartTime = null;
         table.UpdateColor();
         table.UpdateDuration();
+
+        _activeTables.Remove(table);
     }
 
     private static void SwitchToHome()
@@ -196,7 +206,7 @@ public partial class MainForm : Form
 
     private void MasterTimer_Tick(object? sender, EventArgs e)
     {
-        foreach (var table in _tableMap.Values)
+        foreach (var table in _activeTables)
         {
             table.UpdateDuration();
         }

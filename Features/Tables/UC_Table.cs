@@ -6,75 +6,109 @@ public enum TableStatus { Empty, Occupied, Reserved }
 
 public class UC_Table : UserControl
 {
-    // Data Properties
+    // UI COMPONENTS
+    private readonly Label _lblTime;
+    private readonly IconPictureBox _iconTable;
+    private readonly Label _lblTableName;
+
+    // DATA PROPERTIES
     public int TableId { get; set; }
     public TableStatus Status { get; set; }
     public DateTime? StartTime { get; set; }
 
-    // UI Components
-    private readonly Label _lblTime;
-    private readonly IconPictureBox iconTable;
-    private readonly Label lblTableName;
-
+    // CONSTRUCTOR
     public UC_Table(int id, string name, TableStatus status)
     {
         TableId = id;
         Status = status;
 
+        SetupMainContainer();
+
+        _lblTime = BuildTimeLabel();
+        _lblTableName = BuildNameLabel(name);
+        _iconTable = BuildTableIcon();
+
+        // Add cái Fill trước, Dock=Top/Bottom sau cùng
+        Controls.Add(_iconTable);      // Fill (Nằm giữa)
+        Controls.Add(_lblTime);        // Top
+        Controls.Add(_lblTableName);   // Bottom
+
+        UpdateColor();
+
+        BindClickEvent(this);
+    }
+
+    // HELPER METHODS (UI)
+
+    private void SetupMainContainer()
+    {
         Size = new Size(120, 120);
-        BackColor = GetColorByStatus(status);
         Margin = new Padding(10);
         Cursor = Cursors.Hand;
+    }
 
-        _lblTime = new Label
+    private static Label BuildTimeLabel()
+    {
+        return new Label
         {
             Text = "",
             AutoSize = false,
-            Size = new Size(60, 20),
-            Dock = DockStyle.Top, // Tạm dock Top, hoặc dùng Anchor
+            Height = 20,
+            Dock = DockStyle.Top,
             TextAlign = ContentAlignment.MiddleRight,
             Font = new Font("Segoe UI", 9, FontStyle.Bold),
             ForeColor = Color.Yellow,
             BackColor = Color.Transparent,
             Padding = new Padding(0, 2, 5, 0)
         };
+    }
 
-        iconTable = new IconPictureBox
-        {
-            IconChar = IconChar.Table,
-            IconSize = 50,
-            IconColor = Color.White,
-            Dock = DockStyle.Fill,
-            Height = 80,
-            BackColor = Color.Transparent,
-            SizeMode = PictureBoxSizeMode.CenterImage
-        };
-        iconTable.Click += (s, e) => OnClick(e);
-
-        lblTableName = new Label
+    private static Label BuildNameLabel(string name)
+    {
+        return new Label
         {
             Text = name,
             Font = new Font("Segoe UI", 12, FontStyle.Bold),
             ForeColor = Color.White,
             Dock = DockStyle.Bottom,
             Height = 40,
-            TextAlign = ContentAlignment.TopCenter
+            TextAlign = ContentAlignment.TopCenter,
+            BackColor = Color.Transparent
         };
-        lblTableName.Click += (s, e) => OnClick(e);
+    }
 
-        Controls.Add(_lblTime);
-        Controls.Add(iconTable);
-        Controls.Add(lblTableName);
+    private static IconPictureBox BuildTableIcon()
+    {
+        return new IconPictureBox
+        {
+            IconChar = IconChar.Table,
+            IconSize = 50,
+            IconColor = Color.White,
+            Dock = DockStyle.Fill,
+            BackColor = Color.Transparent,
+            SizeMode = PictureBoxSizeMode.CenterImage
+        };
+    }
 
-        UpdateColor();
+    // LOGIC METHODS
+
+    private void BindClickEvent(Control parent)
+    {
+        parent.Click += (s, e) => OnClick(e);
+
+        foreach (Control child in parent.Controls)
+        {
+            child.Click += (s, e) => OnClick(e);
+        }
     }
 
     private static Color GetColorByStatus(TableStatus status)
     {
         return status switch
         {
-            TableStatus.Empty => Color.FromArgb(46, 204, 113),   // Xanh lá (Trống)
-            TableStatus.Occupied => Color.FromArgb(231, 76, 60), // Đỏ (Có khách)
+            TableStatus.Empty => Color.FromArgb(46, 204, 113),   // Green
+            TableStatus.Occupied => Color.FromArgb(231, 76, 60), // Red
+            TableStatus.Reserved => Color.FromArgb(241, 196, 15),// Yellow
             _ => Color.Gray
         };
     }
@@ -88,25 +122,22 @@ public class UC_Table : UserControl
     {
         if (Status == TableStatus.Empty || StartTime == null)
         {
-            _lblTime.Text = "";
+            if (_lblTime.Text != "") _lblTime.Text = "";
             return;
         }
 
-        // Tính khoảng thời gian chênh lệch
         TimeSpan duration = DateTime.Now - StartTime.Value;
 
-        // Format đẹp: "1h 5p" hoặc "45p"
-        if (duration.TotalMinutes < 60)
-        {
-            _lblTime.Text = $"{duration.TotalMinutes:0}p";
-        }
-        else
-        {
-            _lblTime.Text = $"{duration.Hours}h {duration.Minutes}p";
-        }
+        // Cập nhật text
+        string newText = duration.TotalMinutes < 60
+            ? $"{duration.TotalMinutes:0}p"
+            : $"{duration.Hours}h {duration.Minutes}p";
 
-        // Cảnh báo: Nếu ngồi quá 2 tiếng (120p) -> Đổi màu chữ sang Cam để nhắc nhân viên
-        if (duration.TotalMinutes > 120) _lblTime.ForeColor = Color.OrangeRed;
-        else _lblTime.ForeColor = Color.Yellow;
+        if (_lblTime.Text != newText)
+            _lblTime.Text = newText;
+
+        Color targetColor = duration.TotalMinutes > 120 ? Color.OrangeRed : Color.Yellow;
+        if (_lblTime.ForeColor != targetColor)
+            _lblTime.ForeColor = targetColor;
     }
 }
