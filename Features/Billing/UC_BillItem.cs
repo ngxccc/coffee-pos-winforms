@@ -9,6 +9,10 @@ public class UC_BillItem : Panel
     private readonly decimal _unitPrice;
     private readonly Label lblPrice;
 
+    public event EventHandler<decimal>? OnAmountChanged;
+    public event EventHandler<UC_BillItem>? OnDeleteRequest;
+    public decimal TotalValue => _quantity * _unitPrice;
+
     public UC_BillItem(string foodName, int count, decimal price, Image foodImage)
     {
         _quantity = count;
@@ -74,6 +78,7 @@ public class UC_BillItem : Panel
             Cursor = Cursors.Hand
         };
         btnDelete.FlatAppearance.BorderSize = 0;
+        btnDelete.Click += (s, e) => OnDeleteRequest?.Invoke(this, this);
 
         lblPrice = new Label
         {
@@ -109,11 +114,19 @@ public class UC_BillItem : Panel
 
     private void UpdateQty(int delta)
     {
+        int oldQty = _quantity;
+
         _quantity += delta;
         if (_quantity < 1) _quantity = 1;
+
+        if (oldQty == _quantity) return;
+
         lblCount.Text = $"{_quantity}";
-        decimal totalPrice = _quantity * _unitPrice;
-        lblPrice.Text = $"{totalPrice:N0}";
+        lblPrice.Text = $"{TotalValue:N0}";
+
+        decimal moneyDiff = delta * _unitPrice;
+
+        OnAmountChanged?.Invoke(this, moneyDiff);
     }
 
     // Helper tạo nút tròn nhỏ

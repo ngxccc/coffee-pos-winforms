@@ -2,8 +2,6 @@ using CoffeePOS.Data.Repositories;
 using CoffeePOS.Features.Billing;
 using CoffeePOS.Features.Sidebar;
 using CoffeePOS.Features.Tables;
-using FontAwesome.Sharp;
-using ReaLTaiizor.Controls;
 using Panel = System.Windows.Forms.Panel;
 
 namespace CoffeePOS.Forms;
@@ -38,7 +36,7 @@ public partial class MainForm : Form
 
         // BILLING PANEL
         _ucBilling = new UC_Billing();
-        for (int i = 1; i <= 50; i++)
+        for (int i = 1; i <= 20; i++)
         {
             _ucBilling.AddItemToBill("ddddddddddddddddddddddddddddddđ", 1, 20000);
         }
