@@ -14,6 +14,7 @@ public class UC_Menu : UserControl
     private bool _isLoading = false;
 
     private readonly IProductRepository _productRepo;
+    private readonly ICategoryRepository _categoryRepo;
 
     // Data Cache
     private List<Product> _allProducts = [];
@@ -23,9 +24,10 @@ public class UC_Menu : UserControl
     public event Action<int, string, decimal>? OnProductSelected;
     public event EventHandler? OnBackClicked;
 
-    public UC_Menu(IProductRepository productRepo)
+    public UC_Menu(IProductRepository productRepo, ICategoryRepository categoryRepo)
     {
         _productRepo = productRepo;
+        _categoryRepo = categoryRepo;
 
         Dock = DockStyle.Fill;
         BackColor = Color.FromArgb(245, 245, 245);
@@ -98,7 +100,7 @@ public class UC_Menu : UserControl
     {
         try
         {
-            _allCategories = _productRepo.GetCategories();
+            _allCategories = _categoryRepo.GetCategories();
             _allProducts = _productRepo.GetProducts();
         }
         catch (Exception ex)

@@ -47,7 +47,7 @@ public class UC_ProductItem : UserControl
             Height = 40,
             TextAlign = ContentAlignment.MiddleCenter,
             Font = new Font("Segoe UI", 10, FontStyle.Bold),
-            Padding = new Padding(5)
+            AutoEllipsis = true,
         };
     }
 

@@ -14,6 +14,7 @@ public partial class MainForm : Form
     // DEPENDENCIES & CONTROLS
     private readonly IBillRepository _billRepo;
     private readonly IServiceProvider _serviceProvider;
+    private readonly ITableRepository _tableRepo;
 
     // UI Components
     private readonly UC_Sidebar _ucSidebar = new();
@@ -29,12 +30,15 @@ public partial class MainForm : Form
     private readonly List<UC_Table> _activeTables = [];
 
     // CONSTRUCTOR & INIT
-    public MainForm(IServiceProvider serviceProvider, IBillRepository billRepo)
+    public MainForm(IServiceProvider serviceProvider,
+                    IBillRepository billRepo,
+                    ITableRepository tableRepo)
     {
         InitializeFormProperties();
 
         _serviceProvider = serviceProvider;
         _billRepo = billRepo;
+        _tableRepo = tableRepo;
 
         // Setup các thành phần giao diện
         SetupTimer();
@@ -110,15 +114,31 @@ public partial class MainForm : Form
         _tableMap.Clear();
         _activeTables.Clear();
 
-        for (int i = 1; i <= 60; i++)
+        var tables = _tableRepo.GetAllTables();
+
+        foreach (var t in tables)
         {
-            UC_Table table = new(i, $"Bàn {i:00}", TableStatus.Empty);
+            // Mặc định là Empty
+            UC_Table ucTable = new(t.Id, t.Name, TableStatus.Empty);
 
-            table.Click += (s, e) => HandleTableClick(table);
+            // Kiểm tra xem bàn này có Bill nào chưa thanh toán không?
+            int activeBillId = _billRepo.GetCurrentUnpaidBillId(t.Id);
+            if (activeBillId > 0)
+            {
+                ucTable.Status = TableStatus.Occupied;
 
-            _tableMap.Add(i, table);
+                // Lấy giờ vào từ DB để sync đồng hồ
+                var startTime = _billRepo.GetBillStartTime(activeBillId);
+                ucTable.StartTime = startTime;
 
-            _flowTableList.Controls.Add(table);
+                ucTable.UpdateColor();
+                ucTable.UpdateDuration();
+                _activeTables.Add(ucTable);
+            }
+
+            ucTable.Click += (s, e) => HandleTableClick(ucTable);
+            _tableMap.Add(t.Id, ucTable);
+            _flowTableList.Controls.Add(ucTable);
         }
     }
 
@@ -149,8 +169,10 @@ public partial class MainForm : Form
             {
                 // Gọi thêm
                 _ucBilling.SetTableInfo(table.TableId, $"Bàn {table.TableId} (Gọi thêm)");
+                LoadExistingBillToUI(table.TableId);
                 ShowMenu();
             }
+
         }
         else
         {
@@ -160,17 +182,44 @@ public partial class MainForm : Form
         }
     }
 
+    private void LoadExistingBillToUI(int tableId)
+    {
+        int billId = _billRepo.GetCurrentUnpaidBillId(tableId);
+        if (billId == 0) return;
+
+        var details = _billRepo.GetBillDetails(billId);
+
+        foreach (var d in details)
+        {
+            _ucBilling.AddItemToBill(d.ProductId, d.ProductName, d.Quantity, d.Price, d.Note);
+        }
+    }
+
     private void ProcessPayment()
     {
         int tableId = _ucBilling.CurrentTableId;
+
         if (tableId == 0)
         {
             MessageBox.Show("Vui lòng chọn bàn trước!");
             return;
         }
 
-        // 1. Lưu DB (Giả lập)
-        // _billRepo.CreateBill(...)
+        int billId = _billRepo.GetCurrentUnpaidBillId(tableId);
+        if (billId == 0)
+        {
+            MessageBox.Show("Bàn này không có hóa đơn nào để thanh toán!");
+            return;
+        }
+
+        decimal finalAmount = _ucBilling.GrandTotal;
+
+        if (MessageBox.Show($"Xác nhận thanh toán {finalAmount:N0} đ?", "Thanh toán", MessageBoxButtons.YesNo) == DialogResult.No)
+        {
+            return;
+        }
+
+        _billRepo.Checkout(billId, finalAmount);
 
         if (_tableMap.TryGetValue(tableId, out UC_Table? targetTable))
         {
@@ -225,14 +274,37 @@ public partial class MainForm : Form
     {
         if (_ucMenu == null || _ucMenu.IsDisposed)
         {
-            // DI CONTAINER: "Cho tao xin một cái UC_Menu đầy đủ phụ kiện!"
             _ucMenu = _serviceProvider.GetRequiredService<UC_Menu>();
-
-            _ucMenu.OnProductSelected += (id, name, price) =>
-            {
-                _ucBilling.AddItemToBill(id, name, 1, price);
-            };
             _ucMenu.OnBackClicked += (s, e) => ShowTableMap();
+
+            _ucMenu.OnProductSelected += (prodId, prodName, price) =>
+            {
+                int tableId = _ucBilling.CurrentTableId;
+                if (tableId == 0) return;
+
+                // A. Kiểm tra xem bàn đã có Bill chưa? Chưa thì tạo mới.
+                int billId = _billRepo.GetCurrentUnpaidBillId(tableId);
+                if (billId == 0)
+                {
+                    billId = _billRepo.CreateBill(tableId);
+
+                    // Cập nhật trạng thái bàn trên UI
+                    if (_tableMap.TryGetValue(tableId, out var table))
+                    {
+                        table.Status = TableStatus.Occupied;
+                        table.StartTime = TimeKeeper.Now;
+                        table.UpdateColor();
+                        if (!_activeTables.Contains(table)) _activeTables.Add(table);
+                    }
+                }
+
+                // B. Lưu món vào DB (Bill Details)
+                // Lưu ý: Hàm này sẽ tự cộng dồn số lượng nếu trùng
+                _billRepo.AddBillDetail(billId, prodId, prodName, 1, price);
+
+                // C. Hiển thị lên UI (UC_Billing)
+                _ucBilling.AddItemToBill(prodId, prodName, 1, price);
+            };
         }
 
         _pnlMainWorkspace.Controls.Clear();

@@ -130,7 +130,7 @@ public class UC_BillItem : Panel
 
         _lblPrice = new Label
         {
-            Text = $"{price:N0}",
+            Text = $"{price:N0} đ",
             Dock = DockStyle.Fill,
             TextAlign = ContentAlignment.MiddleRight,
             Font = new Font("Segoe UI", 10, FontStyle.Bold),
@@ -154,7 +154,7 @@ public class UC_BillItem : Panel
         {
             Text = name,
             Dock = DockStyle.Top,
-            Height = 25,
+            Height = 30,
             TextAlign = ContentAlignment.MiddleLeft,
             Font = new Font("Segoe UI", 10, FontStyle.Bold),
             AutoEllipsis = true

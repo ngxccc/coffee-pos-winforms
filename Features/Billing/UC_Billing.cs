@@ -13,6 +13,7 @@ public class UC_Billing : UserControl
 
     // DATA
     private decimal _grandTotal = 0;
+    public decimal GrandTotal => _grandTotal;
     private readonly Dictionary<string, UC_BillItem> _billItemsDict = [];
     public int CurrentTableId { get; private set; } = 0;
 

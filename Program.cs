@@ -56,6 +56,8 @@ static class Program
                 services.AddSingleton(dataSource);
                 services.AddSingleton<IBillRepository, BillRepository>();
                 services.AddSingleton<IProductRepository, ProductRepository>();
+                services.AddSingleton<ICategoryRepository, CategoryRepository>();
+                services.AddSingleton<ITableRepository, TableRepository>();
 
                 services.AddTransient<MainForm>();
                 services.AddTransient<UC_Menu>();

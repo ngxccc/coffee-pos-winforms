@@ -51,6 +51,43 @@ public static class DbInitializer
             ";
             ExecuteSql(conn, seedSql);
         }
+
+        var sqlBillDetails = @"
+            CREATE TABLE IF NOT EXISTS bill_details (
+                id SERIAL PRIMARY KEY,
+                bill_id INT NOT NULL REFERENCES bills(id) ON DELETE CASCADE,
+                product_id INT NOT NULL,
+                product_name VARCHAR(200),
+                quantity INT DEFAULT 1,
+                price DECIMAL(18,0) DEFAULT 0,
+                note VARCHAR(255),
+                created_at TIMESTAMP DEFAULT NOW(),
+
+                UNIQUE(bill_id, product_id)
+            );";
+        ExecuteSql(conn, sqlBillDetails);
+
+        var sqlTables = @"
+            CREATE TABLE IF NOT EXISTS tables (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(50) NOT NULL
+            );";
+        ExecuteSql(conn, sqlTables);
+
+        if (CountTable(conn, "tables") == 0)
+        {
+            // Seed 100 bàn
+            for (int i = 1; i <= 99; i++)
+            {
+                ExecuteSql(conn, $"INSERT INTO tables (id, name) VALUES ({i}, 'Bàn {i:00}')");
+            }
+            // Reset sequence để insert bàn tiếp theo không lỗi ID
+            ExecuteSql(conn, "SELECT setval('tables_id_seq', 99, true);");
+        }
+
+        ExecuteSql(conn, "CREATE INDEX IF NOT EXISTS idx_bills_table_status ON bills(table_id, status);");
+        ExecuteSql(conn, "CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);");
+        ExecuteSql(conn, "CREATE INDEX IF NOT EXISTS idx_bills_created_at ON bills(created_at);");
     }
 
     private static void ExecuteSql(NpgsqlConnection conn, string sql)
