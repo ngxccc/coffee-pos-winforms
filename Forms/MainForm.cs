@@ -1,3 +1,4 @@
+using CoffeePOS.Core;
 using CoffeePOS.Data.Repositories;
 using CoffeePOS.Features.Billing;
 using CoffeePOS.Features.Products;
@@ -174,7 +175,7 @@ public partial class MainForm : Form
         if (_tableMap.TryGetValue(tableId, out UC_Table? targetTable))
         {
             targetTable.Status = TableStatus.Occupied;
-            targetTable.StartTime = DateTime.Now;
+            targetTable.StartTime = TimeKeeper.Now;
 
             targetTable.UpdateColor();
             targetTable.UpdateDuration();

@@ -8,7 +8,7 @@ public static class TimeKeeper
     private static DateTime _serverStartTime;
     private static Stopwatch _appUptime = null!;
     private static bool _isInitialized = false;
-    private static readonly string _connStr = "";
+    private static string _connStr = "";
 
     private static DateTime FetchServerTimeFromDB()
     {
@@ -35,12 +35,13 @@ public static class TimeKeeper
         return DateTime.Now;
     }
 
-    public static void Initialize()
+    public static void Initialize(string connStr)
     {
         _serverStartTime = FetchServerTimeFromDB();
         _appUptime = new Stopwatch();
         _appUptime.Start();
         _isInitialized = true;
+        _connStr = connStr;
     }
 
     public static DateTime Now

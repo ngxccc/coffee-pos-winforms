@@ -3,9 +3,9 @@ using Npgsql;
 
 namespace CoffeePOS.Data.Repositories.Impl;
 
-public class ProductRepository(string connStr) : IProductRepository
+public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
 {
-    private readonly string _connStr = connStr;
+    private readonly NpgsqlDataSource _dataSource = dataSource;
 
     public List<Category> GetCategories()
     {
@@ -15,8 +15,7 @@ public class ProductRepository(string connStr) : IProductRepository
             new() { Id = 0, Name = "Tất cả" }
         };
 
-        using var conn = new NpgsqlConnection(_connStr);
-        conn.Open();
+        using var conn = _dataSource.OpenConnection();
 
         using var cmd = new NpgsqlCommand("SELECT id, name FROM categories ORDER BY id", conn);
         using var reader = cmd.ExecuteReader();
@@ -35,8 +34,7 @@ public class ProductRepository(string connStr) : IProductRepository
     public List<Product> GetProducts()
     {
         var list = new List<Product>();
-        using var conn = new NpgsqlConnection(_connStr);
-        conn.Open();
+        using var conn = _dataSource.OpenConnection();
 
         string sql = "SELECT id, name, price, category_id FROM products ORDER BY name";
         using var cmd = new NpgsqlCommand(sql, conn);
