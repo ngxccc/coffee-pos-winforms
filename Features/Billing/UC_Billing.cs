@@ -138,7 +138,7 @@ public class UC_Billing : UserControl
         string newNote = Interaction.InputBox("Nhập ghi chú mới:", "Sửa Ghi Chú", currentNote);
 
         // Nếu user bấm Cancel hoặc không đổi gì
-        if (newNote == currentNote) return;
+        if (newNote == "") return;
 
         // 2. Tính toán Key
         string oldKey = $"{currentItem.ProductId}_{currentItem.Note}";
