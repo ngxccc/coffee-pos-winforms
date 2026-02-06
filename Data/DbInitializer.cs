@@ -36,6 +36,7 @@ public static class DbInitializer
                     on delete set null
             );";
         ExecuteSql(conn, sqlProducts);
+        ExecuteSql(conn, "CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);");
 
         var sqlBills = @"
             CREATE TABLE IF NOT EXISTS bills (
@@ -52,22 +53,8 @@ public static class DbInitializer
                     on delete set null
             );";
         ExecuteSql(conn, sqlBills);
-
-        if (CountTable(conn, "categories") == 0)
-        {
-            var seedSql = @"
-                INSERT INTO categories (name) VALUES
-                ('Cà phê'), ('Trà trái cây'), ('Đá xay'), ('Bánh ngọt');
-
-                -- Insert vài món mẫu
-                INSERT INTO products (name, price, category_id) VALUES
-                ('Cafe Đen', 25000, 1),
-                ('Cafe Sữa', 29000, 1),
-                ('Trà Đào Cam Sả', 35000, 2),
-                ('Bánh Tiramisu', 45000, 4);
-            ";
-            ExecuteSql(conn, seedSql);
-        }
+        ExecuteSql(conn, "CREATE INDEX IF NOT EXISTS idx_bills_table_status ON bills(table_id, status);");
+        ExecuteSql(conn, "CREATE INDEX IF NOT EXISTS idx_bills_created_at ON bills(created_at);");
 
         var sqlBillDetails = @"
             CREATE TABLE IF NOT EXISTS bill_details (
@@ -92,6 +79,23 @@ public static class DbInitializer
             );";
         ExecuteSql(conn, sqlBillDetails);
 
+        // Data mẫu
+        if (CountTable(conn, "categories") == 0)
+        {
+            var seedSql = @"
+                INSERT INTO categories (name) VALUES
+                ('Cà phê'), ('Trà trái cây'), ('Đá xay'), ('Bánh ngọt');
+
+                -- Insert vài món mẫu
+                INSERT INTO products (name, price, category_id) VALUES
+                ('Cafe Đen', 25000, 1),
+                ('Cafe Sữa', 29000, 1),
+                ('Trà Đào Cam Sả', 35000, 2),
+                ('Bánh Tiramisu', 45000, 4);
+            ";
+            ExecuteSql(conn, seedSql);
+        }
+
         if (CountTable(conn, "tables") == 0)
         {
             // Seed 100 bàn
@@ -102,10 +106,6 @@ public static class DbInitializer
             // Reset sequence để insert bàn tiếp theo không lỗi ID
             ExecuteSql(conn, "SELECT setval('tables_id_seq', 99, true);");
         }
-
-        ExecuteSql(conn, "CREATE INDEX IF NOT EXISTS idx_bills_table_status ON bills(table_id, status);");
-        ExecuteSql(conn, "CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);");
-        ExecuteSql(conn, "CREATE INDEX IF NOT EXISTS idx_bills_created_at ON bills(created_at);");
     }
 
     private static void ExecuteSql(NpgsqlConnection conn, string sql)
