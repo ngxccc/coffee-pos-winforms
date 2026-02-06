@@ -12,6 +12,7 @@ public class UCBillItem : Panel
     public UCBillItem(string foodName, int count, decimal price, Image foodImage)
     {
         _quantity = count;
+        _unitPrice = price;
 
         Size = new Size(360, 90);
         BackColor = Color.White;
@@ -95,7 +96,7 @@ public class UCBillItem : Panel
             TextAlign = ContentAlignment.MiddleLeft,
             Font = new Font("Segoe UI", 10, FontStyle.Regular),
             Padding = new Padding(5, 0, 0, 0),
-            AutoEllipsis = true
+            AutoEllipsis = true,
         };
 
         // Dock Fill (Name) add cuối cùng
@@ -112,8 +113,8 @@ public class UCBillItem : Panel
         _quantity += delta;
         if (_quantity < 1) _quantity = 1;
         lblCount.Text = $"{_quantity}";
-        // Logic update giá tiền tổng nếu cần:
-        // lblPrice.Text = $"{_unitPrice * _quantity:N0}";
+        decimal totalPrice = _quantity * _unitPrice;
+        lblPrice.Text = $"{totalPrice:N0}";
     }
 
     // Helper tạo nút tròn nhỏ
