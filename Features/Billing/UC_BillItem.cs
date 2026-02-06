@@ -12,11 +12,13 @@ public class UC_BillItem : Panel
     public event EventHandler<decimal>? OnAmountChanged;
     public event EventHandler<UC_BillItem>? OnDeleteRequest;
     public decimal TotalValue => _quantity * _unitPrice;
+    public string ItemName { get; private set; }
 
     public UC_BillItem(string foodName, int count, decimal price, Image foodImage)
     {
         _quantity = count;
         _unitPrice = price;
+        ItemName = foodName;
 
         Size = new Size(400, 90);
         BackColor = Color.White;
@@ -112,7 +114,7 @@ public class UC_BillItem : Panel
         Controls.Add(picFood);         // Left 1: Ảnh (nằm ngoài cùng bên trái)
     }
 
-    private void UpdateQty(int delta)
+    public void UpdateQty(int delta)
     {
         int oldQty = _quantity;
 

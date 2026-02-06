@@ -8,6 +8,7 @@ public class UC_Billing : UserControl
     private readonly FlowLayoutPanel _flowBillItemList;
     private readonly Label _lblTotalPrice;
     private decimal _grandTotal = 0;
+    private readonly Dictionary<string, UC_BillItem> _billItemsDict = [];
     public event EventHandler? OnPayClicked;
 
     public UC_Billing()
@@ -80,6 +81,14 @@ public class UC_Billing : UserControl
 
     public void AddItemToBill(string name, int qty, decimal price)
     {
+        if (_billItemsDict.TryGetValue(name, out UC_BillItem? existingItem))
+        {
+            existingItem.UpdateQty(qty);
+            _flowBillItemList.ScrollControlIntoView(existingItem);
+
+            return;
+        }
+
         Bitmap dummyImg = new(100, 100);
         using (Graphics g = Graphics.FromImage(dummyImg))
         {
@@ -98,10 +107,17 @@ public class UC_Billing : UserControl
         {
             UpdateTotal(-billItem.TotalValue);
             _flowBillItemList.Controls.Remove(billItem);
+
+            if (_billItemsDict.ContainsKey(billItem.ItemName))
+            {
+                _billItemsDict.Remove(billItem.ItemName);
+            }
+
             billItem.Dispose();
         };
 
         _flowBillItemList.Controls.Add(billItem);
+        _billItemsDict.Add(name, billItem);
         UpdateTotal(qty * price);
     }
 
