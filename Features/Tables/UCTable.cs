@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using FontAwesome.Sharp;
 
 namespace CoffeePOS.Features.Tables;

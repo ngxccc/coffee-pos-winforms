@@ -1,5 +1,6 @@
 using CoffeePOS.Data.Repositories;
 using CoffeePOS.Features.Billing;
+using CoffeePOS.Features.Sidebar;
 using CoffeePOS.Features.Tables;
 using FontAwesome.Sharp;
 using ReaLTaiizor.Controls;
@@ -10,6 +11,7 @@ namespace CoffeePOS.Forms;
 public partial class MainForm : Form
 {
     private readonly IBillRepository _billRepo;
+    private UC_Sidebar? _ucSidebar;
     private UC_Billing? _ucBilling;
     private Panel? _pnlMainWorkspace;
 
@@ -31,25 +33,8 @@ public partial class MainForm : Form
     private new void InitLayout()
     {
         // SIDE PANEL
-        Panel pnlSidebar = new()
-        {
-            Width = 80,
-            Dock = DockStyle.Left,
-            BackColor = Color.FromArgb(30, 30, 30),
-        };
-
-        IconButton btnHome = new()
-        {
-            IconChar = IconChar.Home,
-            IconColor = Color.White,
-            IconSize = 32,
-            Dock = DockStyle.Top,
-            Height = 80,
-            FlatStyle = FlatStyle.Flat,
-            ForeColor = Color.Transparent,
-            TextImageRelation = TextImageRelation.Overlay // Chỉ hiện Icon
-        };
-        btnHome.FlatAppearance.BorderSize = 0;
+        _ucSidebar = new UC_Sidebar();
+        _ucSidebar.OnHomeClicked += (s, e) => SwitchToHome();
 
         // BILLING PANEL
         _ucBilling = new UC_Billing();
@@ -67,8 +52,7 @@ public partial class MainForm : Form
         };
 
         // CONTROLS
-        pnlSidebar.Controls.Add(btnHome);
-        Controls.Add(pnlSidebar);
+        Controls.Add(_ucSidebar);
 
         Controls.Add(_ucBilling);
 
@@ -109,5 +93,10 @@ public partial class MainForm : Form
     private static void ProcessPayment()
     {
         MessageBox.Show("Thanh toán thành công");
+    }
+
+    private static void SwitchToHome()
+    {
+        MessageBox.Show("Đã chuyển sang trang Home");
     }
 }

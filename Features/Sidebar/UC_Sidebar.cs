@@ -1,6 +1,6 @@
 using FontAwesome.Sharp;
 
-namespace CoffeePOS.Features.Shared;
+namespace CoffeePOS.Features.Sidebar;
 
 public class UC_Sidebar : UserControl
 {
@@ -20,7 +20,8 @@ public class UC_Sidebar : UserControl
             Dock = DockStyle.Top,
             Height = 80,
             FlatStyle = FlatStyle.Flat,
-            ForeColor = Color.Transparent
+            ForeColor = Color.Transparent,
+            TextImageRelation = TextImageRelation.Overlay
         };
         btnHome.FlatAppearance.BorderSize = 0;
 
