@@ -6,21 +6,60 @@ namespace CoffeePOS.Features.Billing;
 
 public class UC_Billing : UserControl
 {
-    private readonly FlowLayoutPanel _flowBillItemList;
-    private readonly Label _lblTotalPrice;
+    // UI COMPONENTS
+    private FlowLayoutPanel? _flowBillItemList;
+    private Label? _lblTotalPrice;
+    private Label? _lblTableName;
+
+    // DATA
     private decimal _grandTotal = 0;
-    private readonly Label _lblTableName;
     private readonly Dictionary<string, UC_BillItem> _billItemsDict = [];
     public int CurrentTableId { get; private set; } = 0;
+
+    // EVENTS
     public event EventHandler? OnPayClicked;
 
     public UC_Billing()
     {
+        InitializeLayout();
+        InitializeComponents();
+    }
+
+    // UI CONSTRUCTION METHODS
+
+    private void InitializeLayout()
+    {
         Width = 420;
         Dock = DockStyle.Right;
         BackColor = Color.White;
+    }
 
-        Panel pnlHeader = new()
+    private void InitializeComponents()
+    {
+        var pnlHeader = BuildHeaderPanel();
+
+        var pnlFooter = BuildFooterPanel();
+
+        _flowBillItemList = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            AutoScroll = true,
+            FlowDirection = FlowDirection.TopDown,
+            WrapContents = false,
+            Padding = new Padding(5)
+        };
+
+        Controls.Add(pnlHeader);         // Top
+        Controls.Add(pnlFooter);         // Bottom
+        Controls.Add(_flowBillItemList); // Fill
+
+        pnlHeader.SendToBack();       // Đẩy lên cùng (Dock Top ưu tiên)
+        _flowBillItemList.BringToFront();
+    }
+
+    private Panel BuildHeaderPanel()
+    {
+        Panel pnl = new()
         {
             Dock = DockStyle.Top,
             Height = 50,
@@ -37,9 +76,13 @@ public class UC_Billing : UserControl
             TextAlign = ContentAlignment.MiddleLeft
         };
 
-        pnlHeader.Controls.Add(_lblTableName);
+        pnl.Controls.Add(_lblTableName);
+        return pnl;
+    }
 
-        Panel pnlBillingFooter = new()
+    private Panel BuildFooterPanel()
+    {
+        Panel pnl = new()
         {
             Dock = DockStyle.Bottom,
             Height = 110,
@@ -47,6 +90,7 @@ public class UC_Billing : UserControl
             BackColor = Color.WhiteSmoke,
         };
 
+        // Panel con chứa thông tin tổng tiền
         Panel pnlTotalInfo = new()
         {
             Dock = DockStyle.Top,
@@ -63,7 +107,7 @@ public class UC_Billing : UserControl
             Width = 100
         };
 
-        _lblTotalPrice = new()
+        _lblTotalPrice = new Label
         {
             Text = "0 đ",
             Dock = DockStyle.Right,
@@ -84,141 +128,130 @@ public class UC_Billing : UserControl
         };
         btnPay.Click += (s, e) => OnPayClicked?.Invoke(this, EventArgs.Empty);
 
-        pnlBillingFooter.Controls.Add(btnPay);
-        pnlBillingFooter.Controls.Add(pnlTotalInfo);
+        pnl.Controls.Add(btnPay);     // Fill
+        pnl.Controls.Add(pnlTotalInfo); // Top
+        return pnl;
+    }
 
-        _flowBillItemList = new()
-        {
-            Dock = DockStyle.Fill,
-            AutoScroll = true,
-            FlowDirection = FlowDirection.TopDown,
-            WrapContents = false
-        };
+    // PUBLIC METHODS
 
-        Controls.Add(pnlHeader);
-        Controls.Add(pnlBillingFooter);
-        Controls.Add(_flowBillItemList);
+    public void SetTableInfo(int tableId, string tableName)
+    {
+        ClearOrder();
+        CurrentTableId = tableId;
+        if (_lblTableName != null)
+            _lblTableName.Text = tableName;
+    }
 
-        pnlHeader.SendToBack();
-        _flowBillItemList.BringToFront();
+    public void ClearOrder()
+    {
+        if (_flowBillItemList == null)
+            return;
+
+        // Dọn dẹp memory cho các control cũ
+        foreach (Control c in _flowBillItemList.Controls) c.Dispose();
+
+        _flowBillItemList.Controls.Clear();
+        _billItemsDict.Clear();
+        _grandTotal = 0;
+        if (_lblTotalPrice != null)
+            _lblTotalPrice.Text = "0 đ";
+        CurrentTableId = 0;
+        if (_lblTableName != null)
+            _lblTableName.Text = "Vui lòng chọn bàn";
     }
 
     public void AddItemToBill(int productId, string name, int qty, decimal price, string note = "")
     {
+        if (_flowBillItemList == null)
+            return;
+
         string uniqueKey = $"{productId}_{note}";
 
         if (_billItemsDict.TryGetValue(uniqueKey, out UC_BillItem? existingItem))
         {
             existingItem.UpdateQty(qty);
             _flowBillItemList.ScrollControlIntoView(existingItem);
-
             return;
         }
 
-        Bitmap dummyImg = new(100, 100);
-        using (Graphics g = Graphics.FromImage(dummyImg))
-        {
-            g.Clear(Color.Bisque); // Màu kem
-                                   // Vẽ chữ cái đầu của tên món vào ảnh
-            g.DrawString(name, new Font("Arial", 20), Brushes.Brown, 10, 30);
-        }
+        UC_BillItem billItem = CreateBillItem(productId, name, qty, price, note);
 
-        UC_BillItem billItem = new(productId, name, qty, price, note, dummyImg);
-        billItem.OnNoteEditRequest += BillItem_OnNoteEditRequest;
-
-        billItem.OnAmountChanged += (sender, moneyDiff) =>
-        {
-            UpdateTotal(moneyDiff);
-        };
-
-        billItem.OnDeleteRequest += (sender, e) =>
-        {
-            UpdateTotal(-billItem.TotalValue);
-            _flowBillItemList.Controls.Remove(billItem);
-
-            string keyToDelete = $"{billItem.ProductId}_{billItem.Note}";
-            _billItemsDict.Remove(keyToDelete);
-
-            billItem.Dispose();
-        };
-
+        // Add to UI & Data
         _flowBillItemList.Controls.Add(billItem);
         _billItemsDict.Add(uniqueKey, billItem);
+
         UpdateTotal(qty * price);
     }
 
-    private void UpdateTotal(decimal amountToAdd)
+    // HELPER LOGIC
+
+    private UC_BillItem CreateBillItem(int productId, string name, int qty, decimal price, string note)
     {
-        _grandTotal += amountToAdd;
-        _lblTotalPrice.Text = $"{_grandTotal:N0} đ";
+        // Mock image (Sau này thay bằng logic lấy ảnh thật)
+        Bitmap dummyImg = new(100, 100);
+        using (Graphics g = Graphics.FromImage(dummyImg))
+        {
+            g.Clear(Color.Bisque);
+            g.DrawString(name[..1], new Font("Arial", 20), Brushes.Brown, 10, 30);
+        }
+
+        UC_BillItem billItem = new(productId, name, qty, price, note, dummyImg);
+
+        // Wiring Events
+        billItem.OnNoteEditRequest += BillItem_OnNoteEditRequest;
+        billItem.OnAmountChanged += (s, moneyDiff) => UpdateTotal(moneyDiff);
+        billItem.OnDeleteRequest += (s, e) => HandleDeleteItem(billItem);
+
+        return billItem;
+    }
+
+    private void HandleDeleteItem(UC_BillItem item)
+    {
+        if (_flowBillItemList == null)
+            return;
+
+        UpdateTotal(-item.TotalValue);
+        _flowBillItemList.Controls.Remove(item);
+
+        string keyToDelete = $"{item.ProductId}_{item.Note}";
+        _billItemsDict.Remove(keyToDelete);
+
+        item.Dispose();
     }
 
     private void BillItem_OnNoteEditRequest(object? sender, string currentNote)
     {
         if (sender is not UC_BillItem currentItem) return;
 
-        // 1. Hiện InputBox hỏi Note mới (Dùng tạm VB InputBox cho lẹ)
         string newNote = Interaction.InputBox("Nhập ghi chú mới:", "Sửa Ghi Chú", currentNote);
+        if (newNote == currentNote) return;
 
-        // Nếu user bấm Cancel hoặc không đổi gì
-        if (newNote == "") return;
-
-        // 2. Tính toán Key
+        // Tính toán Key
         string oldKey = $"{currentItem.ProductId}_{currentItem.Note}";
         string newKey = $"{currentItem.ProductId}_{newNote}";
 
-        // 3. KIỂM TRA LOGIC
+        // Logic Merge hoặc Rename
         if (_billItemsDict.TryGetValue(newKey, out UC_BillItem? targetItem))
         {
-
-            // A. Cộng dồn số lượng từ món cũ sang món đích
+            // MERGE
             targetItem.UpdateQty(currentItem.Quantity);
-
-            // B. Xóa món cũ đi
-            // (Phải trừ tiền của món cũ ra khỏi tổng trước khi xóa)
-            // Lưu ý: Hàm UpdateQty ở trên đã TỰ CỘNG thêm tiền vào tổng rồi.
-            // Nhưng món cũ vẫn đang nằm đó chiếm tiền -> Phải trừ tiền món cũ đi.
-            UpdateTotal(-currentItem.TotalValue);
-
-            // Xóa khỏi UI và Dict
-            _flowBillItemList.Controls.Remove(currentItem);
-            _billItemsDict.Remove(oldKey);
-            currentItem.Dispose();
-
-            // C. Scroll tới món đích cho user thấy
-            _flowBillItemList.ScrollControlIntoView(targetItem);
+            HandleDeleteItem(currentItem); // Xóa item cũ đi
+            _flowBillItemList?.ScrollControlIntoView(targetItem);
         }
         else
         {
-            // --- TRƯỜNG HỢP RENAME (ĐỔI TÊN) ---
-            // Chưa có món nào trùng Note mới -> Chỉ cần cập nhật Key và UI
-
-            // A. Xóa Key cũ
+            // RENAME
             _billItemsDict.Remove(oldKey);
-
-            // B. Update Item
-            currentItem.SetNote(newNote); // Update UI + Property
-
-            // C. Add Key mới trỏ về Item hiện tại
+            currentItem.SetNote(newNote);
             _billItemsDict.Add(newKey, currentItem);
         }
     }
 
-    public void SetTableInfo(int tableId, string tableName)
+    private void UpdateTotal(decimal amountToAdd)
     {
-        ClearOrder();
-
-        CurrentTableId = tableId;
-        _lblTableName.Text = tableName;
-    }
-
-    public void ClearOrder()
-    {
-        _flowBillItemList.Controls.Clear();
-        _billItemsDict.Clear();
-        _grandTotal = 0;
-        _lblTotalPrice.Text = "0 đ";
-        CurrentTableId = 0;
-        _lblTableName.Text = "Vui lòng chọn bàn";
+        _grandTotal += amountToAdd;
+        if (_lblTotalPrice != null)
+            _lblTotalPrice.Text = $"{_grandTotal:N0} đ";
     }
 }
