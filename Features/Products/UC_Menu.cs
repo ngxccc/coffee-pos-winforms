@@ -7,6 +7,10 @@ public class UC_Menu : UserControl
     // UI Components
     private FlowLayoutPanel _flowProducts = null!;
     private FlowLayoutPanel _flowCategories = null!;
+    private List<Product> _currentFilteredList = [];
+    private int _currentPage = 0;
+    private const int PAGE_SIZE = 20;
+    private bool _isLoading = false;
 
     // Data Cache
     private readonly List<Product> _allProducts = [];
@@ -22,11 +26,10 @@ public class UC_Menu : UserControl
         BackColor = Color.FromArgb(245, 245, 245);
 
         InitializeComponents();
-
         LoadDataFromDatabase();
 
         RenderCategories();
-        RenderProducts(_allProducts);
+        FilterProducts(0);
     }
 
     private void InitializeComponents()
@@ -49,7 +52,13 @@ public class UC_Menu : UserControl
             AutoScroll = true,
             Padding = new Padding(20),
             BackColor = Color.FromArgb(245, 245, 245),
+            AutoScrollMargin = new Size(0, 1000),
         };
+
+        _flowProducts.Scroll += (s, e) => CheckScrollBottom();
+        // WinForms FlowLayout đôi khi không fire event Scroll khi dùng chuột lăn (MouseWheel)
+        // Nên cần bắt thêm cái này cho chắc cốp:
+        _flowProducts.MouseWheel += (s, e) => CheckScrollBottom();
 
         Controls.Add(_flowProducts);    // Fill
         Controls.Add(_flowCategories);  // Top 2
@@ -89,7 +98,7 @@ public class UC_Menu : UserControl
             new Category { Id = 1, Name = "Cà phê" },
             new Category { Id = 2, Name = "Trà trái cây" },
             new Category { Id = 3, Name = "Đá xay" },
-            new Category { Id = 4, Name = "Bánh ngọt" }
+            new Category { Id = 4, Name = "Bánh ngọt" },
         ];
 
         _allProducts.Clear();
@@ -99,6 +108,18 @@ public class UC_Menu : UserControl
         for (int i = 6; i <= 10; i++) _allProducts.Add(new Product { Id = i, Name = $"Trà {i}", Price = 30000, CategoryId = 2 });
         // Bánh (CatId 4)
         for (int i = 11; i <= 15; i++) _allProducts.Add(new Product { Id = i, Name = $"Bánh {i}", Price = 15000, CategoryId = 4 });
+
+        var rand = new Random();
+        for (int i = 1; i <= 500; i++)
+        {
+            _allProducts.Add(new Product
+            {
+                Id = i,
+                Name = $"Món ngon {i} (Siêu dài)",
+                Price = rand.Next(20, 80) * 1000,
+                CategoryId = rand.Next(1, 5) // Random danh mục
+            });
+        }
     }
 
     private void RenderCategories()
@@ -134,38 +155,69 @@ public class UC_Menu : UserControl
 
     private void FilterProducts(int categoryId)
     {
-        List<Product> filteredList;
-
         if (categoryId == 0)
-        {
-            filteredList = _allProducts;
-        }
+            _currentFilteredList = _allProducts;
         else
-        {
-            filteredList = _allProducts.Where(p => p.CategoryId == categoryId).ToList();
-        }
+            _currentFilteredList = [.. _allProducts.Where(p => p.CategoryId == categoryId)];
 
-        RenderProducts(filteredList);
+        _currentPage = 0;
+        _flowProducts.VerticalScroll.Value = 0;
+        _flowProducts.Controls.Clear();
+        _flowProducts.PerformLayout(); // Force layout update
+
+        LoadNextPage();
     }
 
-    private void RenderProducts(List<Product> products)
+    private void LoadNextPage()
     {
-        _flowProducts.SuspendLayout();
-        _flowProducts.Controls.Clear();
+        if (_isLoading) return;
+        _isLoading = true;
 
-        foreach (var p in products)
+        // Tính toán: Lấy từ đâu, lấy bao nhiêu
+        // Skip: Bỏ qua những thằng đã load
+        // Take: Lấy 20 thằng tiếp theo
+        var productsToRender = _currentFilteredList
+                                .Skip(_currentPage * PAGE_SIZE)
+                                .Take(PAGE_SIZE)
+                                .ToList();
+
+        // Nếu hết hàng để lấy thì thôi
+        if (productsToRender.Count == 0)
+        {
+            _isLoading = false;
+            return;
+        }
+
+        _flowProducts.SuspendLayout(); // Tạm dừng vẽ để đỡ giật
+
+        foreach (var p in productsToRender)
         {
             var pItem = new UC_ProductItem(p.Id, p.Name, p.Price);
-
             pItem.OnProductClicked += (s, e) =>
-            {
                 OnProductSelected?.Invoke(p.Id, p.Name, p.Price);
-            };
+
+            pItem.LoadImageAsync(p.Id);
 
             _flowProducts.Controls.Add(pItem);
         }
 
         _flowProducts.ResumeLayout();
+        _currentPage++;
+        _isLoading = false;
+    }
+
+    private void CheckScrollBottom()
+    {
+        // Công thức kiểm tra đã cuộn xuống đáy chưa
+        // VerticalScroll.Value: Vị trí hiện tại của thanh cuộn
+        // ClientSize.Height: Chiều cao vùng nhìn thấy
+        // VerticalScroll.Maximum: Tổng chiều cao thực tế của nội dung
+
+        // Hack: Cộng thêm 50px dung sai (buffer) để load sớm hơn xíu cho mượt
+        if (_flowProducts.VerticalScroll.Value + _flowProducts.ClientSize.Height >= _flowProducts.VerticalScroll.Maximum - 100)
+        {
+            LoadNextPage();
+        }
     }
 
     private void HighlightCategoryButton(Button activeBtn)
