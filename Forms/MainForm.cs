@@ -118,17 +118,14 @@ public partial class MainForm : Form
 
         foreach (var t in tables)
         {
-            // Mặc định là Empty
             UC_Table ucTable = new(t.Id, t.Name, TableStatus.Empty);
 
-            // Kiểm tra xem bàn này có Bill nào chưa thanh toán không?
-            int activeBillId = _billRepo.GetCurrentUnpaidBillId(t.Id);
-            if (activeBillId > 0)
+            int paidBillId = _billRepo.GetCurrentPaidBillId(t.Id);
+
+            if (paidBillId > 0)
             {
                 ucTable.Status = TableStatus.Occupied;
-
-                // Lấy giờ vào từ DB để sync đồng hồ
-                var startTime = _billRepo.GetBillStartTime(activeBillId);
+                var startTime = _billRepo.GetBillStartTime(paidBillId);
                 ucTable.StartTime = startTime;
 
                 ucTable.UpdateColor();
@@ -162,6 +159,7 @@ public partial class MainForm : Form
             if (result == DialogResult.No)
             {
                 // Dọn bàn
+                _billRepo.ClearTable(table.TableId);
                 ResetTableStatus(table);
                 _ucBilling.ClearOrder();
             }
@@ -169,7 +167,6 @@ public partial class MainForm : Form
             {
                 // Gọi thêm
                 _ucBilling.SetTableInfo(table.TableId, $"Bàn {table.TableId} (Gọi thêm)");
-                LoadExistingBillToUI(table.TableId);
                 ShowMenu();
             }
 
@@ -178,6 +175,12 @@ public partial class MainForm : Form
         {
             // --- BÀN TRỐNG ---
             _ucBilling.SetTableInfo(table.TableId, $"Order cho Bàn {table.TableId}");
+            int draftBillId = _billRepo.GetCurrentUnpaidBillId(table.TableId);
+
+            if (draftBillId > 0)
+            {
+                LoadExistingBillToUI(table.TableId);
+            }
             ShowMenu();
         }
     }
@@ -287,15 +290,6 @@ public partial class MainForm : Form
                 if (billId == 0)
                 {
                     billId = _billRepo.CreateBill(tableId);
-
-                    // Cập nhật trạng thái bàn trên UI
-                    if (_tableMap.TryGetValue(tableId, out var table))
-                    {
-                        table.Status = TableStatus.Occupied;
-                        table.StartTime = TimeKeeper.Now;
-                        table.UpdateColor();
-                        if (!_activeTables.Contains(table)) _activeTables.Add(table);
-                    }
                 }
 
                 // B. Lưu món vào DB (Bill Details)
@@ -313,6 +307,7 @@ public partial class MainForm : Form
 
     private void ShowTableMap()
     {
+        _ucBilling.ClearOrder();
         _pnlMainWorkspace.Controls.Clear();
         _pnlMainWorkspace.Controls.Add(_flowTableList);
     }

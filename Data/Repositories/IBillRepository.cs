@@ -10,4 +10,6 @@ public interface IBillRepository
     void AddBillDetail(int billId, int productId, string name, int qty, decimal price);
     List<BillDetail> GetBillDetails(int billId);
     DateTime? GetBillStartTime(int billId);
+    public void ClearTable(int tableId);
+    public int GetCurrentPaidBillId(int tableId);
 }

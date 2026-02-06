@@ -53,6 +53,17 @@ public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
         return res == null ? 0 : (int)res;
     }
 
+    public int GetCurrentPaidBillId(int tableId)
+    {
+        using var conn = dataSource.OpenConnection();
+        // Lấy bill mới nhất có status = 1 (Paid)
+        string sql = "SELECT id FROM bills WHERE table_id = @t AND status = 1 ORDER BY id DESC LIMIT 1";
+        using var cmd = new NpgsqlCommand(sql, conn);
+        cmd.Parameters.AddWithValue("t", tableId);
+        var res = cmd.ExecuteScalar();
+        return res == null ? 0 : (int)res;
+    }
+
     public void AddBillDetail(int billId, int productId, string name, int qty, decimal price)
     {
         using var conn = dataSource.OpenConnection();
@@ -105,5 +116,14 @@ public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
         cmd.Parameters.AddWithValue("id", billId);
         var res = cmd.ExecuteScalar();
         return res == DBNull.Value ? null : (DateTime?)res;
+    }
+
+    public void ClearTable(int tableId)
+    {
+        using var conn = dataSource.OpenConnection();
+        string sql = "UPDATE bills SET status = 2 WHERE table_id = @t AND status = 1";
+        using var cmd = new NpgsqlCommand(sql, conn);
+        cmd.Parameters.AddWithValue("t", tableId);
+        cmd.ExecuteNonQuery();
     }
 }
