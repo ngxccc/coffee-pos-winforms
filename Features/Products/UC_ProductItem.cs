@@ -17,9 +17,8 @@ public class UC_ProductItem : UserControl
         ProductName = name;
         Price = price;
 
-        Size = new Size(140, 180);
+        Size = new Size(130, 180);
         BackColor = Color.White;
-        Margin = new Padding(10);
         Cursor = Cursors.Hand;
 
         BorderStyle = BorderStyle.FixedSingle;
