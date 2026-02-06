@@ -36,10 +36,11 @@ public partial class MainForm : Form
 
         // BILLING PANEL
         _ucBilling = new UC_Billing();
-        for (int i = 1; i <= 20; i++)
-        {
-            _ucBilling.AddItemToBill("ddddddddddddddddddddddddddddddđ", 1, 20000);
-        }
+
+        _ucBilling.AddItemToBill(101, "Cafe Đen Đá", 1, 20000, "Ít đường");
+        _ucBilling.AddItemToBill(101, "Cafe Đen Đá", 1, 20000, "Ít đường");
+        _ucBilling.AddItemToBill(102, "Cafe Đen Đá XL", 1, 30000, "Nhiều đá");
+
         _ucBilling.OnPayClicked += (s, e) => ProcessPayment();
 
         // WORKSPACE

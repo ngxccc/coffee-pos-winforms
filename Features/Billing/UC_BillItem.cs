@@ -12,13 +12,17 @@ public class UC_BillItem : Panel
     public event EventHandler<decimal>? OnAmountChanged;
     public event EventHandler<UC_BillItem>? OnDeleteRequest;
     public decimal TotalValue => _quantity * _unitPrice;
+    public int ProductId { get; private set; }
     public string ItemName { get; private set; }
+    public string Note { get; private set; }
 
-    public UC_BillItem(string foodName, int count, decimal price, Image foodImage)
+    public UC_BillItem(int id, string foodName, int count, decimal price, string note = "", Image? foodImage = null)
     {
+        ProductId = id;
+        ItemName = foodName;
         _quantity = count;
         _unitPrice = price;
-        ItemName = foodName;
+        Note = note;
 
         Size = new Size(400, 90);
         BackColor = Color.White;
@@ -94,21 +98,40 @@ public class UC_BillItem : Panel
         pnlRightActions.Controls.Add(lblPrice);
         pnlRightActions.Controls.Add(btnDelete);
 
+        Panel pnlInfo = new()
+        {
+            Dock = DockStyle.Fill,
+            Padding = new Padding(5, 5, 0, 5)
+        };
+
         // TÊN MÓN
         Label lblName = new()
         {
             Text = foodName,
-            Dock = DockStyle.Fill,
+            Dock = DockStyle.Top,
+            Height = 25,
             TextAlign = ContentAlignment.MiddleLeft,
-            Font = new Font("Segoe UI", 10, FontStyle.Regular),
-            Padding = new Padding(5, 0, 0, 0),
-            AutoEllipsis = true,
+            Font = new Font("Segoe UI", 10, FontStyle.Bold),
+            AutoEllipsis = true
         };
+
+        // Ghi Chú
+        Label lblNote = new()
+        {
+            Text = string.IsNullOrEmpty(note) ? "" : $"{note}",
+            Dock = DockStyle.Fill,
+            TextAlign = ContentAlignment.TopLeft,
+            Font = new Font("Segoe UI", 9, FontStyle.Italic),
+            ForeColor = Color.Gray,
+            AutoEllipsis = true
+        };
+        pnlInfo.Controls.Add(lblNote); // Add sau (Fill)
+        pnlInfo.Controls.Add(lblName); // Add trước (Top)
 
         // Dock Fill (Name) add cuối cùng
         // Dock Left/Right add trước
 
-        Controls.Add(lblName);         // Fill: Lấp đầy khoảng trống còn lại
+        Controls.Add(pnlInfo);         // Fill: Lấp đầy khoảng trống còn lại
         Controls.Add(pnlRightActions); // Right: Giá
         Controls.Add(pnlQty);          // Left 2: Số lượng (nằm sau ảnh)
         Controls.Add(picFood);         // Left 1: Ảnh (nằm ngoài cùng bên trái)

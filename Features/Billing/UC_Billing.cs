@@ -79,9 +79,13 @@ public class UC_Billing : UserControl
         _flowBillItemList.BringToFront();
     }
 
-    public void AddItemToBill(string name, int qty, decimal price)
+    public void AddItemToBill(int productId, string name, int qty, decimal price, string note = "")
     {
-        if (_billItemsDict.TryGetValue(name, out UC_BillItem? existingItem))
+        string uniqueKey = $"{productId}_{note}";
+
+        MessageBox.Show(uniqueKey);
+
+        if (_billItemsDict.TryGetValue(uniqueKey, out UC_BillItem? existingItem))
         {
             existingItem.UpdateQty(qty);
             _flowBillItemList.ScrollControlIntoView(existingItem);
@@ -96,7 +100,8 @@ public class UC_Billing : UserControl
                                    // Vẽ chữ cái đầu của tên món vào ảnh
             g.DrawString(name, new Font("Arial", 20), Brushes.Brown, 10, 30);
         }
-        UC_BillItem billItem = new(name, qty, price, dummyImg);
+
+        UC_BillItem billItem = new(productId, name, qty, price, note, dummyImg);
 
         billItem.OnAmountChanged += (sender, moneyDiff) =>
         {
@@ -108,16 +113,17 @@ public class UC_Billing : UserControl
             UpdateTotal(-billItem.TotalValue);
             _flowBillItemList.Controls.Remove(billItem);
 
-            if (_billItemsDict.ContainsKey(billItem.ItemName))
+            string keyToDelete = $"{billItem.ProductId}_{billItem.Note}";
+            if (_billItemsDict.ContainsKey(keyToDelete))
             {
-                _billItemsDict.Remove(billItem.ItemName);
+                _billItemsDict.Remove(keyToDelete);
             }
 
             billItem.Dispose();
         };
 
         _flowBillItemList.Controls.Add(billItem);
-        _billItemsDict.Add(name, billItem);
+        _billItemsDict.Add(uniqueKey, billItem);
         UpdateTotal(qty * price);
     }
 
