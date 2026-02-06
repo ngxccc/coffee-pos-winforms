@@ -4,7 +4,7 @@ namespace CoffeePOS.Features.Tables;
 
 public enum TableStatus { Empty, Occupied, Reserved }
 
-public class UCTable : UserControl
+public class UC_Table : UserControl
 {
     // Data Properties
     public int TableId { get; set; }
@@ -14,7 +14,7 @@ public class UCTable : UserControl
     private readonly IconPictureBox iconTable;
     private readonly Label lblTableName;
 
-    public UCTable(int id, string name, TableStatus status)
+    public UC_Table(int id, string name, TableStatus status)
     {
         TableId = id;
         Status = status;
@@ -53,9 +53,10 @@ public class UCTable : UserControl
 
         Controls.Add(lblTableName);
         Controls.Add(iconTable);
+
+        UpdateColor();
     }
 
-    // Helper chọn màu
     private static Color GetColorByStatus(TableStatus status)
     {
         return status switch
@@ -64,5 +65,10 @@ public class UCTable : UserControl
             TableStatus.Occupied => Color.FromArgb(231, 76, 60), // Đỏ (Có khách)
             _ => Color.Gray
         };
+    }
+
+    public void UpdateColor()
+    {
+        BackColor = GetColorByStatus(Status);
     }
 }

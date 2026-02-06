@@ -9,7 +9,9 @@ public class UC_Billing : UserControl
     private readonly FlowLayoutPanel _flowBillItemList;
     private readonly Label _lblTotalPrice;
     private decimal _grandTotal = 0;
+    private readonly Label _lblTableName;
     private readonly Dictionary<string, UC_BillItem> _billItemsDict = [];
+    public int CurrentTableId { get; private set; } = 0;
     public event EventHandler? OnPayClicked;
 
     public UC_Billing()
@@ -17,6 +19,25 @@ public class UC_Billing : UserControl
         Width = 420;
         Dock = DockStyle.Right;
         BackColor = Color.White;
+
+        Panel pnlHeader = new()
+        {
+            Dock = DockStyle.Top,
+            Height = 50,
+            BackColor = Color.FromArgb(0, 122, 204),
+            Padding = new Padding(15, 0, 0, 0)
+        };
+
+        _lblTableName = new Label
+        {
+            Text = "Vui lòng chọn bàn",
+            Dock = DockStyle.Fill,
+            ForeColor = Color.White,
+            Font = new Font("Segoe UI", 14, FontStyle.Bold),
+            TextAlign = ContentAlignment.MiddleLeft
+        };
+
+        pnlHeader.Controls.Add(_lblTableName);
 
         Panel pnlBillingFooter = new()
         {
@@ -74,9 +95,11 @@ public class UC_Billing : UserControl
             WrapContents = false
         };
 
+        Controls.Add(pnlHeader);
         Controls.Add(pnlBillingFooter);
         Controls.Add(_flowBillItemList);
 
+        pnlHeader.SendToBack();
         _flowBillItemList.BringToFront();
     }
 
@@ -179,5 +202,23 @@ public class UC_Billing : UserControl
             // C. Add Key mới trỏ về Item hiện tại
             _billItemsDict.Add(newKey, currentItem);
         }
+    }
+
+    public void SetTableInfo(int tableId, string tableName)
+    {
+        ClearOrder();
+
+        CurrentTableId = tableId;
+        _lblTableName.Text = tableName;
+    }
+
+    public void ClearOrder()
+    {
+        _flowBillItemList.Controls.Clear();
+        _billItemsDict.Clear();
+        _grandTotal = 0;
+        _lblTotalPrice.Text = "0 đ";
+        CurrentTableId = 0;
+        _lblTableName.Text = "Vui lòng chọn bàn";
     }
 }
