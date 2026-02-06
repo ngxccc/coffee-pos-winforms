@@ -1,3 +1,4 @@
+using Microsoft.VisualBasic;
 using ReaLTaiizor.Controls;
 using Panel = System.Windows.Forms.Panel;
 
@@ -83,8 +84,6 @@ public class UC_Billing : UserControl
     {
         string uniqueKey = $"{productId}_{note}";
 
-        MessageBox.Show(uniqueKey);
-
         if (_billItemsDict.TryGetValue(uniqueKey, out UC_BillItem? existingItem))
         {
             existingItem.UpdateQty(qty);
@@ -102,6 +101,7 @@ public class UC_Billing : UserControl
         }
 
         UC_BillItem billItem = new(productId, name, qty, price, note, dummyImg);
+        billItem.OnNoteEditRequest += BillItem_OnNoteEditRequest;
 
         billItem.OnAmountChanged += (sender, moneyDiff) =>
         {
@@ -114,10 +114,7 @@ public class UC_Billing : UserControl
             _flowBillItemList.Controls.Remove(billItem);
 
             string keyToDelete = $"{billItem.ProductId}_{billItem.Note}";
-            if (_billItemsDict.ContainsKey(keyToDelete))
-            {
-                _billItemsDict.Remove(keyToDelete);
-            }
+            _billItemsDict.Remove(keyToDelete);
 
             billItem.Dispose();
         };
@@ -131,5 +128,56 @@ public class UC_Billing : UserControl
     {
         _grandTotal += amountToAdd;
         _lblTotalPrice.Text = $"{_grandTotal:N0} đ";
+    }
+
+    private void BillItem_OnNoteEditRequest(object? sender, string currentNote)
+    {
+        if (sender is not UC_BillItem currentItem) return;
+
+        // 1. Hiện InputBox hỏi Note mới (Dùng tạm VB InputBox cho lẹ)
+        string newNote = Interaction.InputBox("Nhập ghi chú mới:", "Sửa Ghi Chú", currentNote);
+
+        // Nếu user bấm Cancel hoặc không đổi gì
+        if (newNote == currentNote) return;
+
+        // 2. Tính toán Key
+        string oldKey = $"{currentItem.ProductId}_{currentItem.Note}";
+        string newKey = $"{currentItem.ProductId}_{newNote}";
+
+        // 3. KIỂM TRA LOGIC
+        if (_billItemsDict.TryGetValue(newKey, out UC_BillItem? targetItem))
+        {
+
+            // A. Cộng dồn số lượng từ món cũ sang món đích
+            targetItem.UpdateQty(currentItem.Quantity);
+
+            // B. Xóa món cũ đi
+            // (Phải trừ tiền của món cũ ra khỏi tổng trước khi xóa)
+            // Lưu ý: Hàm UpdateQty ở trên đã TỰ CỘNG thêm tiền vào tổng rồi.
+            // Nhưng món cũ vẫn đang nằm đó chiếm tiền -> Phải trừ tiền món cũ đi.
+            UpdateTotal(-currentItem.TotalValue);
+
+            // Xóa khỏi UI và Dict
+            _flowBillItemList.Controls.Remove(currentItem);
+            _billItemsDict.Remove(oldKey);
+            currentItem.Dispose();
+
+            // C. Scroll tới món đích cho user thấy
+            _flowBillItemList.ScrollControlIntoView(targetItem);
+        }
+        else
+        {
+            // --- TRƯỜNG HỢP RENAME (ĐỔI TÊN) ---
+            // Chưa có món nào trùng Note mới -> Chỉ cần cập nhật Key và UI
+
+            // A. Xóa Key cũ
+            _billItemsDict.Remove(oldKey);
+
+            // B. Update Item
+            currentItem.SetNote(newNote); // Update UI + Property
+
+            // C. Add Key mới trỏ về Item hiện tại
+            _billItemsDict.Add(newKey, currentItem);
+        }
     }
 }

@@ -4,52 +4,92 @@ namespace CoffeePOS.Features.Billing;
 
 public class UC_BillItem : Panel
 {
-    private readonly Label lblCount;
+    // --- 1. UI COMPONENTS (Class Level) ---
+    private Label? _lblCount;
+    private Label? _lblPrice;
+    private Label? _lblNote;
+    private Label? _lblName;
+
+    // --- 2. DATA FIELDS ---
     private int _quantity;
     private readonly decimal _unitPrice;
-    private readonly Label lblPrice;
 
+    // --- 3. EVENTS ---
     public event EventHandler<decimal>? OnAmountChanged;
     public event EventHandler<UC_BillItem>? OnDeleteRequest;
+    public event EventHandler<string>? OnNoteEditRequest;
+
+    // --- 4. PROPERTIES ---
     public decimal TotalValue => _quantity * _unitPrice;
     public int ProductId { get; private set; }
     public string ItemName { get; private set; }
     public string Note { get; private set; }
+    public int Quantity => _quantity;
 
     public UC_BillItem(int id, string foodName, int count, decimal price, string note = "", Image? foodImage = null)
     {
+        // A. Gán Data
         ProductId = id;
         ItemName = foodName;
         _quantity = count;
         _unitPrice = price;
         Note = note;
 
+        // B. Setup Container chính
+        SetupMainContainer();
+
+        // C. Tạo các mảnh ghép (Components)
+        var picFood = BuildImagePanel(foodImage);
+        var pnlQty = BuildQtyPanel();
+        var pnlRight = BuildRightActionsPanel(price);
+        var pnlInfo = BuildInfoPanel(foodName, note);
+
+        // D. Ráp lại (Thứ tự quan trọng vì dùng Dock)
+        // Add vào: Info (Fill) -> Right (Right) -> Qty (Left) -> Image (Left)
+        Controls.Add(pnlInfo);
+        Controls.Add(pnlRight);
+        Controls.Add(pnlQty);
+        Controls.Add(picFood);
+
+        // E. Gán sự kiện DoubleClick thần thánh
+        BindDoubleClickRecursive(this);
+    }
+
+    private void SetupMainContainer()
+    {
         Size = new Size(400, 90);
         BackColor = Color.White;
         Padding = new Padding(5);
         Margin = new Padding(0, 0, 0, 10);
+    }
 
-        PictureBox picFood = new()
+    private static PictureBox BuildImagePanel(Image? img)
+    {
+        return new PictureBox
         {
-            Image = foodImage,
+            Image = img,
             SizeMode = PictureBoxSizeMode.StretchImage,
             Size = new Size(90, 90),
             Dock = DockStyle.Left,
             Cursor = Cursors.Hand,
             Padding = new Padding(0, 0, 5, 0),
         };
+    }
 
-        Panel pnlQty = new()
+    private Panel BuildQtyPanel()
+    {
+        Panel pnl = new()
         {
             Dock = DockStyle.Left,
             Width = 80,
-            Padding = new Padding(0, 20, 0, 20)
+            Padding = new Padding(0, 20, 0, 20),
+            Tag = "BLOCK_DOUBLE_CLICK"
         };
 
-        IconButton btnMinus = CreateQtyButton(IconChar.Minus);
-        IconButton btnPlus = CreateQtyButton(IconChar.Plus);
+        var btnMinus = CreateQtyButton(IconChar.Minus);
+        var btnPlus = CreateQtyButton(IconChar.Plus);
 
-        lblCount = new Label
+        _lblCount = new Label
         {
             Text = $"{_quantity}",
             Dock = DockStyle.Fill,
@@ -57,23 +97,25 @@ public class UC_BillItem : Panel
             Font = new Font("Segoe UI", 11, FontStyle.Bold)
         };
 
-        // Event dummy
         btnPlus.Click += (s, e) => UpdateQty(1);
         btnMinus.Click += (s, e) => UpdateQty(-1);
 
-        pnlQty.Controls.Add(lblCount);
-        pnlQty.Controls.Add(btnMinus);
-        pnlQty.Controls.Add(btnPlus);
+        pnl.Controls.Add(_lblCount);
+        pnl.Controls.Add(btnMinus);
+        pnl.Controls.Add(btnPlus);
+        return pnl;
+    }
 
-        // GIÁ & XÓA
-        Panel pnlRightActions = new()
+    private Panel BuildRightActionsPanel(decimal price)
+    {
+        Panel pnl = new()
         {
             Dock = DockStyle.Right,
             Width = 100,
             BackColor = Color.Transparent
         };
 
-        IconButton btnDelete = new()
+        var btnDelete = new IconButton
         {
             IconChar = IconChar.TrashAlt,
             IconSize = 18,
@@ -86,7 +128,7 @@ public class UC_BillItem : Panel
         btnDelete.FlatAppearance.BorderSize = 0;
         btnDelete.Click += (s, e) => OnDeleteRequest?.Invoke(this, this);
 
-        lblPrice = new Label
+        _lblPrice = new Label
         {
             Text = $"{price:N0}",
             Dock = DockStyle.Fill,
@@ -95,19 +137,22 @@ public class UC_BillItem : Panel
             ForeColor = Color.FromArgb(64, 64, 64),
         };
 
-        pnlRightActions.Controls.Add(lblPrice);
-        pnlRightActions.Controls.Add(btnDelete);
+        pnl.Controls.Add(_lblPrice);
+        pnl.Controls.Add(btnDelete);
+        return pnl;
+    }
 
-        Panel pnlInfo = new()
+    private Panel BuildInfoPanel(string name, string note)
+    {
+        Panel pnl = new()
         {
             Dock = DockStyle.Fill,
             Padding = new Padding(5, 5, 0, 5)
         };
 
-        // TÊN MÓN
-        Label lblName = new()
+        _lblName = new Label
         {
-            Text = foodName,
+            Text = name,
             Dock = DockStyle.Top,
             Height = 25,
             TextAlign = ContentAlignment.MiddleLeft,
@@ -115,8 +160,7 @@ public class UC_BillItem : Panel
             AutoEllipsis = true
         };
 
-        // Ghi Chú
-        Label lblNote = new()
+        _lblNote = new Label
         {
             Text = string.IsNullOrEmpty(note) ? "" : $"{note}",
             Dock = DockStyle.Fill,
@@ -125,36 +169,12 @@ public class UC_BillItem : Panel
             ForeColor = Color.Gray,
             AutoEllipsis = true
         };
-        pnlInfo.Controls.Add(lblNote); // Add sau (Fill)
-        pnlInfo.Controls.Add(lblName); // Add trước (Top)
 
-        // Dock Fill (Name) add cuối cùng
-        // Dock Left/Right add trước
-
-        Controls.Add(pnlInfo);         // Fill: Lấp đầy khoảng trống còn lại
-        Controls.Add(pnlRightActions); // Right: Giá
-        Controls.Add(pnlQty);          // Left 2: Số lượng (nằm sau ảnh)
-        Controls.Add(picFood);         // Left 1: Ảnh (nằm ngoài cùng bên trái)
+        pnl.Controls.Add(_lblNote);
+        pnl.Controls.Add(_lblName);
+        return pnl;
     }
 
-    public void UpdateQty(int delta)
-    {
-        int oldQty = _quantity;
-
-        _quantity += delta;
-        if (_quantity < 1) _quantity = 1;
-
-        if (oldQty == _quantity) return;
-
-        lblCount.Text = $"{_quantity}";
-        lblPrice.Text = $"{TotalValue:N0}";
-
-        decimal moneyDiff = delta * _unitPrice;
-
-        OnAmountChanged?.Invoke(this, moneyDiff);
-    }
-
-    // Helper tạo nút tròn nhỏ
     private static IconButton CreateQtyButton(IconChar icon)
     {
         var btn = new IconButton
@@ -170,5 +190,41 @@ public class UC_BillItem : Panel
         };
         btn.FlatAppearance.BorderSize = 0;
         return btn;
+    }
+
+    private void BindDoubleClickRecursive(Control control)
+    {
+        if (control.Tag?.ToString() == "BLOCK_DOUBLE_CLICK")
+        {
+            return;
+        }
+
+        if (control is not Button && control is not IconButton)
+        {
+            control.DoubleClick += (s, e) => OnNoteEditRequest?.Invoke(this, Note);
+        }
+
+        foreach (Control child in control.Controls)
+        {
+            BindDoubleClickRecursive(child);
+        }
+    }
+
+    public void UpdateQty(int delta)
+    {
+        int oldQty = _quantity;
+        _quantity += delta;
+        if (_quantity < 1) _quantity = 1;
+        if (oldQty == _quantity) return;
+
+        if (_lblCount != null) _lblCount.Text = $"{_quantity}";
+        if (_lblPrice != null) _lblPrice.Text = $"{TotalValue:N0}";
+        OnAmountChanged?.Invoke(this, delta * _unitPrice);
+    }
+
+    public void SetNote(string newNote)
+    {
+        Note = newNote;
+        if (_lblNote != null) _lblNote.Text = string.IsNullOrEmpty(newNote) ? "" : $"{newNote}";
     }
 }
