@@ -2,33 +2,32 @@ using FontAwesome.Sharp;
 
 namespace CoffeePOS.Features.Billing;
 
-public class UCBillItem : Panel
+public class UC_BillItem : Panel
 {
     private readonly Label lblCount;
     private int _quantity;
     private readonly decimal _unitPrice;
     private readonly Label lblPrice;
 
-    public UCBillItem(string foodName, int count, decimal price, Image foodImage)
+    public UC_BillItem(string foodName, int count, decimal price, Image foodImage)
     {
         _quantity = count;
         _unitPrice = price;
 
-        Size = new Size(360, 90);
+        Size = new Size(400, 90);
         BackColor = Color.White;
         Padding = new Padding(5);
-        Margin = new Padding(0, 0, 0, 5);
+        Margin = new Padding(0, 0, 0, 10);
 
         PictureBox picFood = new()
         {
             Image = foodImage,
             SizeMode = PictureBoxSizeMode.StretchImage,
-            Width = 70,
+            Size = new Size(90, 90),
             Dock = DockStyle.Left,
             Cursor = Cursors.Hand,
             Padding = new Padding(0, 0, 5, 0),
         };
-        // Hack bo góc nhẹ cho ảnh (Optional - Code chay hơi cực nên để vuông cũng được)
 
         Panel pnlQty = new()
         {
@@ -82,7 +81,7 @@ public class UCBillItem : Panel
             Dock = DockStyle.Fill,
             TextAlign = ContentAlignment.MiddleRight,
             Font = new Font("Segoe UI", 10, FontStyle.Bold),
-            ForeColor = Color.FromArgb(64, 64, 64)
+            ForeColor = Color.FromArgb(64, 64, 64),
         };
 
         pnlRightActions.Controls.Add(lblPrice);
