@@ -1,5 +1,6 @@
 using CoffeePOS.Data.Repositories;
 using CoffeePOS.Features.Billing;
+using CoffeePOS.Features.Products;
 using CoffeePOS.Features.Sidebar;
 using CoffeePOS.Features.Tables;
 using Panel = System.Windows.Forms.Panel;
@@ -14,6 +15,7 @@ public partial class MainForm : Form
     // UI Components
     private readonly UC_Sidebar _ucSidebar = new();
     private readonly UC_Billing _ucBilling = new();
+    private UC_Menu? _ucMenu;
     private Panel _pnlMainWorkspace = new();
     private FlowLayoutPanel _flowTableList = new();
 
@@ -68,7 +70,6 @@ public partial class MainForm : Form
 
     private void SetupBilling()
     {
-        _ucBilling.AddItemToBill(101, "Cafe Đen Đá", 1, 20000, "Ít đường");
         _ucBilling.OnPayClicked += (s, e) => ProcessPayment();
     }
 
@@ -105,7 +106,7 @@ public partial class MainForm : Form
         _tableMap.Clear();
         _activeTables.Clear();
 
-        for (int i = 1; i <= 20; i++)
+        for (int i = 1; i <= 60; i++)
         {
             UC_Table table = new(i, $"Bàn {i:00}", TableStatus.Empty);
 
@@ -144,12 +145,14 @@ public partial class MainForm : Form
             {
                 // Gọi thêm
                 _ucBilling.SetTableInfo(table.TableId, $"Bàn {table.TableId} (Gọi thêm)");
+                ShowMenu();
             }
         }
         else
         {
             // --- BÀN TRỐNG ---
             _ucBilling.SetTableInfo(table.TableId, $"Order cho Bàn {table.TableId}");
+            ShowMenu();
         }
     }
 
@@ -180,6 +183,8 @@ public partial class MainForm : Form
             }
 
             MessageBox.Show($"Thanh toán Bàn {tableId} thành công!");
+
+            ShowTableMap();
         }
         else
         {
@@ -199,9 +204,9 @@ public partial class MainForm : Form
         _activeTables.Remove(table);
     }
 
-    private static void SwitchToHome()
+    private void SwitchToHome()
     {
-        MessageBox.Show("Đã chuyển sang trang Home");
+        ShowTableMap();
     }
 
     private void MasterTimer_Tick(object? sender, EventArgs e)
@@ -210,5 +215,29 @@ public partial class MainForm : Form
         {
             table.UpdateDuration();
         }
+    }
+
+    private void ShowMenu()
+    {
+        if (_ucMenu == null)
+        {
+            _ucMenu = new UC_Menu();
+
+            _ucMenu.OnProductSelected += (id, name, price) =>
+            {
+                _ucBilling.AddItemToBill(id, name, 1, price);
+            };
+
+            _ucMenu.OnBackClicked += (s, e) => ShowTableMap();
+        }
+
+        _pnlMainWorkspace.Controls.Clear();
+        _pnlMainWorkspace.Controls.Add(_ucMenu);
+    }
+
+    private void ShowTableMap()
+    {
+        _pnlMainWorkspace.Controls.Clear();
+        _pnlMainWorkspace.Controls.Add(_flowTableList);
     }
 }
