@@ -50,9 +50,7 @@ public class UC_Menu : UserControl
         {
             Dock = DockStyle.Fill,
             AutoScroll = true,
-            Padding = new Padding(20),
             BackColor = Color.FromArgb(245, 245, 245),
-            AutoScrollMargin = new Size(0, 1000),
         };
 
         _flowProducts.Scroll += (s, e) => CheckScrollBottom();
