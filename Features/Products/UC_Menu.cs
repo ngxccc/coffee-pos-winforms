@@ -50,6 +50,7 @@ public class UC_Menu : UserControl
         {
             Dock = DockStyle.Fill,
             AutoScroll = true,
+            Padding = new Padding(20, 0, 0, 0),
             BackColor = Color.FromArgb(245, 245, 245),
         };
 
@@ -100,15 +101,8 @@ public class UC_Menu : UserControl
         ];
 
         _allProducts.Clear();
-        // Cafe (CatId 1)
-        for (int i = 1; i <= 5; i++) _allProducts.Add(new Product { Id = i, Name = $"Cafe {i}", Price = 25000, CategoryId = 1 });
-        // Trà (CatId 2)
-        for (int i = 6; i <= 10; i++) _allProducts.Add(new Product { Id = i, Name = $"Trà {i}", Price = 30000, CategoryId = 2 });
-        // Bánh (CatId 4)
-        for (int i = 11; i <= 15; i++) _allProducts.Add(new Product { Id = i, Name = $"Bánh {i}", Price = 15000, CategoryId = 4 });
-
         var rand = new Random();
-        for (int i = 1; i <= 500; i++)
+        for (int i = 1; i <= 100; i++)
         {
             _allProducts.Add(new Product
             {
