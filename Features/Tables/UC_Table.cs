@@ -1,3 +1,4 @@
+using CoffeePOS.Core;
 using FontAwesome.Sharp;
 
 namespace CoffeePOS.Features.Tables;
@@ -92,11 +93,15 @@ public class UC_Table : UserControl
 
     // LOGIC METHODS
 
-    private void BindClickEvent(Control parent)
+    private void BindClickEvent(Control control)
     {
-        parent.Click += (s, e) => OnClick(e);
+        if (control != this)
+        {
+            // Khi click vào label/icon -> Kích hoạt sự kiện Click của UC_Table
+            control.Click += (s, e) => OnClick(e);
+        }
 
-        foreach (Control child in parent.Controls)
+        foreach (Control child in control.Controls)
         {
             child.Click += (s, e) => OnClick(e);
         }
@@ -126,7 +131,7 @@ public class UC_Table : UserControl
             return;
         }
 
-        TimeSpan duration = DateTime.Now - StartTime.Value;
+        TimeSpan duration = TimeKeeper.Now - StartTime.Value;
 
         // Cập nhật text
         string newText = duration.TotalMinutes < 60
