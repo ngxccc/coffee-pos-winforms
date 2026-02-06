@@ -3,6 +3,7 @@ using CoffeePOS.Features.Billing;
 using CoffeePOS.Features.Products;
 using CoffeePOS.Features.Sidebar;
 using CoffeePOS.Features.Tables;
+using Microsoft.Extensions.DependencyInjection;
 using Panel = System.Windows.Forms.Panel;
 
 namespace CoffeePOS.Forms;
@@ -11,6 +12,7 @@ public partial class MainForm : Form
 {
     // DEPENDENCIES & CONTROLS
     private readonly IBillRepository _billRepo;
+    private readonly IServiceProvider _serviceProvider;
 
     // UI Components
     private readonly UC_Sidebar _ucSidebar = new();
@@ -26,10 +28,11 @@ public partial class MainForm : Form
     private readonly List<UC_Table> _activeTables = [];
 
     // CONSTRUCTOR & INIT
-    public MainForm(IBillRepository billRepo)
+    public MainForm(IServiceProvider serviceProvider, IBillRepository billRepo)
     {
         InitializeFormProperties();
 
+        _serviceProvider = serviceProvider;
         _billRepo = billRepo;
 
         // Setup các thành phần giao diện
@@ -219,15 +222,15 @@ public partial class MainForm : Form
 
     private void ShowMenu()
     {
-        if (_ucMenu == null)
+        if (_ucMenu == null || _ucMenu.IsDisposed)
         {
-            _ucMenu = new UC_Menu();
+            // DI CONTAINER: "Cho tao xin một cái UC_Menu đầy đủ phụ kiện!"
+            _ucMenu = _serviceProvider.GetRequiredService<UC_Menu>();
 
             _ucMenu.OnProductSelected += (id, name, price) =>
             {
                 _ucBilling.AddItemToBill(id, name, 1, price);
             };
-
             _ucMenu.OnBackClicked += (s, e) => ShowTableMap();
         }
 

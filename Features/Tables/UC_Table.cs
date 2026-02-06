@@ -133,6 +133,8 @@ public class UC_Table : UserControl
 
         TimeSpan duration = TimeKeeper.Now - StartTime.Value;
 
+        MessageBox.Show($"{duration}: {TimeKeeper.Now} {StartTime.Value}");
+
         // Cập nhật text
         string newText = duration.TotalMinutes < 60
             ? $"{duration.TotalMinutes:0}p"

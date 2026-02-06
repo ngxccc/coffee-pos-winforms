@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Npgsql;
 
 namespace CoffeePOS.Core;
 
@@ -7,12 +8,30 @@ public static class TimeKeeper
     private static DateTime _serverStartTime;
     private static Stopwatch _appUptime = null!;
     private static bool _isInitialized = false;
+    private static readonly string _connStr = "";
 
-    // Giả lập hàm gọi xuống DB lấy giờ (Sau này thay bằng Repo call)
-    // Query: SELECT GETDATE() FROM System
     private static DateTime FetchServerTimeFromDB()
     {
-        // Tạm thời return DateTime.Now để test, sau này thay code SQL vào đây
+        try
+        {
+            using var conn = new NpgsqlConnection(_connStr);
+            conn.Open();
+
+            // SELECT NOW() trả về DateTime bao gồm cả TimeZone
+            using var cmd = new NpgsqlCommand("SELECT NOW()", conn);
+            var result = cmd.ExecuteScalar();
+
+            if (result != null && result != DBNull.Value)
+            {
+                return Convert.ToDateTime(result);
+            }
+        }
+        catch (Exception ex)
+        {
+            // Fallback nếu mất mạng/lỗi DB: Dùng giờ máy tính tạm
+            Debug.WriteLine($"Lỗi lấy giờ Server: {ex.Message}");
+        }
+
         return DateTime.Now;
     }
 
@@ -43,7 +62,6 @@ public static class TimeKeeper
     // checkInTime: Là giờ server đã lưu trong DB lúc khách vào
     public static TimeSpan GetDuration(DateTime checkInTime)
     {
-        // Lấy giờ hiện tại (đã sync) trừ đi giờ checkin
         var duration = Now - checkInTime;
         return duration < TimeSpan.Zero ? TimeSpan.Zero : duration;
     }

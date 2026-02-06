@@ -1,3 +1,4 @@
+using CoffeePOS.Data.Repositories;
 using CoffeePOS.Models;
 
 namespace CoffeePOS.Features.Products;
@@ -12,16 +13,20 @@ public class UC_Menu : UserControl
     private const int PAGE_SIZE = 20;
     private bool _isLoading = false;
 
+    private readonly IProductRepository _productRepo;
+
     // Data Cache
-    private readonly List<Product> _allProducts = [];
+    private List<Product> _allProducts = [];
     private List<Category> _allCategories = [];
 
     // Events
     public event Action<int, string, decimal>? OnProductSelected;
     public event EventHandler? OnBackClicked;
 
-    public UC_Menu()
+    public UC_Menu(IProductRepository productRepo)
     {
+        _productRepo = productRepo;
+
         Dock = DockStyle.Fill;
         BackColor = Color.FromArgb(245, 245, 245);
 
@@ -91,26 +96,16 @@ public class UC_Menu : UserControl
 
     private void LoadDataFromDatabase()
     {
-        _allCategories =
-        [
-            new Category { Id = 0, Name = "Tất cả" },
-            new Category { Id = 1, Name = "Cà phê" },
-            new Category { Id = 2, Name = "Trà trái cây" },
-            new Category { Id = 3, Name = "Đá xay" },
-            new Category { Id = 4, Name = "Bánh ngọt" },
-        ];
-
-        _allProducts.Clear();
-        var rand = new Random();
-        for (int i = 1; i <= 100; i++)
+        try
         {
-            _allProducts.Add(new Product
-            {
-                Id = i,
-                Name = $"Món ngon {i} (Siêu dài)",
-                Price = rand.Next(20, 80) * 1000,
-                CategoryId = rand.Next(1, 5) // Random danh mục
-            });
+            _allCategories = _productRepo.GetCategories();
+            _allProducts = _productRepo.GetProducts();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show("Lỗi kết nối CSDL: " + ex.Message);
+            _allCategories = [];
+            _allProducts = [];
         }
     }
 
