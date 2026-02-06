@@ -9,6 +9,13 @@ public static class DbInitializer
         using var conn = new NpgsqlConnection(connStr);
         conn.Open();
 
+        var sqlTables = @"
+            CREATE TABLE IF NOT EXISTS tables (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(50) NOT NULL
+            );";
+        ExecuteSql(conn, sqlTables);
+
         var sqlCategories = @"
             CREATE TABLE IF NOT EXISTS categories (
                 id SERIAL PRIMARY KEY,
@@ -21,18 +28,28 @@ public static class DbInitializer
                 id SERIAL PRIMARY KEY,
                 name VARCHAR(200) NOT NULL,
                 price DECIMAL(18, 0) NOT NULL DEFAULT 0,
-                category_id INT REFERENCES categories(id) ON DELETE SET NULL
+                category_id INT,
+
+                constraint fk_product_category
+                    foreign key (category_id)
+                    references categories(id)
+                    on delete set null
             );";
         ExecuteSql(conn, sqlProducts);
 
         var sqlBills = @"
             CREATE TABLE IF NOT EXISTS bills (
                 id SERIAL PRIMARY KEY,
-                table_id INT NOT NULL,
+                table_id INT,
                 total_amount DECIMAL(18,0) DEFAULT 0,
                 status INT DEFAULT 0, -- 0: Unpaid, 1: Paid
                 created_at TIMESTAMP DEFAULT NOW(),
-                checkout_at TIMESTAMP
+                checkout_at TIMESTAMP,
+
+                constraint fk_bill_table
+                    foreign key (table_id)
+                    references tables(id)
+                    on delete set null
             );";
         ExecuteSql(conn, sqlBills);
 
@@ -55,7 +72,7 @@ public static class DbInitializer
         var sqlBillDetails = @"
             CREATE TABLE IF NOT EXISTS bill_details (
                 id SERIAL PRIMARY KEY,
-                bill_id INT NOT NULL REFERENCES bills(id) ON DELETE CASCADE,
+                bill_id INT NOT NULL,
                 product_id INT NOT NULL,
                 product_name VARCHAR(200),
                 quantity INT DEFAULT 1,
@@ -63,16 +80,17 @@ public static class DbInitializer
                 note VARCHAR(255),
                 created_at TIMESTAMP DEFAULT NOW(),
 
+                constraint fk_bill_detail_bill
+                    foreign key (bill_id)
+                    references bills(id)
+                    on delete cascade,
+                constraint fk_bill_detail_product
+                    foreign key (product_id)
+                    references products(id)
+                    on delete cascade,
                 UNIQUE(bill_id, product_id)
             );";
         ExecuteSql(conn, sqlBillDetails);
-
-        var sqlTables = @"
-            CREATE TABLE IF NOT EXISTS tables (
-                id SERIAL PRIMARY KEY,
-                name VARCHAR(50) NOT NULL
-            );";
-        ExecuteSql(conn, sqlTables);
 
         if (CountTable(conn, "tables") == 0)
         {
