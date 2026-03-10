@@ -44,6 +44,7 @@ public static class DbInitializer
                 table_id INT,
                 total_amount DECIMAL(18,0) DEFAULT 0,
                 status INT DEFAULT 0, -- 0: Unpaid, 1: Paid
+                is_deleted BOOLEAN DEFAULT FALSE,
                 created_at TIMESTAMP DEFAULT NOW(),
                 checkout_at TIMESTAMP,
 

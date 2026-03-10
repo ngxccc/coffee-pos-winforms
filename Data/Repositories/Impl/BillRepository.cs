@@ -46,7 +46,7 @@ public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
     public int GetCurrentUnpaidBillId(int tableId)
     {
         using var conn = dataSource.OpenConnection();
-        string sql = "SELECT id FROM bills WHERE table_id = @t AND status = 0 ORDER BY id DESC LIMIT 1";
+        string sql = "SELECT id FROM bills WHERE table_id = @t AND status = 0 AND is_deleted = false ORDER BY id DESC LIMIT 1";
         using var cmd = new NpgsqlCommand(sql, conn);
         cmd.Parameters.AddWithValue("t", tableId);
         var res = cmd.ExecuteScalar();
@@ -57,7 +57,7 @@ public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
     {
         using var conn = dataSource.OpenConnection();
         // Lấy bill mới nhất có status = 1 (Paid)
-        string sql = "SELECT id FROM bills WHERE table_id = @t AND status = 1 ORDER BY id DESC LIMIT 1";
+        string sql = "SELECT id FROM bills WHERE table_id = @t AND status = 1 AND is_deleted = false ORDER BY id DESC LIMIT 1";
         using var cmd = new NpgsqlCommand(sql, conn);
         cmd.Parameters.AddWithValue("t", tableId);
         var res = cmd.ExecuteScalar();
@@ -124,6 +124,15 @@ public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
         string sql = "UPDATE bills SET status = 2 WHERE table_id = @t AND status = 1";
         using var cmd = new NpgsqlCommand(sql, conn);
         cmd.Parameters.AddWithValue("t", tableId);
+        cmd.ExecuteNonQuery();
+    }
+
+    public void CancelBill(int billId)
+    {
+        using var conn = dataSource.OpenConnection();
+        string sql = "UPDATE bills SET is_deleted = true, checkout_at = NOW() WHERE id = @id";
+        using var cmd = new NpgsqlCommand(sql, conn);
+        cmd.Parameters.AddWithValue("id", billId);
         cmd.ExecuteNonQuery();
     }
 }
