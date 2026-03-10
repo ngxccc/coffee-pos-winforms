@@ -25,6 +25,7 @@ public partial class MainForm : Form
 
     // Logic Components
     private System.Windows.Forms.Timer? _masterTimer;
+    private readonly PdfPrintQueue _pdfQueue;
 
     private readonly Dictionary<int, UC_Table> _tableMap = [];
     private readonly List<UC_Table> _activeTables = [];
@@ -34,13 +35,14 @@ public partial class MainForm : Form
     // CONSTRUCTOR & INIT
     public MainForm(IServiceProvider serviceProvider,
                     IBillRepository billRepo,
-                    ITableRepository tableRepo)
+                    ITableRepository tableRepo, PdfPrintQueue pdfQueue)
     {
         InitializeFormProperties();
 
         _serviceProvider = serviceProvider;
         _billRepo = billRepo;
         _tableRepo = tableRepo;
+        _pdfQueue = pdfQueue;
 
         // Setup các thành phần giao diện
         SetupTimer();
@@ -232,7 +234,13 @@ public partial class MainForm : Form
 
             var billDetails = _billRepo.GetBillDetails(billId);
 
-            await InvoiceGenerator.GenerateAndOpenPdfAsync(billId, tableId, finalAmount, billDetails);
+            await _pdfQueue.EnqueueJobAsync(new PdfJobPayload
+            {
+                BillId = billId,
+                TableId = tableId,
+                TotalAmount = finalAmount,
+                Details = billDetails
+            });
 
             if (_tableMap.TryGetValue(tableId, out UC_Table? targetTable))
             {

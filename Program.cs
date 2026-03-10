@@ -31,12 +31,20 @@ static class Program
             Core.TimeKeeper.Initialize(connStr);
             Core.InvoiceGenerator.Initialize();
 
+            // Tự động gọi ExecuteAsync của tất cả các BackgroundService
+            host.Start();
+
             var mainForm = host.Services.GetRequiredService<MainForm>();
             Application.Run(mainForm);
         }
         catch (Exception ex)
         {
             MessageBox.Show($"Lỗi khởi động: {ex.Message}\nKiểm tra lại appsettings.json!", "Critical Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        finally
+        {
+            host.StopAsync().GetAwaiter().GetResult();
+            host.Dispose();
         }
     }
 
@@ -59,6 +67,9 @@ static class Program
                 services.AddSingleton<IProductRepository, ProductRepository>();
                 services.AddSingleton<ICategoryRepository, CategoryRepository>();
                 services.AddSingleton<ITableRepository, TableRepository>();
+
+                services.AddSingleton<Core.PdfPrintQueue>();
+                services.AddHostedService<Core.PdfPrintWorker>();
 
                 services.AddTransient<MainForm>();
                 services.AddTransient<UC_Menu>();
