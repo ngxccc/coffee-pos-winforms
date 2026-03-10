@@ -85,14 +85,13 @@ public static class DbInitializer
         {
             var seedSql = @"
                 INSERT INTO categories (name) VALUES
-                ('Cà phê'), ('Trà trái cây'), ('Đá xay'), ('Bánh ngọt');
+                ('Cà phê'), ('Trà trái cây'), ('Đá xay');
 
                 -- Insert vài món mẫu
                 INSERT INTO products (name, price, category_id) VALUES
                 ('Cafe Đen', 25000, 1),
                 ('Cafe Sữa', 29000, 1),
-                ('Trà Đào Cam Sả', 35000, 2),
-                ('Bánh Tiramisu', 45000, 4);
+                ('Trà Đào Cam Sả', 35000, 2);
             ";
             ExecuteSql(conn, seedSql);
         }

@@ -11,7 +11,7 @@ CREATE TABLE products (
 );
 
 INSERT INTO categories (name) VALUES
-('Cà phê'), ('Trà trái cây'), ('Đá xay'), ('Bánh ngọt');
+('Cà phê'), ('Trà trái cây'), ('Đá xay');
 
 DO $$
 DECLARE
