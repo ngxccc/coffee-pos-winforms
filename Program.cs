@@ -29,6 +29,7 @@ static class Program
         {
             DbInitializer.Initialize(connStr);
             Core.TimeKeeper.Initialize(connStr);
+            Core.InvoiceGenerator.Initialize();
 
             var mainForm = host.Services.GetRequiredService<MainForm>();
             Application.Run(mainForm);

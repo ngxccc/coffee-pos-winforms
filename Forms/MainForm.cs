@@ -230,6 +230,10 @@ public partial class MainForm : Form
 
             await _billRepo.CheckoutAsync(billId, finalAmount);
 
+            var billDetails = _billRepo.GetBillDetails(billId);
+
+            await InvoiceGenerator.GenerateAndOpenPdfAsync(billId, tableId, finalAmount, billDetails);
+
             if (_tableMap.TryGetValue(tableId, out UC_Table? targetTable))
             {
                 targetTable.Status = TableStatus.Occupied;
@@ -243,7 +247,7 @@ public partial class MainForm : Form
                     _activeTables.Add(targetTable);
                 }
 
-                MessageBox.Show($"Thanh toán Bàn {tableId} thành công!");
+                // MessageBox.Show($"Thanh toán Bàn {tableId} thành công!");
                 ShowTableMap();
             }
             else
