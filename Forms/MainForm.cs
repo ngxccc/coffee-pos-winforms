@@ -29,6 +29,8 @@ public partial class MainForm : Form
     private readonly Dictionary<int, UC_Table> _tableMap = [];
     private readonly List<UC_Table> _activeTables = [];
 
+    private bool _isProcessingPayment = false;
+
     // CONSTRUCTOR & INIT
     public MainForm(IServiceProvider serviceProvider,
                     IBillRepository billRepo,
@@ -78,7 +80,7 @@ public partial class MainForm : Form
 
     private void SetupBilling()
     {
-        _ucBilling.OnPayClicked += (s, e) => ProcessPayment();
+        _ucBilling.OnPayClicked += async (s, e) => await ProcessPaymentAsync();
     }
 
     private void SetupWorkspace()
@@ -198,10 +200,11 @@ public partial class MainForm : Form
         }
     }
 
-    private void ProcessPayment()
+    private async Task ProcessPaymentAsync()
     {
-        int tableId = _ucBilling.CurrentTableId;
+        if (_isProcessingPayment) return;
 
+        int tableId = _ucBilling.CurrentTableId;
         if (tableId == 0)
         {
             MessageBox.Show("Vui lòng chọn bàn trước!");
@@ -216,38 +219,47 @@ public partial class MainForm : Form
         }
 
         decimal finalAmount = _ucBilling.GrandTotal;
-
         if (MessageBox.Show($"Xác nhận thanh toán {finalAmount:N0} đ?", "Thanh toán", MessageBoxButtons.YesNo) == DialogResult.No)
         {
             return;
         }
 
-        _billRepo.Checkout(billId, finalAmount);
-
-        if (_tableMap.TryGetValue(tableId, out UC_Table? targetTable))
+        try
         {
-            targetTable.Status = TableStatus.Occupied;
-            targetTable.StartTime = TimeKeeper.Now;
+            _isProcessingPayment = true;
 
-            targetTable.UpdateColor();
-            targetTable.UpdateDuration();
+            await _billRepo.CheckoutAsync(billId, finalAmount);
 
-            // tránh add trùng
-            if (!_activeTables.Contains(targetTable))
+            if (_tableMap.TryGetValue(tableId, out UC_Table? targetTable))
             {
-                _activeTables.Add(targetTable);
+                targetTable.Status = TableStatus.Occupied;
+                targetTable.StartTime = TimeKeeper.Now;
+                targetTable.UpdateColor();
+                targetTable.UpdateDuration();
+
+                // tránh add trùng
+                if (!_activeTables.Contains(targetTable))
+                {
+                    _activeTables.Add(targetTable);
+                }
+
+                MessageBox.Show($"Thanh toán Bàn {tableId} thành công!");
+                ShowTableMap();
             }
-
-            MessageBox.Show($"Thanh toán Bàn {tableId} thành công!");
-
-            ShowTableMap();
+            else
+            {
+                MessageBox.Show("Lỗi: Không tìm thấy bàn này trong bản đồ!");
+            }
         }
-        else
+        catch (Exception ex)
         {
-            MessageBox.Show("Lỗi: Không tìm thấy bàn này trong bản đồ!");
+            MessageBox.Show($"Lỗi trong quá trình thanh toán: {ex.Message}", "Lỗi Database", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
-
-        _ucBilling.ClearOrder();
+        finally
+        {
+            _isProcessingPayment = false;
+            _ucBilling.ClearOrder();
+        }
     }
 
     private void ResetTableStatus(UC_Table table)
@@ -280,23 +292,23 @@ public partial class MainForm : Form
             _ucMenu = _serviceProvider.GetRequiredService<UC_Menu>();
             _ucMenu.OnBackClicked += (s, e) => ShowTableMap();
 
-            _ucMenu.OnProductSelected += (prodId, prodName, price) =>
+            _ucMenu.OnProductSelected += async (prodId, prodName, price) =>
             {
                 int tableId = _ucBilling.CurrentTableId;
                 if (tableId == 0) return;
 
-                // A. Kiểm tra xem bàn đã có Bill chưa? Chưa thì tạo mới.
+                // Kiểm tra xem bàn đã có Bill chưa? Chưa thì tạo mới.
                 int billId = _billRepo.GetCurrentUnpaidBillId(tableId);
                 if (billId == 0)
                 {
-                    billId = _billRepo.CreateBill(tableId);
+                    billId = await _billRepo.CreateBillAsync(tableId);
                 }
 
-                // B. Lưu món vào DB (Bill Details)
+                // Lưu món vào DB (Bill Details)
                 // Lưu ý: Hàm này sẽ tự cộng dồn số lượng nếu trùng
-                _billRepo.AddBillDetail(billId, prodId, prodName, 1, price);
+                await _billRepo.AddBillDetailAsync(billId, prodId, prodName, 1, price);
 
-                // C. Hiển thị lên UI (UC_Billing)
+                // Hiển thị lên UI (UC_Billing)
                 _ucBilling.AddItemToBill(prodId, prodName, 1, price);
             };
         }

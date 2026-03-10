@@ -5,9 +5,9 @@ using Npgsql;
 
 public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
 {
-    public int CreateBill(int tableId)
+    public async Task<int> CreateBillAsync(int tableId)
     {
-        using var conn = dataSource.OpenConnection();
+        using var conn = await dataSource.OpenConnectionAsync();
 
         // Insert xong trả về luôn ID, đỡ phải SELECT MAX(id)
         string sql = @"
@@ -19,14 +19,14 @@ public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
         cmd.Parameters.AddWithValue("tableId", tableId);
 
         // ExecuteScalar: Lấy giá trị của cột đầu tiên dòng đầu tiên (chính là ID)
-        object? result = cmd.ExecuteScalar();
+        object? result = await cmd.ExecuteScalarAsync();
 
         return result != null ? Convert.ToInt32(result) : 0;
     }
 
-    public void Checkout(int billId, decimal total)
+    public async Task CheckoutAsync(int billId, decimal total)
     {
-        using var conn = dataSource.OpenConnection();
+        using var conn = await dataSource.OpenConnectionAsync();
 
         // Update trạng thái thành Paid (1), lưu tổng tiền và giờ checkout
         string sql = @"
@@ -40,7 +40,7 @@ public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
         cmd.Parameters.AddWithValue("total", total);
         cmd.Parameters.AddWithValue("billId", billId);
 
-        cmd.ExecuteNonQuery();
+        await cmd.ExecuteNonQueryAsync();
     }
 
     public int GetCurrentUnpaidBillId(int tableId)
@@ -64,9 +64,9 @@ public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
         return res == null ? 0 : (int)res;
     }
 
-    public void AddBillDetail(int billId, int productId, string name, int qty, decimal price)
+    public async Task AddBillDetailAsync(int billId, int productId, string name, int qty, decimal price)
     {
-        using var conn = dataSource.OpenConnection();
+        using var conn = await dataSource.OpenConnectionAsync();
 
         // Kiểm tra món đã tồn tại chưa để cộng dồn
         string sql = @"
@@ -83,7 +83,7 @@ public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
         cmd.Parameters.AddWithValue("q", qty);
         cmd.Parameters.AddWithValue("price", price);
 
-        cmd.ExecuteNonQuery();
+        await cmd.ExecuteNonQueryAsync();
     }
 
     public List<BillDetail> GetBillDetails(int billId)
