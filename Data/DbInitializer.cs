@@ -68,33 +68,6 @@ public static class DbInitializer
                 UNIQUE(bill_id, product_id)
             );";
         ExecuteSql(conn, sqlBillDetails);
-
-        // Data mẫu
-        if (CountTable(conn, "categories") == 0)
-        {
-            var seedSql = @"
-                INSERT INTO categories (name) VALUES
-                ('Cà phê'), ('Trà trái cây'), ('Đá xay');
-
-                -- Insert vài món mẫu
-                INSERT INTO products (name, price, category_id) VALUES
-                ('Cafe Đen', 25000, 1),
-                ('Cafe Sữa', 29000, 1),
-                ('Trà Đào Cam Sả', 35000, 2);
-            ";
-            ExecuteSql(conn, seedSql);
-        }
-
-        if (CountTable(conn, "tables") == 0)
-        {
-            // Seed 100 bàn
-            for (int i = 1; i <= 99; i++)
-            {
-                ExecuteSql(conn, $"INSERT INTO tables (id, name) VALUES ({i}, 'Bàn {i:00}')");
-            }
-            // Reset sequence để insert bàn tiếp theo không lỗi ID
-            ExecuteSql(conn, "SELECT setval('tables_id_seq', 99, true);");
-        }
     }
 
     private static void ExecuteSql(NpgsqlConnection conn, string sql)
