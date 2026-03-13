@@ -110,11 +110,7 @@ public partial class MainForm : Form
         {
             _isProcessingPayment = true;
 
-            int billId = await _billRepo.CreatePaidBillAsync(buzzerNumber, finalAmount);
-            foreach (var item in cartItems)
-            {
-                await _billRepo.AddBillDetailAsync(billId, item.ProductId, item.ProductName, item.Quantity, item.Price);
-            }
+            int billId = await _billRepo.ProcessFullOrderAsync(buzzerNumber, finalAmount, cartItems);
 
             await _pdfQueue.EnqueueJobAsync(new PdfJobPayload
             {

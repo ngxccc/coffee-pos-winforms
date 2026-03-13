@@ -5,81 +5,54 @@ using Npgsql;
 
 public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
 {
-    public async Task<int> CreatePaidBillAsync(int buzzerNumber, decimal totalAmount)
+    public async Task<int> ProcessFullOrderAsync(int buzzerNumber, decimal totalAmount, List<BillDetail> items)
     {
         using var conn = await dataSource.OpenConnectionAsync();
+        using var tx = await conn.BeginTransactionAsync();
 
-        // Insert xong trả về luôn ID, đỡ phải SELECT MAX(id)
-        string sql = @"
-            INSERT INTO bills (buzzer_number, status, created_at, total_amount)
-            VALUES (@b, 1, NOW(), @total)
-            RETURNING id;";
+        try
+        {
+            string sqlBill = @"
+                INSERT INTO bills (buzzer_number, status, total_amount)
+                VALUES (@b, 1, @total)
+                RETURNING id;";
 
-        using var cmd = new NpgsqlCommand(sql, conn);
-        cmd.Parameters.AddWithValue("b", buzzerNumber);
-        cmd.Parameters.AddWithValue("total", totalAmount);
+            using var cmdBill = new NpgsqlCommand(sqlBill, conn, tx);
+            cmdBill.Parameters.AddWithValue("b", buzzerNumber);
+            cmdBill.Parameters.AddWithValue("total", totalAmount);
 
-        // ExecuteScalar: Lấy giá trị của cột đầu tiên dòng đầu tiên (chính là ID)
-        return Convert.ToInt32(await cmd.ExecuteScalarAsync());
-    }
+            int billId = Convert.ToInt32(await cmdBill.ExecuteScalarAsync());
 
-    public async Task CheckoutAsync(int billId, decimal total)
-    {
-        using var conn = await dataSource.OpenConnectionAsync();
+            string sqlDetail = @"
+                INSERT INTO bill_details (bill_id, product_id, product_name, quantity, price)
+                VALUES (@b, @p, @n, @q, @price);";
 
-        // Update trạng thái thành Paid (1), lưu tổng tiền và giờ checkout
-        string sql = @"
-            UPDATE bills
-            SET status = 1,
-                total_amount = @total,
-                checkout_at = NOW()
-            WHERE id = @billId";
+            await using var batch = new NpgsqlBatch(conn, tx);
 
-        using var cmd = new NpgsqlCommand(sql, conn);
-        cmd.Parameters.AddWithValue("total", total);
-        cmd.Parameters.AddWithValue("billId", billId);
+            foreach (var item in items)
+            {
+                var batchCommand = new NpgsqlBatchCommand(sqlDetail);
 
-        await cmd.ExecuteNonQueryAsync();
-    }
+                batchCommand.Parameters.AddWithValue("b", billId);
+                batchCommand.Parameters.AddWithValue("p", item.ProductId);
+                batchCommand.Parameters.AddWithValue("n", item.ProductName);
+                batchCommand.Parameters.AddWithValue("q", item.Quantity);
+                batchCommand.Parameters.AddWithValue("price", item.Price);
 
-    public int GetCurrentUnpaidBillId(int tableId)
-    {
-        using var conn = dataSource.OpenConnection();
-        string sql = "SELECT id FROM bills WHERE table_id = @t AND status = 0 AND is_deleted = false ORDER BY id DESC LIMIT 1";
-        using var cmd = new NpgsqlCommand(sql, conn);
-        cmd.Parameters.AddWithValue("t", tableId);
-        var res = cmd.ExecuteScalar();
-        return res == null ? 0 : (int)res;
-    }
+                batch.BatchCommands.Add(batchCommand);
+            }
 
-    public int GetCurrentPaidBillId(int tableId)
-    {
-        using var conn = dataSource.OpenConnection();
-        // Lấy bill mới nhất có status = 1 (Paid)
-        string sql = "SELECT id FROM bills WHERE table_id = @t AND status = 1 AND is_deleted = false ORDER BY id DESC LIMIT 1";
-        using var cmd = new NpgsqlCommand(sql, conn);
-        cmd.Parameters.AddWithValue("t", tableId);
-        var res = cmd.ExecuteScalar();
-        return res == null ? 0 : (int)res;
-    }
+            await batch.ExecuteNonQueryAsync();
 
-    public async Task AddBillDetailAsync(int billId, int productId, string name, int qty, decimal price)
-    {
-        using var conn = await dataSource.OpenConnectionAsync();
+            await tx.CommitAsync();
 
-        // Kiểm tra món đã tồn tại chưa để cộng dồn
-        string sql = @"
-            INSERT INTO bill_details (bill_id, product_id, product_name, quantity, price)
-            VALUES (@b, @p, @n, @q, @price);";
-
-        using var cmd = new NpgsqlCommand(sql, conn);
-        cmd.Parameters.AddWithValue("b", billId);
-        cmd.Parameters.AddWithValue("p", productId);
-        cmd.Parameters.AddWithValue("n", name);
-        cmd.Parameters.AddWithValue("q", qty);
-        cmd.Parameters.AddWithValue("price", price);
-
-        await cmd.ExecuteNonQueryAsync();
+            return billId;
+        }
+        catch (Exception)
+        {
+            await tx.RollbackAsync();
+            throw;
+        }
     }
 
     public List<BillDetail> GetBillDetails(int billId)
@@ -104,29 +77,10 @@ public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
         return list;
     }
 
-    public DateTime? GetBillStartTime(int billId)
-    {
-        using var conn = dataSource.OpenConnection();
-        string sql = "SELECT created_at FROM bills WHERE id = @id";
-        using var cmd = new NpgsqlCommand(sql, conn);
-        cmd.Parameters.AddWithValue("id", billId);
-        var res = cmd.ExecuteScalar();
-        return res == DBNull.Value ? null : (DateTime?)res;
-    }
-
-    public void ClearTable(int tableId)
-    {
-        using var conn = dataSource.OpenConnection();
-        string sql = "UPDATE bills SET status = 2 WHERE table_id = @t AND status = 1";
-        using var cmd = new NpgsqlCommand(sql, conn);
-        cmd.Parameters.AddWithValue("t", tableId);
-        cmd.ExecuteNonQuery();
-    }
-
     public void CancelBill(int billId)
     {
         using var conn = dataSource.OpenConnection();
-        string sql = "UPDATE bills SET is_deleted = true, checkout_at = NOW() WHERE id = @id";
+        string sql = "UPDATE bills SET is_deleted = true, updated_at = NOW() WHERE id = @id";
         using var cmd = new NpgsqlCommand(sql, conn);
         cmd.Parameters.AddWithValue("id", billId);
         cmd.ExecuteNonQuery();

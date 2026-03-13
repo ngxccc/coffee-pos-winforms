@@ -17,7 +17,8 @@ CREATE TABLE IF NOT EXISTS bills (
   total_amount DECIMAL(18,0) DEFAULT 0,
   status INT DEFAULT 1, -- 0: Unpaid, 1: Paid
   is_deleted BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP DEFAULT NOW()
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
 );
 
 -- 0: Queued (Đang chờ pha)

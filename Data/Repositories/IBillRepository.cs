@@ -4,13 +4,7 @@ namespace CoffeePOS.Data.Repositories;
 
 public interface IBillRepository
 {
-    Task<int> CreatePaidBillAsync(int buzzerNumber, decimal totalAmount);
-    Task CheckoutAsync(int billId, decimal total);
-    int GetCurrentUnpaidBillId(int tableId);
-    Task AddBillDetailAsync(int billId, int productId, string name, int qty, decimal price);
+    Task<int> ProcessFullOrderAsync(int buzzerNumber, decimal totalAmount, List<BillDetail> items);
     List<BillDetail> GetBillDetails(int billId);
-    DateTime? GetBillStartTime(int billId);
-    public void ClearTable(int tableId);
-    public int GetCurrentPaidBillId(int tableId);
     public void CancelBill(int billId);
 }
