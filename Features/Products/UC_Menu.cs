@@ -41,7 +41,7 @@ public class UC_Menu : UserControl
 
     private void InitializeComponents()
     {
-        Panel pnlHeader = BuildHeaderPanel();
+        // Panel pnlHeader = BuildHeaderPanel();
 
         _flowCategories = new()
         {
@@ -62,13 +62,11 @@ public class UC_Menu : UserControl
         };
 
         _flowProducts.Scroll += (s, e) => CheckScrollBottom();
-        // WinForms FlowLayout đôi khi không fire event Scroll khi dùng chuột lăn (MouseWheel)
-        // Nên cần bắt thêm cái này cho chắc cốp:
         _flowProducts.MouseWheel += (s, e) => CheckScrollBottom();
 
         Controls.Add(_flowProducts);    // Fill
         Controls.Add(_flowCategories);  // Top 2
-        Controls.Add(pnlHeader);        // Top 1
+        // Controls.Add(pnlHeader);        // Top 1
     }
 
     private Panel BuildHeaderPanel()
