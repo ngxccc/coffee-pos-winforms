@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS bill_details (
   bill_id INT NOT NULL,
   product_id INT NOT NULL,
   product_name VARCHAR(200),
-  item_status INT DEFAULT 0,
+  -- item_status INT DEFAULT 0,
   quantity INT DEFAULT 1,
   price DECIMAL(18,0) DEFAULT 0,
   note VARCHAR(255),
