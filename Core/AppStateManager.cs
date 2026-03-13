@@ -44,7 +44,6 @@ public class AppStateManager : ApplicationContext
 
             closedForm.Dispose();
 
-            // 4. CHUYỂN CẢNH
             if (isLoginSuccess)
             {
                 ShowMainWorkspace();
@@ -55,7 +54,7 @@ public class AppStateManager : ApplicationContext
             }
             else
             {
-                ExitThread(); // Tắt App
+                ExitThread();
             }
         }
     }
