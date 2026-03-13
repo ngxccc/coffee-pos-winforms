@@ -14,7 +14,7 @@ public static class InvoiceGenerator
         QuestPDF.Settings.License = LicenseType.Community;
     }
 
-    public static async Task GenerateAndOpenPdfAsync(int billId, int tableId, decimal totalAmount, List<BillDetail> details)
+    public static async Task GenerateAndOpenPdfAsync(int billId, int buzzerNumber, decimal totalAmount, List<BillDetail> details)
     {
         var document = Document.Create(container =>
         {
@@ -26,7 +26,7 @@ public static class InvoiceGenerator
                 page.PageColor(Colors.White);
                 page.DefaultTextStyle(x => x.FontSize(10).FontFamily(Fonts.Arial));
 
-                page.Header().Element(x => ComposeHeader(x, billId, tableId));
+                page.Header().Element(x => ComposeHeader(x, billId, buzzerNumber));
                 page.Content().Element(x => ComposeContent(x, details));
                 page.Footer().Element(x => ComposeFooter(x, totalAmount));
             });
@@ -45,7 +45,7 @@ public static class InvoiceGenerator
         });
     }
 
-    private static void ComposeHeader(IContainer container, int billId, int tableId)
+    private static void ComposeHeader(IContainer container, int billId, int buzzerNumber)
     {
         container.Row(row =>
         {
@@ -53,7 +53,7 @@ public static class InvoiceGenerator
             {
                 column.Item().Text("COFFEE POS").FontSize(20).SemiBold().FontColor(Colors.Blue.Darken2).AlignCenter();
                 column.Item().Text($"Hóa đơn số: #{billId}");
-                column.Item().Text($"Bàn: {tableId}");
+                column.Item().Text($"Thẻ rung số: {buzzerNumber}");
                 column.Item().Text($"Ngày: {DateTime.Now:dd/MM/yyyy HH:mm}");
             });
         });

@@ -1,3 +1,4 @@
+using CoffeePOS.Models;
 using Microsoft.VisualBasic;
 using ReaLTaiizor.Controls;
 using Panel = System.Windows.Forms.Panel;
@@ -254,5 +255,22 @@ public class UC_Billing : UserControl
         _grandTotal += amountToAdd;
         if (_lblTotalPrice != null)
             _lblTotalPrice.Text = $"{_grandTotal:N0} đ";
+    }
+
+    public List<BillDetail> GetCartItems()
+    {
+        var list = new List<BillDetail>();
+        foreach (var item in _billItemsDict.Values)
+        {
+            list.Add(new BillDetail
+            {
+                ProductId = item.ProductId,
+                ProductName = item.ItemName,
+                Quantity = item.Quantity,
+                Price = item.TotalValue / item.Quantity,
+                Note = item.Note
+            });
+        }
+        return list;
     }
 }

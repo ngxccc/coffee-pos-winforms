@@ -5,23 +5,22 @@ using Npgsql;
 
 public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
 {
-    public async Task<int> CreateBillAsync(int tableId)
+    public async Task<int> CreatePaidBillAsync(int buzzerNumber, decimal totalAmount)
     {
         using var conn = await dataSource.OpenConnectionAsync();
 
         // Insert xong trả về luôn ID, đỡ phải SELECT MAX(id)
         string sql = @"
-            INSERT INTO bills (table_id, status, created_at, total_amount)
-            VALUES (@tableId, 0, NOW(), 0)
+            INSERT INTO bills (buzzer_number, status, created_at, total_amount)
+            VALUES (@b, 1, NOW(), @total)
             RETURNING id;";
 
         using var cmd = new NpgsqlCommand(sql, conn);
-        cmd.Parameters.AddWithValue("tableId", tableId);
+        cmd.Parameters.AddWithValue("b", buzzerNumber);
+        cmd.Parameters.AddWithValue("total", totalAmount);
 
         // ExecuteScalar: Lấy giá trị của cột đầu tiên dòng đầu tiên (chính là ID)
-        object? result = await cmd.ExecuteScalarAsync();
-
-        return result != null ? Convert.ToInt32(result) : 0;
+        return Convert.ToInt32(await cmd.ExecuteScalarAsync());
     }
 
     public async Task CheckoutAsync(int billId, decimal total)
@@ -71,10 +70,7 @@ public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
         // Kiểm tra món đã tồn tại chưa để cộng dồn
         string sql = @"
             INSERT INTO bill_details (bill_id, product_id, product_name, quantity, price)
-            VALUES (@b, @p, @n, @q, @price)
-            ON CONFLICT (bill_id, product_id)
-            DO UPDATE SET
-                quantity = bill_details.quantity + EXCLUDED.quantity;";
+            VALUES (@b, @p, @n, @q, @price);";
 
         using var cmd = new NpgsqlCommand(sql, conn);
         cmd.Parameters.AddWithValue("b", billId);

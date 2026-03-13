@@ -3,7 +3,6 @@ using CoffeePOS.Data.Repositories;
 using CoffeePOS.Features.Billing;
 using CoffeePOS.Features.Products;
 using CoffeePOS.Features.Sidebar;
-using CoffeePOS.Features.Tables;
 using Microsoft.Extensions.DependencyInjection;
 using Panel = System.Windows.Forms.Panel;
 
@@ -14,47 +13,35 @@ public partial class MainForm : Form
     // DEPENDENCIES & CONTROLS
     private readonly IBillRepository _billRepo;
     private readonly IServiceProvider _serviceProvider;
-    private readonly ITableRepository _tableRepo;
+    private readonly PdfPrintQueue _pdfQueue;
 
     // UI Components
     private readonly UC_Sidebar _ucSidebar = new();
     private readonly UC_Billing _ucBilling = new();
-    private UC_Menu? _ucMenu;
-    private Panel _pnlMainWorkspace = new();
-    private FlowLayoutPanel _flowTableList = new();
+    private UC_Menu _ucMenu = null!;
 
     // Logic Components
-    private System.Windows.Forms.Timer? _masterTimer;
-    private readonly PdfPrintQueue _pdfQueue;
-
-    private readonly Dictionary<int, UC_Table> _tableMap = [];
-    private readonly List<UC_Table> _activeTables = [];
 
     private bool _isProcessingPayment = false;
 
     // CONSTRUCTOR & INIT
     public MainForm(IServiceProvider serviceProvider,
-                    IBillRepository billRepo,
-                    ITableRepository tableRepo, PdfPrintQueue pdfQueue)
+                    IBillRepository billRepo, PdfPrintQueue pdfQueue)
     {
         InitializeFormProperties();
 
         _serviceProvider = serviceProvider;
         _billRepo = billRepo;
-        _tableRepo = tableRepo;
         _pdfQueue = pdfQueue;
 
         // Setup các thành phần giao diện
-        SetupTimer();
         SetupSidebar();
         SetupBilling();
-        SetupWorkspace();
 
         // Ráp nối Layout
         AssembleLayout();
 
-        // Load dữ liệu bàn
-        LoadTableMap();
+        LoadMenuDirectly();
     }
 
     // UI SETUP METHODS
@@ -68,16 +55,9 @@ public partial class MainForm : Form
         BackColor = Color.White;
     }
 
-    private void SetupTimer()
-    {
-        _masterTimer = new System.Windows.Forms.Timer { Interval = 60000 };
-        _masterTimer.Tick += MasterTimer_Tick;
-        _masterTimer.Start();
-    }
-
     private void SetupSidebar()
     {
-        _ucSidebar.OnHomeClicked += (s, e) => SwitchToHome();
+        _ucSidebar.OnHomeClicked += (s, e) => _ucBilling.ClearOrder();
     }
 
     private void SetupBilling()
@@ -85,254 +65,74 @@ public partial class MainForm : Form
         _ucBilling.OnPayClicked += async (s, e) => await ProcessPaymentAsync();
     }
 
-    private void SetupWorkspace()
-    {
-        _pnlMainWorkspace = new Panel
-        {
-            Dock = DockStyle.Fill,
-            BackColor = Color.FromArgb(245, 245, 245)
-        };
-
-        _flowTableList = new FlowLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            AutoScroll = true,
-            Padding = new Padding(20),
-        };
-
-        _pnlMainWorkspace.Controls.Add(_flowTableList);
-    }
-
     private void AssembleLayout()
     {
         Controls.Add(_ucSidebar);
         Controls.Add(_ucBilling);
-        Controls.Add(_pnlMainWorkspace);
-
-        _pnlMainWorkspace.BringToFront();
     }
 
-    private void LoadTableMap()
+    private void LoadMenuDirectly()
     {
-        _flowTableList.Controls.Clear();
-        _tableMap.Clear();
-        _activeTables.Clear();
+        _ucMenu = _serviceProvider.GetRequiredService<UC_Menu>();
+        // _ucMenu.HideBackButton(); (Ông tự thêm hàm này vào UC_Menu cho đẹp)
 
-        var tables = _tableRepo.GetAllTables();
-
-        foreach (var t in tables)
+        _ucMenu.OnProductSelected += (prodId, prodName, price) =>
         {
-            UC_Table ucTable = new(t.Id, t.Name, TableStatus.Empty);
+            _ucBilling.AddItemToBill(prodId, prodName, 1, price);
+        };
 
-            int paidBillId = _billRepo.GetCurrentPaidBillId(t.Id);
-
-            if (paidBillId > 0)
-            {
-                ucTable.Status = TableStatus.Occupied;
-                var startTime = _billRepo.GetBillStartTime(paidBillId);
-                ucTable.StartTime = startTime;
-
-                ucTable.UpdateColor();
-                ucTable.UpdateDuration();
-                _activeTables.Add(ucTable);
-            }
-
-            ucTable.Click += (s, e) => HandleTableClick(ucTable);
-            _tableMap.Add(t.Id, ucTable);
-            _flowTableList.Controls.Add(ucTable);
-        }
+        _ucMenu.Dock = DockStyle.Fill;
+        Controls.Add(_ucMenu);
+        _ucMenu.BringToFront();
     }
 
     // BUSINESS LOGIC
-
-    private void HandleTableClick(UC_Table table)
-    {
-        bool isOccupied = table.Status == TableStatus.Occupied;
-
-        if (isOccupied)
-        {
-            // --- BÀN CÓ KHÁCH ---
-            DialogResult result = MessageBox.Show(
-                $"Bàn {table.TableId} đang có khách.\n\n" +
-                "- YES: Order thêm món (Bill mới)\n" +
-                "- NO: Khách đã về (Dọn bàn)",
-                "Quản lý bàn",
-                MessageBoxButtons.YesNoCancel,
-                MessageBoxIcon.Question);
-
-            if (result == DialogResult.No)
-            {
-                // Dọn bàn
-                _billRepo.ClearTable(table.TableId);
-                ResetTableStatus(table);
-                _ucBilling.ClearOrder();
-            }
-            else if (result == DialogResult.Yes)
-            {
-                // Gọi thêm
-                _ucBilling.SetTableInfo(table.TableId, $"Bàn {table.TableId} (Gọi thêm)");
-                ShowMenu();
-            }
-
-        }
-        else
-        {
-            // --- BÀN TRỐNG ---
-            _ucBilling.SetTableInfo(table.TableId, $"Order cho Bàn {table.TableId}");
-            int draftBillId = _billRepo.GetCurrentUnpaidBillId(table.TableId);
-
-            if (draftBillId > 0)
-            {
-                LoadExistingBillToUI(table.TableId);
-            }
-            ShowMenu();
-        }
-    }
-
-    private void LoadExistingBillToUI(int tableId)
-    {
-        int billId = _billRepo.GetCurrentUnpaidBillId(tableId);
-        if (billId == 0) return;
-
-        var details = _billRepo.GetBillDetails(billId);
-
-        foreach (var d in details)
-        {
-            _ucBilling.AddItemToBill(d.ProductId, d.ProductName, d.Quantity, d.Price, d.Note);
-        }
-    }
 
     private async Task ProcessPaymentAsync()
     {
         if (_isProcessingPayment) return;
 
-        int tableId = _ucBilling.CurrentTableId;
-        if (tableId == 0)
+        var cartItems = _ucBilling.GetCartItems();
+        if (cartItems.Count == 0)
         {
-            MessageBox.Show("Vui lòng chọn bàn trước!");
+            MessageBox.Show("Chưa có món nào trong giỏ!");
             return;
         }
 
-        int billId = _billRepo.GetCurrentUnpaidBillId(tableId);
-        if (billId == 0)
-        {
-            MessageBox.Show("Bàn này không có hóa đơn nào để thanh toán!");
-            return;
-        }
+        string input = Microsoft.VisualBasic.Interaction.InputBox("Nhập số Thẻ Rung / Số thứ tự:", "Xác nhận Order", "1");
+        if (!int.TryParse(input, out int buzzerNumber)) return;
 
         decimal finalAmount = _ucBilling.GrandTotal;
-        if (MessageBox.Show($"Xác nhận thanh toán {finalAmount:N0} đ?", "Thanh toán", MessageBoxButtons.YesNo) == DialogResult.No)
-        {
+        if (MessageBox.Show($"Thu của khách {finalAmount:N0} đ?", "Xác nhận", MessageBoxButtons.YesNo) == DialogResult.No)
             return;
-        }
 
         try
         {
             _isProcessingPayment = true;
 
-            await _billRepo.CheckoutAsync(billId, finalAmount);
-
-            var billDetails = _billRepo.GetBillDetails(billId);
+            int billId = await _billRepo.CreatePaidBillAsync(buzzerNumber, finalAmount);
+            foreach (var item in cartItems)
+            {
+                await _billRepo.AddBillDetailAsync(billId, item.ProductId, item.ProductName, item.Quantity, item.Price);
+            }
 
             await _pdfQueue.EnqueueJobAsync(new PdfJobPayload
             {
                 BillId = billId,
-                TableId = tableId,
+                BuzzerNumber = buzzerNumber,
                 TotalAmount = finalAmount,
-                Details = billDetails
+                Details = cartItems
             });
 
-            if (_tableMap.TryGetValue(tableId, out UC_Table? targetTable))
-            {
-                targetTable.Status = TableStatus.Occupied;
-                targetTable.StartTime = TimeKeeper.Now;
-                targetTable.UpdateColor();
-                targetTable.UpdateDuration();
-
-                // tránh add trùng
-                if (!_activeTables.Contains(targetTable))
-                {
-                    _activeTables.Add(targetTable);
-                }
-
-                // MessageBox.Show($"Thanh toán Bàn {tableId} thành công!");
-                ShowTableMap();
-            }
-            else
-            {
-                MessageBox.Show("Lỗi: Không tìm thấy bàn này trong bản đồ!");
-            }
+            _ucBilling.ClearOrder();
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Lỗi trong quá trình thanh toán: {ex.Message}", "Lỗi Database", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show($"Lỗi thanh toán: {ex.Message}");
         }
         finally
         {
             _isProcessingPayment = false;
-            _ucBilling.ClearOrder();
         }
-    }
-
-    private void ResetTableStatus(UC_Table table)
-    {
-        table.Status = TableStatus.Empty;
-        table.StartTime = null;
-        table.UpdateColor();
-        table.UpdateDuration();
-
-        _activeTables.Remove(table);
-    }
-
-    private void SwitchToHome()
-    {
-        ShowTableMap();
-    }
-
-    private void MasterTimer_Tick(object? sender, EventArgs e)
-    {
-        foreach (var table in _activeTables)
-        {
-            table.UpdateDuration();
-        }
-    }
-
-    private void ShowMenu()
-    {
-        if (_ucMenu == null || _ucMenu.IsDisposed)
-        {
-            _ucMenu = _serviceProvider.GetRequiredService<UC_Menu>();
-            _ucMenu.OnBackClicked += (s, e) => ShowTableMap();
-
-            _ucMenu.OnProductSelected += async (prodId, prodName, price) =>
-            {
-                int tableId = _ucBilling.CurrentTableId;
-                if (tableId == 0) return;
-
-                // Kiểm tra xem bàn đã có Bill chưa? Chưa thì tạo mới.
-                int billId = _billRepo.GetCurrentUnpaidBillId(tableId);
-                if (billId == 0)
-                {
-                    billId = await _billRepo.CreateBillAsync(tableId);
-                }
-
-                // Lưu món vào DB (Bill Details)
-                // Lưu ý: Hàm này sẽ tự cộng dồn số lượng nếu trùng
-                await _billRepo.AddBillDetailAsync(billId, prodId, prodName, 1, price);
-
-                // Hiển thị lên UI (UC_Billing)
-                _ucBilling.AddItemToBill(prodId, prodName, 1, price);
-            };
-        }
-
-        _pnlMainWorkspace.Controls.Clear();
-        _pnlMainWorkspace.Controls.Add(_ucMenu);
-    }
-
-    private void ShowTableMap()
-    {
-        _ucBilling.ClearOrder();
-        _pnlMainWorkspace.Controls.Clear();
-        _pnlMainWorkspace.Controls.Add(_flowTableList);
     }
 }

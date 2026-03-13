@@ -9,13 +9,6 @@ public static class DbInitializer
         using var conn = new NpgsqlConnection(connStr);
         conn.Open();
 
-        var sqlTables = @"
-            CREATE TABLE IF NOT EXISTS tables (
-                id SERIAL PRIMARY KEY,
-                name VARCHAR(50) NOT NULL
-            );";
-        ExecuteSql(conn, sqlTables);
-
         var sqlCategories = @"
             CREATE TABLE IF NOT EXISTS categories (
                 id SERIAL PRIMARY KEY,
@@ -41,20 +34,15 @@ public static class DbInitializer
         var sqlBills = @"
             CREATE TABLE IF NOT EXISTS bills (
                 id SERIAL PRIMARY KEY,
-                table_id INT,
+                buzzer_number INT NOT NULL,
+                order_type INT DEFAULT 1,
                 total_amount DECIMAL(18,0) DEFAULT 0,
-                status INT DEFAULT 0, -- 0: Unpaid, 1: Paid
+                status INT DEFAULT 1, -- 0: Unpaid, 1: Paid
                 is_deleted BOOLEAN DEFAULT FALSE,
-                created_at TIMESTAMP DEFAULT NOW(),
-                checkout_at TIMESTAMP,
-
-                constraint fk_bill_table
-                    foreign key (table_id)
-                    references tables(id)
-                    on delete set null
+                created_at TIMESTAMP DEFAULT NOW()
             );";
         ExecuteSql(conn, sqlBills);
-        ExecuteSql(conn, "CREATE INDEX IF NOT EXISTS idx_bills_table_status ON bills(table_id, status);");
+        ExecuteSql(conn, "CREATE INDEX IF NOT EXISTS idx_bills_table_status ON bills(buzzer_number, status);");
         ExecuteSql(conn, "CREATE INDEX IF NOT EXISTS idx_bills_created_at ON bills(created_at);");
 
         var sqlBillDetails = @"
@@ -63,6 +51,7 @@ public static class DbInitializer
                 bill_id INT NOT NULL,
                 product_id INT NOT NULL,
                 product_name VARCHAR(200),
+                item_status INT DEFAULT 0,
                 quantity INT DEFAULT 1,
                 price DECIMAL(18,0) DEFAULT 0,
                 note VARCHAR(255),
