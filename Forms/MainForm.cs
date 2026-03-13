@@ -74,7 +74,6 @@ public partial class MainForm : Form
     private void LoadMenuDirectly()
     {
         _ucMenu = _serviceProvider.GetRequiredService<UC_Menu>();
-        // _ucMenu.HideBackButton(); (Ông tự thêm hàm này vào UC_Menu cho đẹp)
 
         _ucMenu.OnProductSelected += (prodId, prodName, price) =>
         {
