@@ -58,6 +58,15 @@ public partial class MainForm : Form
     private void SetupSidebar()
     {
         _ucSidebar.OnHomeClicked += (s, e) => _ucBilling.ClearOrder();
+
+        // _ucSidebar.OnLogoutClicked += (s, e) =>
+        // {
+        //     if (MessageBox.Show("Bạn muốn đăng xuất ca làm việc?", "Đăng xuất", MessageBoxButtons.YesNo) == DialogResult.Yes)
+        //     {
+        //         this.DialogResult = DialogResult.Abort; // Quăng cờ Đăng xuất
+        //         this.Close(); // Đóng MainForm
+        //     }
+        // };
     }
 
     private void SetupBilling()

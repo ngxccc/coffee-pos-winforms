@@ -9,32 +9,44 @@ public static class DbInitializer
         using var conn = new NpgsqlConnection(connStr);
         conn.Open();
 
-        var sqlCategories = @"
+        string sqlUsers = @"
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                username VARCHAR(50) UNIQUE NOT NULL,
+                password_hash VARCHAR(255) NOT NULL,
+                full_name VARCHAR(100),
+                role INT DEFAULT 1, -- 0: Admin, 1: Staff
+                is_active BOOLEAN DEFAULT TRUE,
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW()
+            );";
+        ExecuteSql(conn, sqlUsers);
+
+        string sqlCategories = @"
             CREATE TABLE IF NOT EXISTS categories (
                 id SERIAL PRIMARY KEY,
-                name VARCHAR(100) NOT NULL
+                name VARCHAR(100) NOT NULL,
+                is_deleted BOOLEAN DEFAULT FALSE
             );";
         ExecuteSql(conn, sqlCategories);
 
-        var sqlProducts = @"
+        string sqlProducts = @"
             CREATE TABLE IF NOT EXISTS products (
                 id SERIAL PRIMARY KEY,
+                category_id INT REFERENCES categories(id),
                 name VARCHAR(200) NOT NULL,
-                price DECIMAL(18, 0) NOT NULL DEFAULT 0,
-                category_id INT,
-
-                constraint fk_product_category
-                    foreign key (category_id)
-                    references categories(id)
-                    on delete set null
+                price DECIMAL(18,0) DEFAULT 0,
+                image_url VARCHAR(255),
+                is_deleted BOOLEAN DEFAULT FALSE
             );";
         ExecuteSql(conn, sqlProducts);
         ExecuteSql(conn, "CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);");
 
-        var sqlBills = @"
+        string sqlBills = @"
             CREATE TABLE IF NOT EXISTS bills (
                 id SERIAL PRIMARY KEY,
                 buzzer_number INT NOT NULL,
+                user_id INT REFERENCES users(id),
                 order_type INT DEFAULT 1,
                 total_amount DECIMAL(18,0) DEFAULT 0,
                 status INT DEFAULT 1, -- 0: Unpaid, 1: Paid
@@ -43,10 +55,10 @@ public static class DbInitializer
                 updated_at TIMESTAMP DEFAULT NOW()
             );";
         ExecuteSql(conn, sqlBills);
-        ExecuteSql(conn, "CREATE INDEX IF NOT EXISTS idx_bills_table_status ON bills(buzzer_number, status);");
-        ExecuteSql(conn, "CREATE INDEX IF NOT EXISTS idx_bills_created_at ON bills(created_at);");
+        ExecuteSql(conn, "CREATE INDEX IF NOT EXISTS idx_bills_userid ON bills(user_id);");
+        ExecuteSql(conn, "CREATE INDEX IF NOT EXISTS idx_bills_reporting ON bills(created_at) WHERE is_deleted = false;");
 
-        var sqlBillDetails = @"
+        string sqlBillDetails = @"
             CREATE TABLE IF NOT EXISTS bill_details (
                 id SERIAL PRIMARY KEY,
                 bill_id INT NOT NULL,
@@ -65,9 +77,12 @@ public static class DbInitializer
                     foreign key (product_id)
                     references products(id)
                     on delete cascade,
+
                 UNIQUE(bill_id, product_id)
             );";
         ExecuteSql(conn, sqlBillDetails);
+
+        SeedAdminUser(conn);
     }
 
     private static void ExecuteSql(NpgsqlConnection conn, string sql)
@@ -76,9 +91,22 @@ public static class DbInitializer
         cmd.ExecuteNonQuery();
     }
 
-    private static long CountTable(NpgsqlConnection conn, string tableName)
+    private static void SeedAdminUser(NpgsqlConnection conn)
     {
-        using var cmd = new NpgsqlCommand($"SELECT COUNT(*) FROM {tableName}", conn);
-        return (long)(cmd.ExecuteScalar() ?? 0);
+        string checkSql = "SELECT COUNT(1) FROM users WHERE username = 'admin'";
+        using var checkCmd = new NpgsqlCommand(checkSql, conn);
+        long count = (long)checkCmd.ExecuteScalar()!;
+
+        if (count == 0)
+        {
+            string hash = BCrypt.Net.BCrypt.HashPassword("admin123", workFactor: 11);
+
+            string insertSql = @"
+                INSERT INTO users (username, password_hash, full_name, role)
+                VALUES ('admin', @hash, 'Administrator', 0)";
+            using var insertCmd = new NpgsqlCommand(insertSql, conn);
+            insertCmd.Parameters.AddWithValue("hash", hash);
+            insertCmd.ExecuteNonQuery();
+        }
     }
 }

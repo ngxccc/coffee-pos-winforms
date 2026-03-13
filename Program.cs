@@ -34,8 +34,8 @@ static class Program
             // Tự động gọi ExecuteAsync của tất cả các BackgroundService
             host.Start();
 
-            var mainForm = host.Services.GetRequiredService<MainForm>();
-            Application.Run(mainForm);
+            var appState = host.Services.GetRequiredService<Core.AppStateManager>();
+            Application.Run(appState);
         }
         catch (Exception ex)
         {
@@ -63,6 +63,8 @@ static class Program
                 var dataSource = NpgsqlDataSource.Create(connStr);
 
                 services.AddSingleton(dataSource);
+                services.AddSingleton<Core.AppStateManager>();
+                services.AddSingleton<IUserRepository, UserRepository>();
                 services.AddSingleton<IBillRepository, BillRepository>();
                 services.AddSingleton<IProductRepository, ProductRepository>();
                 services.AddSingleton<ICategoryRepository, CategoryRepository>();
@@ -71,6 +73,7 @@ static class Program
                 services.AddHostedService<Core.PdfPrintWorker>();
 
                 services.AddTransient<MainForm>();
+                services.AddTransient<LoginForm>();
                 services.AddTransient<UC_Menu>();
             });
 }

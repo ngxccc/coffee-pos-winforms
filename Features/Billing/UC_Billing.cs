@@ -10,13 +10,12 @@ public class UC_Billing : UserControl
     // UI COMPONENTS
     private FlowLayoutPanel? _flowBillItemList;
     private Label? _lblTotalPrice;
-    private Label? _lblTableName;
+    private Label? _lblOrderTitle;
 
     // DATA
     private decimal _grandTotal = 0;
     public decimal GrandTotal => _grandTotal;
     private readonly Dictionary<string, UC_BillItem> _billItemsDict = [];
-    public int CurrentTableId { get; private set; } = 0;
 
     // EVENTS
     public event EventHandler? OnPayClicked;
@@ -69,16 +68,16 @@ public class UC_Billing : UserControl
             Padding = new Padding(15, 0, 0, 0)
         };
 
-        _lblTableName = new Label
+        _lblOrderTitle = new Label
         {
-            Text = "Vui lòng chọn bàn",
+            Text = "Khu vực order",
             Dock = DockStyle.Fill,
             ForeColor = Color.White,
             Font = new Font("Segoe UI", 14, FontStyle.Bold),
             TextAlign = ContentAlignment.MiddleLeft
         };
 
-        pnl.Controls.Add(_lblTableName);
+        pnl.Controls.Add(_lblOrderTitle);
         return pnl;
     }
 
@@ -137,14 +136,6 @@ public class UC_Billing : UserControl
 
     // PUBLIC METHODS
 
-    public void SetTableInfo(int tableId, string tableName)
-    {
-        ClearOrder();
-        CurrentTableId = tableId;
-        if (_lblTableName != null)
-            _lblTableName.Text = tableName;
-    }
-
     public void ClearOrder()
     {
         if (_flowBillItemList == null)
@@ -158,9 +149,8 @@ public class UC_Billing : UserControl
         _grandTotal = 0;
         if (_lblTotalPrice != null)
             _lblTotalPrice.Text = "0 đ";
-        CurrentTableId = 0;
-        if (_lblTableName != null)
-            _lblTableName.Text = "Vui lòng chọn bàn";
+        if (_lblOrderTitle != null)
+            _lblOrderTitle.Text = "Vui lòng chọn bàn";
     }
 
     public void AddItemToBill(int productId, string name, int qty, decimal price, string note = "")
