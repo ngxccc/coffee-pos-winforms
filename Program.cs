@@ -66,7 +66,6 @@ static class Program
                 services.AddSingleton<IBillRepository, BillRepository>();
                 services.AddSingleton<IProductRepository, ProductRepository>();
                 services.AddSingleton<ICategoryRepository, CategoryRepository>();
-                services.AddSingleton<ITableRepository, TableRepository>();
 
                 services.AddSingleton<Core.PdfPrintQueue>();
                 services.AddHostedService<Core.PdfPrintWorker>();
