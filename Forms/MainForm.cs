@@ -21,6 +21,7 @@ public partial class MainForm : Form
     private readonly UC_Billing _ucBilling = new();
     private UC_Menu _ucMenu = null!;
     private readonly Label _lblUserInfo = new();
+    private CancellationTokenSource? _clockCts;
 
     // Logic Components
 
@@ -69,7 +70,9 @@ public partial class MainForm : Form
         _lblUserInfo.TextAlign = ContentAlignment.MiddleLeft;
         _lblUserInfo.Padding = new Padding(0, 0, 20, 0);
 
-        UpdateUserInfoUI();
+        _clockCts = new CancellationTokenSource();
+
+        _ = StartRealTimeClockAsync(_clockCts.Token);
     }
 
     private void SetupSidebar()
@@ -124,14 +127,6 @@ public partial class MainForm : Form
         _ucMenu.Dock = DockStyle.Fill;
         Controls.Add(_ucMenu);
         _ucMenu.BringToFront();
-    }
-
-    private void UpdateUserInfoUI()
-    {
-        if (_session.IsLoggedIn)
-        {
-            _lblUserInfo.Text = $"Ca trực: {_session.CurrentUser!.FullName}";
-        }
     }
 
     // BUSINESS LOGIC
@@ -195,6 +190,36 @@ public partial class MainForm : Form
             }
         }
 
+        if (!e.Cancel && _clockCts != null)
+        {
+            _clockCts.Cancel();
+            _clockCts.Dispose();
+        }
+
         base.OnFormClosing(e);
+    }
+
+    private async Task StartRealTimeClockAsync(CancellationToken token)
+    {
+        try
+        {
+            while (!token.IsCancellationRequested)
+            {
+                if (_session.IsLoggedIn)
+                {
+                    string currentTime = TimeKeeper.Now.ToString("dd/MM/yyyy HH:mm:ss");
+                    _lblUserInfo.Text = $"Ca trực: {_session.CurrentUser!.FullName}   |   🕒 {currentTime}";
+                }
+
+                await Task.Delay(1000, token);
+            }
+        }
+        catch (TaskCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Clock Error: {ex.Message}");
+        }
     }
 }
