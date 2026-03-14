@@ -13,6 +13,7 @@ public partial class MainForm : Form
     // DEPENDENCIES & CONTROLS
     private readonly IBillRepository _billRepo;
     private readonly IServiceProvider _serviceProvider;
+    private readonly IUserSession _session;
     private readonly PdfPrintQueue _pdfQueue;
 
     // UI Components
@@ -25,12 +26,13 @@ public partial class MainForm : Form
     private bool _isProcessingPayment = false;
 
     // CONSTRUCTOR & INIT
-    public MainForm(IServiceProvider serviceProvider,
+    public MainForm(IServiceProvider serviceProvider, IUserSession session,
                     IBillRepository billRepo, PdfPrintQueue pdfQueue)
     {
         InitializeFormProperties();
 
         _serviceProvider = serviceProvider;
+        _session = session;
         _billRepo = billRepo;
         _pdfQueue = pdfQueue;
 

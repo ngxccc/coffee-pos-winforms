@@ -1,5 +1,5 @@
+using CoffeePOS.Core;
 using CoffeePOS.Data.Repositories;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace CoffeePOS.Forms;
 
@@ -7,15 +7,17 @@ public partial class LoginForm : Form
 {
     private readonly IUserRepository _userRepo;
     private readonly IServiceProvider _serviceProvider;
+    private readonly IUserSession _session;
 
     private TextBox txtUsername = null!;
     private TextBox txtPassword = null!;
     private Button btnLogin = null!;
 
-    public LoginForm(IUserRepository userRepo, IServiceProvider serviceProvider)
+    public LoginForm(IUserRepository userRepo, IServiceProvider serviceProvider, IUserSession session)
     {
         _userRepo = userRepo;
         _serviceProvider = serviceProvider;
+        _session = session;
 
         InitializeUI();
 
@@ -137,6 +139,7 @@ public partial class LoginForm : Form
 
             if (user != null)
             {
+                _session.Login(user);
                 DialogResult = DialogResult.OK;
                 Close();
             }

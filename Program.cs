@@ -66,6 +66,7 @@ static class Program
                 services.AddSingleton<Core.AppStateManager>();
                 services.AddSingleton<IUserRepository, UserRepository>();
                 services.AddSingleton<IBillRepository, BillRepository>();
+                services.AddSingleton<Core.IUserSession, Core.UserSession>();
                 services.AddSingleton<IProductRepository, ProductRepository>();
                 services.AddSingleton<ICategoryRepository, CategoryRepository>();
 

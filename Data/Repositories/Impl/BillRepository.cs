@@ -1,24 +1,28 @@
 namespace CoffeePOS.Data.Repositories.Impl;
 
+using CoffeePOS.Core;
 using CoffeePOS.Models;
 using Npgsql;
 
-public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
+public class BillRepository(NpgsqlDataSource dataSource, IUserSession session) : IBillRepository
 {
     public async Task<int> ProcessFullOrderAsync(int buzzerNumber, decimal totalAmount, List<BillDetail> items)
     {
+        if (!session.IsLoggedIn) throw new UnauthorizedAccessException("Chưa đăng nhập không thể tạo bill!");
+
         using var conn = await dataSource.OpenConnectionAsync();
         using var tx = await conn.BeginTransactionAsync();
 
         try
         {
             string sqlBill = @"
-                INSERT INTO bills (buzzer_number, status, total_amount)
-                VALUES (@b, 1, @total)
+                INSERT INTO bills (buzzer_number, user_id, status, total_amount)
+                VALUES (@b, @u, 1, @total)
                 RETURNING id;";
 
             using var cmdBill = new NpgsqlCommand(sqlBill, conn, tx);
             cmdBill.Parameters.AddWithValue("b", buzzerNumber);
+            cmdBill.Parameters.AddWithValue("u", session.CurrentUser!.Id);
             cmdBill.Parameters.AddWithValue("total", totalAmount);
 
             int billId = Convert.ToInt32(await cmdBill.ExecuteScalarAsync());
