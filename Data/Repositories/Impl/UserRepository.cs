@@ -54,4 +54,14 @@ public class UserRepository(NpgsqlDataSource dataSource) : IUserRepository
 
         await cmd.ExecuteNonQueryAsync();
     }
+
+    public async Task UpdatePasswordAsync(int userId, string newPasswordHash)
+    {
+        using var conn = await dataSource.OpenConnectionAsync();
+        string sql = "UPDATE users SET password_hash = @hash, updated_at = NOW() WHERE id = @id";
+        using var cmd = new NpgsqlCommand(sql, conn);
+        cmd.Parameters.AddWithValue("hash", newPasswordHash);
+        cmd.Parameters.AddWithValue("id", userId);
+        await cmd.ExecuteNonQueryAsync();
+    }
 }

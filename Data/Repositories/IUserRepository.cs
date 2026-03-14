@@ -6,4 +6,5 @@ public interface IUserRepository
 {
     Task<User?> AuthenticateAsync(string username, string password);
     Task DeactivateUserAsync(int adminId, int targetUserId);
+    Task UpdatePasswordAsync(int userId, string newPasswordHash);
 }
