@@ -20,6 +20,7 @@ public partial class MainForm : Form
     private readonly UC_Sidebar _ucSidebar = new();
     private readonly UC_Billing _ucBilling = new();
     private UC_Menu _ucMenu = null!;
+    private readonly Label _lblUserInfo = new();
 
     // Logic Components
 
@@ -39,6 +40,7 @@ public partial class MainForm : Form
         // Setup các thành phần giao diện
         SetupSidebar();
         SetupBilling();
+        SetupHeader();
 
         // Ráp nối Layout
         AssembleLayout();
@@ -55,6 +57,19 @@ public partial class MainForm : Form
         ClientSize = new Size(1280, 800);
         StartPosition = FormStartPosition.CenterScreen;
         BackColor = Color.White;
+    }
+
+    private void SetupHeader()
+    {
+        _lblUserInfo.Dock = DockStyle.Top;
+        _lblUserInfo.Height = 25;
+        _lblUserInfo.BackColor = Color.FromArgb(245, 245, 245);
+        _lblUserInfo.ForeColor = Color.FromArgb(0, 122, 204);
+        _lblUserInfo.Font = new Font("Segoe UI", 12, FontStyle.Bold);
+        _lblUserInfo.TextAlign = ContentAlignment.MiddleLeft;
+        _lblUserInfo.Padding = new Padding(0, 0, 20, 0);
+
+        UpdateUserInfoUI();
     }
 
     private void SetupSidebar()
@@ -85,24 +100,6 @@ public partial class MainForm : Form
         };
     }
 
-    protected override void OnFormClosing(FormClosingEventArgs e)
-    {
-        if (e.CloseReason == CloseReason.UserClosing)
-        {
-            if (_ucBilling.HasUnpaidItems)
-            {
-                MessageBox.Show("Không thể tắt phần mềm khi đang có hóa đơn chưa thanh toán!",
-                    "CẢNH BÁO", MessageBoxButtons.OK, MessageBoxIcon.Error);
-
-                // Thuộc tính Cancel = true sẽ HỦY BỎ lệnh tắt Form
-                e.Cancel = true;
-                return;
-            }
-        }
-
-        base.OnFormClosing(e);
-    }
-
     private void SetupBilling()
     {
         _ucBilling.OnPayClicked += async (s, e) => await ProcessPaymentAsync();
@@ -112,6 +109,7 @@ public partial class MainForm : Form
     {
         Controls.Add(_ucSidebar);
         Controls.Add(_ucBilling);
+        Controls.Add(_lblUserInfo);
     }
 
     private void LoadMenuDirectly()
@@ -126,6 +124,14 @@ public partial class MainForm : Form
         _ucMenu.Dock = DockStyle.Fill;
         Controls.Add(_ucMenu);
         _ucMenu.BringToFront();
+    }
+
+    private void UpdateUserInfoUI()
+    {
+        if (_session.IsLoggedIn)
+        {
+            _lblUserInfo.Text = $"Ca trực: {_session.CurrentUser!.FullName}";
+        }
     }
 
     // BUSINESS LOGIC
@@ -172,5 +178,23 @@ public partial class MainForm : Form
         {
             _isProcessingPayment = false;
         }
+    }
+
+    protected override void OnFormClosing(FormClosingEventArgs e)
+    {
+        if (e.CloseReason == CloseReason.UserClosing)
+        {
+            if (_ucBilling.HasUnpaidItems)
+            {
+                MessageBox.Show("Không thể tắt phần mềm khi đang có hóa đơn chưa thanh toán!",
+                    "CẢNH BÁO", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                // Thuộc tính Cancel = true sẽ HỦY BỎ lệnh tắt Form
+                e.Cancel = true;
+                return;
+            }
+        }
+
+        base.OnFormClosing(e);
     }
 }
