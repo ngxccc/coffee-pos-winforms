@@ -4,22 +4,22 @@ namespace CoffeePOS.Features.Billing;
 
 public class UC_BillItem : Panel
 {
-    // --- 1. UI COMPONENTS (Class Level) ---
+    // UI COMPONENTS
     private Label? _lblCount;
     private Label? _lblPrice;
     private Label? _lblNote;
     private Label? _lblName;
 
-    // --- 2. DATA FIELDS ---
+    // DATA FIELDS
     private int _quantity;
     private readonly decimal _unitPrice;
 
-    // --- 3. EVENTS ---
+    // EVENTS
     public event EventHandler<decimal>? OnAmountChanged;
     public event EventHandler<UC_BillItem>? OnDeleteRequest;
     public event EventHandler<string>? OnNoteEditRequest;
 
-    // --- 4. PROPERTIES ---
+    // PROPERTIES
     public decimal TotalValue => _quantity * _unitPrice;
     public int ProductId { get; private set; }
     public string ItemName { get; private set; }
@@ -28,30 +28,25 @@ public class UC_BillItem : Panel
 
     public UC_BillItem(int id, string foodName, int count, decimal price, string note = "", Image? foodImage = null)
     {
-        // A. Gán Data
         ProductId = id;
         ItemName = foodName;
         _quantity = count;
         _unitPrice = price;
         Note = note;
 
-        // B. Setup Container chính
         SetupMainContainer();
 
-        // C. Tạo các mảnh ghép (Components)
         var picFood = BuildImagePanel(foodImage);
         var pnlQty = BuildQtyPanel();
         var pnlRight = BuildRightActionsPanel(price);
         var pnlInfo = BuildInfoPanel(foodName, note);
 
-        // D. Ráp lại (Thứ tự quan trọng vì dùng Dock)
         // Add vào: Info (Fill) -> Right (Right) -> Qty (Left) -> Image (Left)
         Controls.Add(pnlInfo);
         Controls.Add(pnlRight);
         Controls.Add(pnlQty);
         Controls.Add(picFood);
 
-        // E. Gán sự kiện DoubleClick thần thánh
         BindDoubleClickRecursive(this);
     }
 
