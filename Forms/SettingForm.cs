@@ -19,6 +19,8 @@ public partial class SettingForm : Form
         _userRepo = userRepo;
 
         InitializeUI();
+
+        AcceptButton = btnSave;
     }
 
     private void InitializeUI()
@@ -31,7 +33,11 @@ public partial class SettingForm : Form
         MinimizeBox = false;
         BackColor = Color.White;
 
-        Panel pnlMain = new() { Dock = DockStyle.Fill, Padding = new Padding(30) };
+        Panel pnlMain = new()
+        {
+            Dock = DockStyle.Fill,
+            Padding = new Padding(30)
+        };
 
         Label lblTitle = new()
         {
@@ -46,8 +52,17 @@ public partial class SettingForm : Form
         var pnlFullName = CreateInfoRow("Họ tên:", _session.CurrentUser?.FullName ?? "N/A");
         var pnlUsername = CreateInfoRow("Tài khoản:", _session.CurrentUser?.Username ?? "N/A");
 
-        Panel pnlDivider = new() { Dock = DockStyle.Top, Height = 30 };
-        Label lblLine = new() { Dock = DockStyle.Bottom, Height = 2, BackColor = Color.LightGray };
+        Panel pnlDivider = new()
+        {
+            Dock = DockStyle.Top,
+            Height = 30
+        };
+        Label lblLine = new()
+        {
+            Dock = DockStyle.Bottom,
+            Height = 2,
+            BackColor = Color.LightGray
+        };
         pnlDivider.Controls.Add(lblLine);
 
         Label lblPassTitle = new()
@@ -68,7 +83,12 @@ public partial class SettingForm : Form
         pnlNewPass.TabIndex = 2;
         pnlConfirmPass.TabIndex = 3;
 
-        Panel pnlFooter = new() { Dock = DockStyle.Bottom, Height = 60, Padding = new Padding(0, 20, 0, 0) };
+        Panel pnlFooter = new()
+        {
+            Dock = DockStyle.Bottom,
+            Height = 60,
+            Padding = new Padding(0, 20, 0, 0)
+        };
         btnSave = new Button
         {
             Text = "CẬP NHẬT MẬT KHẨU",
@@ -83,7 +103,7 @@ public partial class SettingForm : Form
         btnSave.Click += async (s, e) => await ChangePasswordAsync();
         pnlFooter.Controls.Add(btnSave);
 
-        // RÁP NỐI THEO THỨ TỰ (Thằng nào add trước sẽ nằm trên cùng)
+        // Thằng nào add trước sẽ nằm trên cùng
         pnlMain.Controls.Add(pnlConfirmPass);
         pnlMain.Controls.Add(pnlNewPass);
         pnlMain.Controls.Add(pnlOldPass);
@@ -102,9 +122,28 @@ public partial class SettingForm : Form
 
     private static Panel CreateInfoRow(string labelText, string valueText)
     {
-        Panel pnl = new() { Dock = DockStyle.Top, Height = 35 };
-        Label lblVal = new() { Text = valueText, Dock = DockStyle.Fill, Font = new Font("Segoe UI", 11, FontStyle.Bold), TextAlign = ContentAlignment.MiddleLeft };
-        Label lblKey = new() { Text = labelText, Dock = DockStyle.Left, Width = 120, Font = new Font("Segoe UI", 11), ForeColor = Color.Gray, TextAlign = ContentAlignment.MiddleLeft };
+        Panel pnl = new()
+        {
+            Dock = DockStyle.Top,
+            Height = 35
+        };
+        Label lblVal = new()
+        {
+            Text = valueText,
+            Dock = DockStyle.Fill,
+            Font = new Font("Segoe UI", 11, FontStyle.Bold),
+            TextAlign = ContentAlignment.MiddleLeft
+        };
+        Label lblKey = new()
+        {
+            Text = labelText,
+            Dock = DockStyle.Left,
+            Width = 120,
+            Font = new Font("Segoe UI", 11),
+            ForeColor = Color.Gray,
+            TextAlign = ContentAlignment.MiddleLeft
+        };
+
         pnl.Controls.Add(lblVal);
         pnl.Controls.Add(lblKey);
         return pnl;
@@ -112,9 +151,25 @@ public partial class SettingForm : Form
 
     private static Panel CreateInputRow(string labelText, out TextBox txt)
     {
-        Panel pnl = new() { Dock = DockStyle.Top, Height = 60, Padding = new Padding(0, 5, 0, 5) };
-        txt = new TextBox { Dock = DockStyle.Bottom, Font = new Font("Segoe UI", 12), PasswordChar = '●' };
-        Label lblKey = new() { Text = labelText, Dock = DockStyle.Top, Font = new Font("Segoe UI", 10), ForeColor = Color.DimGray };
+        Panel pnl = new()
+        {
+            Dock = DockStyle.Top,
+            Height = 60,
+            Padding = new Padding(0, 5, 0, 5)
+        };
+        txt = new TextBox
+        {
+            Dock = DockStyle.Bottom,
+            Font = new Font("Segoe UI", 12),
+            PasswordChar = '●'
+        };
+        Label lblKey = new()
+        {
+            Text = labelText,
+            Dock = DockStyle.Top,
+            Font = new Font("Segoe UI", 10),
+            ForeColor = Color.DimGray
+        };
         pnl.Controls.Add(txt);
         pnl.Controls.Add(lblKey);
         return pnl;
@@ -161,6 +216,7 @@ public partial class SettingForm : Form
             await _userRepo.UpdatePasswordAsync(_session.CurrentUser.Id, newHash);
 
             MessageBox.Show("Đổi mật khẩu thành công!", "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            DialogResult = DialogResult.OK;
             Close();
         }
         catch (Exception ex)

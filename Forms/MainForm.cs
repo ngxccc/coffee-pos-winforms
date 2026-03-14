@@ -82,7 +82,12 @@ public partial class MainForm : Form
         _ucSidebar.OnSettingsClicked += (s, e) =>
         {
             var settingForm = _serviceProvider.GetRequiredService<SettingForm>();
-            settingForm.ShowDialog();
+            if (settingForm.ShowDialog() == DialogResult.OK)
+            {
+                _session.Logout();
+                DialogResult = DialogResult.Abort;
+                Close();
+            }
         };
 
         _ucSidebar.OnLogoutClicked += (s, e) =>
@@ -205,17 +210,19 @@ public partial class MainForm : Form
         {
             while (!token.IsCancellationRequested)
             {
-                if (_session.IsLoggedIn)
+                var user = _session.CurrentUser;
+
+                if (user != null)
                 {
                     var now = DateTime.Now;
-
-                    _lblUserInfo.Text = $"Ca trực: {_session.CurrentUser!.FullName}   |   🕒 {now:dd/MM/yyyy HH:mm:ss}";
+                    _lblUserInfo.Text = $"Ca trực: {user.FullName}   |   🕒 {now:dd/MM/yyyy HH:mm:ss}";
 
                     int msUntilNextSecond = 1000 - now.Millisecond;
                     await Task.Delay(msUntilNextSecond + 1, token);
                 }
                 else
                 {
+                    _lblUserInfo.Text = string.Empty;
                     await Task.Delay(1000, token);
                 }
             }
