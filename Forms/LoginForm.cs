@@ -21,7 +21,7 @@ public partial class LoginForm : Form
 
         InitializeUI();
 
-        btnLogin.Click += async (s, e) => await btnLogin_Click(s, e);
+        btnLogin.Click += async (s, e) => await BtnLogin_Click(s, e);
         AcceptButton = btnLogin;
     }
 
@@ -119,7 +119,7 @@ public partial class LoginForm : Form
         Controls.Add(pnlFooter);  // Bottom
     }
 
-    private async Task btnLogin_Click(object? sender, EventArgs e)
+    private async Task BtnLogin_Click(object? sender, EventArgs e)
     {
         string username = txtUsername.Text.Trim();
         string password = txtPassword.Text;
