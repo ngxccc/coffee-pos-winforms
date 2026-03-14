@@ -14,7 +14,7 @@ public static class InvoiceGenerator
         QuestPDF.Settings.License = LicenseType.Community;
     }
 
-    public static async Task GenerateAndOpenPdfAsync(int billId, int buzzerNumber, decimal totalAmount, List<BillDetail> details)
+    public static async Task GenerateAndOpenPdfAsync(int billId, int buzzerNumber, decimal totalAmount, List<BillDetail> details, bool isReprint)
     {
         var document = Document.Create(container =>
         {
@@ -29,13 +29,25 @@ public static class InvoiceGenerator
                 page.Header().Element(x => ComposeHeader(x, billId, buzzerNumber));
                 page.Content().Element(x => ComposeContent(x, details));
                 page.Footer().Element(x => ComposeFooter(x, totalAmount));
+
+                if (isReprint)
+                {
+                    page.Background()
+                        .AlignMiddle()
+                        .Rotate(-45)
+                        .Unconstrained()
+                        .Text("BẢN SAO")
+                        .FontSize(50)
+                        .FontColor(Colors.Grey.Lighten2)
+                        .SemiBold();
+                }
             });
         });
 
         string directory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Invoices");
         if (!Directory.Exists(directory)) Directory.CreateDirectory(directory);
 
-        string filePath = Path.Combine(directory, $"Bill_{billId}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf");
+        string filePath = Path.Combine(directory, $"Bill_{billId}_{(isReprint ? "reprint_" : "")}{DateTime.Now:yyyyMMdd_HHmmss}.pdf");
 
         document.GeneratePdf(filePath);
 

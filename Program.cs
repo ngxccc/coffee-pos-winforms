@@ -1,7 +1,9 @@
 using CoffeePOS.Data;
 using CoffeePOS.Data.Repositories;
 using CoffeePOS.Data.Repositories.Impl;
+using CoffeePOS.Features.Billing;
 using CoffeePOS.Features.Products;
+using CoffeePOS.Features.Sidebar;
 using CoffeePOS.Forms;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -75,7 +77,10 @@ static class Program
 
                 services.AddTransient<MainForm>();
                 services.AddTransient<LoginForm>();
-                services.AddTransient<UC_Menu>();
                 services.AddTransient<SettingForm>();
+                services.AddTransient<UC_Menu>();
+                services.AddTransient<UC_Sidebar>();
+                services.AddTransient<UC_Billing>();
+                services.AddTransient<UC_BillHistory>();
             });
 }

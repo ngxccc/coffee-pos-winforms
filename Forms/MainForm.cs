@@ -17,9 +17,10 @@ public partial class MainForm : Form
     private readonly PdfPrintQueue _pdfQueue;
 
     // UI Components
-    private readonly UC_Sidebar _ucSidebar = new();
-    private readonly UC_Billing _ucBilling = new();
-    private UC_Menu _ucMenu = null!;
+    private readonly UC_Sidebar _ucSidebar = null!;
+    private readonly UC_Billing _ucBilling = null!;
+    private readonly UC_BillHistory _ucBillHistory = null!;
+    private readonly UC_Menu _ucMenu = null!;
     private readonly Label _lblUserInfo = new();
     private CancellationTokenSource? _clockCts;
 
@@ -37,19 +38,35 @@ public partial class MainForm : Form
         _session = session;
         _billRepo = billRepo;
         _pdfQueue = pdfQueue;
+        _ucSidebar = _serviceProvider.GetRequiredService<UC_Sidebar>();
+        _ucBilling = _serviceProvider.GetRequiredService<UC_Billing>();
+        _ucMenu = _serviceProvider.GetRequiredService<UC_Menu>();
+        _ucBillHistory = _serviceProvider.GetRequiredService<UC_BillHistory>();
+
 
         // Setup các thành phần giao diện
         SetupSidebar();
         SetupBilling();
         SetupHeader();
+        SetupHistory();
+        SetupMenu();
 
         // Ráp nối Layout
         AssembleLayout();
-
-        LoadMenuDirectly();
     }
 
     // UI SETUP METHODS
+
+    private void AssembleLayout()
+    {
+        Controls.Add(_ucSidebar); // Trái
+        Controls.Add(_ucBilling); // Phải
+        Controls.Add(_lblUserInfo); // Top
+        Controls.Add(_ucBillHistory); // Fill
+        Controls.Add(_ucMenu); // Fill
+
+        _ucMenu.BringToFront();
+    }
 
     private void InitializeFormProperties()
     {
@@ -77,7 +94,24 @@ public partial class MainForm : Form
 
     private void SetupSidebar()
     {
-        _ucSidebar.OnHomeClicked += (s, e) => _ucBilling.ClearOrder();
+        _ucSidebar.OnHomeClicked += (s, e) =>
+        {
+            _ucBilling.ClearOrder();
+
+            _ucBillHistory.Visible = false;
+            _ucMenu.Visible = true;
+            _ucMenu.BringToFront();
+        };
+
+        _ucSidebar.OnBillHistoryClicked += async (s, e) =>
+        {
+            var todayBills = await _billRepo.GetTodayBillsByUserAsync(_session.CurrentUser!.Id);
+            _ucBillHistory.BindData(todayBills);
+
+            _ucMenu.Visible = false;
+            _ucBillHistory.Visible = true;
+            _ucBillHistory.BringToFront();
+        };
 
         _ucSidebar.OnSettingsClicked += (s, e) =>
         {
@@ -113,25 +147,45 @@ public partial class MainForm : Form
         _ucBilling.OnPayClicked += async (s, e) => await ProcessPaymentAsync();
     }
 
-    private void AssembleLayout()
+    private void SetupHistory()
     {
-        Controls.Add(_ucSidebar);
-        Controls.Add(_ucBilling);
-        Controls.Add(_lblUserInfo);
+        _ucBillHistory.OnReprintClicked += async (s, bill) =>
+        {
+            if (MessageBox.Show($"Bạn muốn in lại hóa đơn #{bill.Id}?", "In lại", MessageBoxButtons.YesNo) == DialogResult.Yes)
+            {
+                try
+                {
+                    Cursor.Current = Cursors.WaitCursor;
+
+                    var billItems = await _billRepo.GetBillDetailsAsync(bill.Id);
+
+                    await _pdfQueue.EnqueueJobAsync(new PdfJobPayload
+                    {
+                        BillId = bill.Id,
+                        BuzzerNumber = bill.BuzzerNumber,
+                        TotalAmount = bill.TotalAmount,
+                        Details = billItems,
+                        IsReprint = true
+                    });
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Lỗi khi in lại hóa đơn: {ex.Message}", "LỖI HỆ THỐNG", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                finally
+                {
+                    Cursor.Current = Cursors.Default;
+                }
+            }
+        };
     }
 
-    private void LoadMenuDirectly()
+    private void SetupMenu()
     {
-        _ucMenu = _serviceProvider.GetRequiredService<UC_Menu>();
-
         _ucMenu.OnProductSelected += (prodId, prodName, price) =>
         {
             _ucBilling.AddItemToBill(prodId, prodName, 1, price);
         };
-
-        _ucMenu.Dock = DockStyle.Fill;
-        Controls.Add(_ucMenu);
-        _ucMenu.BringToFront();
     }
 
     // BUSINESS LOGIC

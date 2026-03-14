@@ -5,6 +5,7 @@ namespace CoffeePOS.Features.Sidebar;
 public class UC_Sidebar : UserControl
 {
     public event EventHandler? OnHomeClicked;
+    public event EventHandler? OnBillHistoryClicked;
     public event EventHandler? OnSettingsClicked;
     public event EventHandler? OnLogoutClicked;
 
@@ -26,7 +27,12 @@ public class UC_Sidebar : UserControl
         btnSettings.Dock = DockStyle.Bottom;
         btnSettings.Click += (s, e) => OnSettingsClicked?.Invoke(this, EventArgs.Empty);
 
+        IconButton btnBillHistory = CreateSidebarButton(IconChar.History);
+        btnBillHistory.Dock = DockStyle.Bottom;
+        btnBillHistory.Click += (s, e) => OnBillHistoryClicked?.Invoke(this, EventArgs.Empty);
+
         Controls.Add(btnHome);
+        Controls.Add(btnBillHistory);
         Controls.Add(btnSettings);
         Controls.Add(btnLogout);
     }

@@ -8,4 +8,5 @@ public class PdfJobPayload
     public int BuzzerNumber { get; set; }
     public decimal TotalAmount { get; set; }
     public List<BillDetail> Details { get; set; } = [];
+    public bool IsReprint { get; set; } = false;
 }
