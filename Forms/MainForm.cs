@@ -207,11 +207,17 @@ public partial class MainForm : Form
             {
                 if (_session.IsLoggedIn)
                 {
-                    string currentTime = TimeKeeper.Now.ToString("dd/MM/yyyy HH:mm:ss");
-                    _lblUserInfo.Text = $"Ca trực: {_session.CurrentUser!.FullName}   |   🕒 {currentTime}";
-                }
+                    var now = DateTime.Now;
 
-                await Task.Delay(1000, token);
+                    _lblUserInfo.Text = $"Ca trực: {_session.CurrentUser!.FullName}   |   🕒 {now:dd/MM/yyyy HH:mm:ss}";
+
+                    int msUntilNextSecond = 1000 - now.Millisecond;
+                    await Task.Delay(msUntilNextSecond + 1, token);
+                }
+                else
+                {
+                    await Task.Delay(1000, token);
+                }
             }
         }
         catch (TaskCanceledException)
