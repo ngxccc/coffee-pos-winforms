@@ -76,5 +76,6 @@ static class Program
                 services.AddTransient<MainForm>();
                 services.AddTransient<LoginForm>();
                 services.AddTransient<UC_Menu>();
+                services.AddTransient<SettingForm>();
             });
 }

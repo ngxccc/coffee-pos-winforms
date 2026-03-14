@@ -16,6 +16,7 @@ public class UC_Billing : UserControl
     private decimal _grandTotal = 0;
     public decimal GrandTotal => _grandTotal;
     private readonly Dictionary<string, UC_BillItem> _billItemsDict = [];
+    public bool HasUnpaidItems => _billItemsDict.Count > 0;
 
     // EVENTS
     public event EventHandler? OnPayClicked;

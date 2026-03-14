@@ -5,6 +5,8 @@ namespace CoffeePOS.Features.Sidebar;
 public class UC_Sidebar : UserControl
 {
     public event EventHandler? OnHomeClicked;
+    public event EventHandler? OnSettingsClicked;
+    public event EventHandler? OnLogoutClicked;
 
     public UC_Sidebar()
     {
@@ -12,21 +14,36 @@ public class UC_Sidebar : UserControl
         Dock = DockStyle.Left;
         BackColor = Color.FromArgb(30, 30, 30);
 
-        IconButton btnHome = new()
+        IconButton btnHome = CreateSidebarButton(IconChar.Home);
+        btnHome.Dock = DockStyle.Top;
+        btnHome.Click += (s, e) => OnHomeClicked?.Invoke(this, EventArgs.Empty);
+
+        IconButton btnLogout = CreateSidebarButton(IconChar.SignOutAlt);
+        btnLogout.Dock = DockStyle.Bottom;
+        btnLogout.Click += (s, e) => OnLogoutClicked?.Invoke(this, EventArgs.Empty);
+
+        IconButton btnSettings = CreateSidebarButton(IconChar.Cog);
+        btnSettings.Dock = DockStyle.Bottom;
+        btnSettings.Click += (s, e) => OnSettingsClicked?.Invoke(this, EventArgs.Empty);
+
+        Controls.Add(btnHome);
+        Controls.Add(btnSettings);
+        Controls.Add(btnLogout);
+    }
+
+    private static IconButton CreateSidebarButton(IconChar icon)
+    {
+        return new IconButton
         {
-            IconChar = IconChar.Home,
+            IconChar = icon,
             IconColor = Color.White,
             IconSize = 32,
-            Dock = DockStyle.Top,
             Height = 80,
             FlatStyle = FlatStyle.Flat,
             ForeColor = Color.Transparent,
-            TextImageRelation = TextImageRelation.Overlay
+            TextImageRelation = TextImageRelation.Overlay,
+            Cursor = Cursors.Hand,
+            FlatAppearance = { BorderSize = 0, MouseOverBackColor = Color.FromArgb(50, 50, 50) }
         };
-        btnHome.FlatAppearance.BorderSize = 0;
-
-        btnHome.Click += (s, e) => OnHomeClicked?.Invoke(this, EventArgs.Empty);
-
-        Controls.Add(btnHome);
     }
 }

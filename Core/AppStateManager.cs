@@ -42,8 +42,6 @@ public class AppStateManager : ApplicationContext
             bool isLoginSuccess = closedForm is LoginForm && closedForm.DialogResult == DialogResult.OK;
             bool isLogout = closedForm is MainForm && closedForm.DialogResult == DialogResult.Abort;
 
-            closedForm.Dispose();
-
             if (isLoginSuccess)
             {
                 ShowMainWorkspace();

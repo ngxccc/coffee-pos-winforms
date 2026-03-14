@@ -61,14 +61,46 @@ public partial class MainForm : Form
     {
         _ucSidebar.OnHomeClicked += (s, e) => _ucBilling.ClearOrder();
 
-        // _ucSidebar.OnLogoutClicked += (s, e) =>
-        // {
-        //     if (MessageBox.Show("Bạn muốn đăng xuất ca làm việc?", "Đăng xuất", MessageBoxButtons.YesNo) == DialogResult.Yes)
-        //     {
-        //         this.DialogResult = DialogResult.Abort; // Quăng cờ Đăng xuất
-        //         this.Close(); // Đóng MainForm
-        //     }
-        // };
+        _ucSidebar.OnSettingsClicked += (s, e) =>
+        {
+            var settingForm = _serviceProvider.GetRequiredService<SettingForm>();
+            settingForm.ShowDialog();
+        };
+
+        _ucSidebar.OnLogoutClicked += (s, e) =>
+        {
+            if (_ucBilling.HasUnpaidItems)
+            {
+                MessageBox.Show("Giỏ hàng đang có món chưa thanh toán!\nVui lòng hoàn tất hoặc xóa giỏ hàng trước khi đăng xuất.",
+                    "CẢNH BÁO", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (MessageBox.Show("Bạn chắc chắn muốn đăng xuất?", "Đăng xuất",
+                MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+            {
+                DialogResult = DialogResult.Abort;
+                Close();
+            }
+        };
+    }
+
+    protected override void OnFormClosing(FormClosingEventArgs e)
+    {
+        if (e.CloseReason == CloseReason.UserClosing)
+        {
+            if (_ucBilling.HasUnpaidItems)
+            {
+                MessageBox.Show("Không thể tắt phần mềm khi đang có hóa đơn chưa thanh toán!",
+                    "CẢNH BÁO", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                // Thuộc tính Cancel = true sẽ HỦY BỎ lệnh tắt Form
+                e.Cancel = true;
+                return;
+            }
+        }
+
+        base.OnFormClosing(e);
     }
 
     private void SetupBilling()
