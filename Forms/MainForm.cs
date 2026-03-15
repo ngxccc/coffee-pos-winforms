@@ -25,8 +25,8 @@ public partial class MainForm : Form
     private CancellationTokenSource? _clockCts;
 
     // Logic Components
-
     private bool _isProcessingPayment = false;
+    private bool _isLoggingOut = false;
 
     // CONSTRUCTOR & INIT
     public MainForm(IServiceProvider serviceProvider, IUserSession session,
@@ -138,6 +138,7 @@ public partial class MainForm : Form
             {
                 _session.Logout();
                 DialogResult = DialogResult.Abort;
+                _isLoggingOut = true;
                 Close();
             }
         };
@@ -237,22 +238,12 @@ public partial class MainForm : Form
 
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
-        if (e.CloseReason == CloseReason.UserClosing)
+        if (e.CloseReason == CloseReason.UserClosing && !_isLoggingOut)
         {
-            MessageBox.Show("Vui lòng thoát bằng nút đăng xuất để chốt ca làm việc!",
+            MessageBox.Show("Vui lòng thoát bằng nút 'Đăng xuất' để hệ thống Chốt ca làm việc!",
                     "CẢNH BÁO", MessageBoxButtons.OK, MessageBoxIcon.Error);
             e.Cancel = true;
             return;
-
-            // if (_ucBilling.HasUnpaidItems)
-            // {
-            //     MessageBox.Show("Không thể tắt phần mềm khi đang có hóa đơn chưa thanh toán!",
-            //         "CẢNH BÁO", MessageBoxButtons.OK, MessageBoxIcon.Error);
-
-            //     // Thuộc tính Cancel = true sẽ HỦY BỎ lệnh tắt Form
-            //     e.Cancel = true;
-            //     return;
-            // }
         }
 
         if (!e.Cancel && _clockCts != null)

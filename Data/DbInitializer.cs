@@ -117,17 +117,33 @@ public static class DbInitializer
 
     private static void SeedAdminUser(NpgsqlConnection conn)
     {
-        string checkSql = "SELECT COUNT(1) FROM users WHERE username = 'admin'";
-        using var checkCmd = new NpgsqlCommand(checkSql, conn);
-        long count = (long)checkCmd.ExecuteScalar()!;
+        string checkAdminSql = "SELECT COUNT(1) FROM users WHERE username = 'admin'";
+        using var checkAdminCmd = new NpgsqlCommand(checkAdminSql, conn);
+        long countAdmin = (long)checkAdminCmd.ExecuteScalar()!;
 
-        if (count == 0)
+        string checkEmployeeSql = "SELECT COUNT(1) FROM users WHERE username = 'employee'";
+        using var checkEmployeeCmd = new NpgsqlCommand(checkEmployeeSql, conn);
+        long countEmployee = (long)checkEmployeeCmd.ExecuteScalar()!;
+
+        if (countAdmin == 0)
         {
             string hash = BCrypt.Net.BCrypt.HashPassword("admin123", workFactor: 11);
 
             string insertSql = @"
                 INSERT INTO users (username, password_hash, full_name, role)
                 VALUES ('admin', @hash, 'Administrator', 0)";
+            using var insertCmd = new NpgsqlCommand(insertSql, conn);
+            insertCmd.Parameters.AddWithValue("hash", hash);
+            insertCmd.ExecuteNonQuery();
+        }
+
+        if (countEmployee == 0)
+        {
+            string hash = BCrypt.Net.BCrypt.HashPassword("123123", workFactor: 11);
+
+            string insertSql = @"
+                INSERT INTO users (username, password_hash, full_name, role)
+                VALUES ('employee', @hash, 'Employee', 1)";
             using var insertCmd = new NpgsqlCommand(insertSql, conn);
             insertCmd.Parameters.AddWithValue("hash", hash);
             insertCmd.ExecuteNonQuery();
