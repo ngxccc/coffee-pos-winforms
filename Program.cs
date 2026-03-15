@@ -71,6 +71,7 @@ static class Program
                 services.AddSingleton<Core.IUserSession, Core.UserSession>();
                 services.AddSingleton<IProductRepository, ProductRepository>();
                 services.AddSingleton<ICategoryRepository, CategoryRepository>();
+                services.AddSingleton<IShiftReportRepository, ShiftReportRepository>();
 
                 services.AddSingleton<Core.PdfPrintQueue>();
                 services.AddHostedService<Core.PdfPrintWorker>();
@@ -78,6 +79,7 @@ static class Program
                 services.AddTransient<MainForm>();
                 services.AddTransient<LoginForm>();
                 services.AddTransient<SettingForm>();
+                services.AddTransient<ShiftReportForm>();
                 services.AddTransient<UC_Menu>();
                 services.AddTransient<UC_Sidebar>();
                 services.AddTransient<UC_Billing>();

@@ -32,7 +32,7 @@ public partial class MainForm : Form
     public MainForm(IServiceProvider serviceProvider, IUserSession session,
                     IBillRepository billRepo, PdfPrintQueue pdfQueue)
     {
-        InitializeFormProperties();
+        InitializeUI();
 
         _serviceProvider = serviceProvider;
         _session = session;
@@ -68,7 +68,7 @@ public partial class MainForm : Form
         _ucMenu.BringToFront();
     }
 
-    private void InitializeFormProperties()
+    private void InitializeUI()
     {
         Text = "CoffeePOS - Code Chay Edition";
         AutoScaleMode = AutoScaleMode.Font;
@@ -133,9 +133,10 @@ public partial class MainForm : Form
                 return;
             }
 
-            if (MessageBox.Show("Bạn chắc chắn muốn đăng xuất?", "Đăng xuất",
-                MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+            var shiftForm = _serviceProvider.GetRequiredService<ShiftReportForm>();
+            if (shiftForm.ShowDialog() == DialogResult.OK)
             {
+                _session.Logout();
                 DialogResult = DialogResult.Abort;
                 Close();
             }
@@ -238,15 +239,20 @@ public partial class MainForm : Form
     {
         if (e.CloseReason == CloseReason.UserClosing)
         {
-            if (_ucBilling.HasUnpaidItems)
-            {
-                MessageBox.Show("Không thể tắt phần mềm khi đang có hóa đơn chưa thanh toán!",
+            MessageBox.Show("Vui lòng thoát bằng nút đăng xuất để chốt ca làm việc!",
                     "CẢNH BÁO", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            e.Cancel = true;
+            return;
 
-                // Thuộc tính Cancel = true sẽ HỦY BỎ lệnh tắt Form
-                e.Cancel = true;
-                return;
-            }
+            // if (_ucBilling.HasUnpaidItems)
+            // {
+            //     MessageBox.Show("Không thể tắt phần mềm khi đang có hóa đơn chưa thanh toán!",
+            //         "CẢNH BÁO", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+            //     // Thuộc tính Cancel = true sẽ HỦY BỎ lệnh tắt Form
+            //     e.Cancel = true;
+            //     return;
+            // }
         }
 
         if (!e.Cancel && _clockCts != null)

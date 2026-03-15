@@ -82,6 +82,30 @@ public static class DbInitializer
             );";
         ExecuteSql(conn, sqlBillDetails);
 
+        string sqlShiftReports = @"
+            CREATE TABLE IF NOT EXISTS shift_reports (
+                id SERIAL PRIMARY KEY,
+                user_id INT REFERENCES users(id),
+
+                start_time TIMESTAMP NOT NULL,
+                end_time TIMESTAMP DEFAULT NOW(),
+
+                total_bills INT DEFAULT 0,            -- Tổng số lượng đơn đã bán trong ca
+                expected_cash DECIMAL(18,0) NOT NULL, -- Số tiền hệ thống cộng lại từ bảng bills
+                actual_cash DECIMAL(18,0) NOT NULL,   -- Số tiền thu ngân đếm thực tế nhập vào
+                variance DECIMAL(18,0) NOT NULL,      -- Độ lệch (actual_cash - expected_cash)
+
+                note VARCHAR(255),                -- Lời giải trình nếu tiền bị lệch
+                created_at TIMESTAMP DEFAULT NOW()
+            );";
+        ExecuteSql(conn, sqlShiftReports);
+        ExecuteSql(conn, @"
+            CREATE INDEX IF NOT EXISTS idx_shiftreports_userid ON shift_reports(user_id);
+            CREATE INDEX IF NOT EXISTS idx_shiftreports_created_at ON shift_reports(created_at);
+            CREATE INDEX IF NOT EXISTS idx_shiftreports_start_time ON shift_reports(start_time);
+            CREATE INDEX IF NOT EXISTS idx_shiftreports_end_time ON shift_reports(end_time);
+        ");
+
         SeedAdminUser(conn);
     }
 
