@@ -55,8 +55,10 @@ public static class DbInitializer
                 updated_at TIMESTAMP DEFAULT NOW()
             );";
         ExecuteSql(conn, sqlBills);
-        ExecuteSql(conn, "CREATE INDEX IF NOT EXISTS idx_bills_userid ON bills(user_id);");
-        ExecuteSql(conn, "CREATE INDEX IF NOT EXISTS idx_bills_reporting ON bills(created_at) WHERE is_deleted = false;");
+        ExecuteSql(conn, @"
+            CREATE INDEX IF NOT EXISTS idx_bills_userid ON bills(user_id);
+            CREATE INDEX IF NOT EXISTS idx_bills_reporting ON bills(created_at) WHERE is_deleted = false;
+        ");
 
         string sqlBillDetails = @"
             CREATE TABLE IF NOT EXISTS bill_details (
