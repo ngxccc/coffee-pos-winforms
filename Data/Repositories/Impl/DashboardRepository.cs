@@ -5,6 +5,23 @@ namespace CoffeePOS.Data.Repositories.Impl;
 
 public class DashboardRepository(NpgsqlDataSource dataSource) : IDashboardRepository
 {
+    public async Task<decimal> GetTodayRevenueAsync()
+    {
+        using var conn = await dataSource.OpenConnectionAsync();
+
+        const string sql = @"
+            SELECT COALESCE(SUM(total_amount), 0)
+            FROM bills
+            WHERE created_at::date = CURRENT_DATE
+              AND is_deleted = FALSE
+              AND status = 1;";
+
+        using var cmd = new NpgsqlCommand(sql, conn);
+        var result = await cmd.ExecuteScalarAsync();
+
+        return result is decimal revenue ? revenue : 0m;
+    }
+
     public async Task<List<DailyRevenue>> Get7DaysRevenueAsync()
     {
         var list = new List<DailyRevenue>();
@@ -41,4 +58,30 @@ public class DashboardRepository(NpgsqlDataSource dataSource) : IDashboardReposi
 
         return list;
     }
+
+    public async Task<List<TopProduct>> GetTop5ProductsAsync()
+    {
+        var list = new List<TopProduct>();
+        using var conn = await dataSource.OpenConnectionAsync();
+
+        string sql = @"
+        SELECT product_name, SUM(quantity) as total_sold
+        FROM bill_details bd
+        JOIN bills b ON bd.bill_id = b.id
+            AND b.status = 1
+            AND b.is_deleted = false
+        GROUP BY product_name
+        ORDER BY total_sold DESC
+        LIMIT 5;";
+
+        using var cmd = new NpgsqlCommand(sql, conn);
+        using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            list.Add(new TopProduct { ProductName = reader.GetString(0), TotalSold = reader.GetInt32(1) });
+        }
+        return list;
+    }
+
+    
 }

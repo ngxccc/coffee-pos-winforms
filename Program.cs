@@ -1,6 +1,7 @@
 using CoffeePOS.Data;
 using CoffeePOS.Data.Repositories;
 using CoffeePOS.Data.Repositories.Impl;
+using CoffeePOS.Features.Admin;
 using CoffeePOS.Features.Billing;
 using CoffeePOS.Features.Products;
 using CoffeePOS.Features.Sidebar;
@@ -72,6 +73,7 @@ static class Program
                 services.AddSingleton<IProductRepository, ProductRepository>();
                 services.AddSingleton<ICategoryRepository, CategoryRepository>();
                 services.AddSingleton<IShiftReportRepository, ShiftReportRepository>();
+                services.AddSingleton<IDashboardRepository, DashboardRepository>();
 
                 services.AddSingleton<Core.PdfPrintQueue>();
                 services.AddHostedService<Core.PdfPrintWorker>();
@@ -85,6 +87,7 @@ static class Program
                 services.AddTransient<UC_Menu>();
                 services.AddTransient<UC_Sidebar>();
                 services.AddTransient<UC_Billing>();
+                services.AddTransient<UC_Dashboard>();
                 services.AddTransient<UC_BillHistory>();
             });
 }

@@ -1,4 +1,5 @@
 using CoffeePOS.Core;
+using CoffeePOS.Features.Admin;
 using FontAwesome.Sharp;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -27,6 +28,8 @@ public partial class AdminDashboardForm : Form
         AssembleLayout();
 
         SetupSidebarMenu();
+
+        NavigateTo<UC_Dashboard>("DASHBOARD");
     }
 
     private void InitializeUI()
@@ -103,7 +106,7 @@ public partial class AdminDashboardForm : Form
         pnlSidebar.Controls.Add(CreateMenuButton("Nhân sự", IconChar.Users, (s, e) => ShowPlaceholder("TÍNH NĂNG: QUẢN LÝ NHÂN VIÊN")));
         pnlSidebar.Controls.Add(CreateMenuButton("Danh mục", IconChar.Tags, (s, e) => ShowPlaceholder("TÍNH NĂNG: DANH MỤC")));
         pnlSidebar.Controls.Add(CreateMenuButton("Sản phẩm", IconChar.Coffee, (s, e) => ShowPlaceholder("TÍNH NĂNG: SẢN PHẨM")));
-        pnlSidebar.Controls.Add(CreateMenuButton("Tổng quan", IconChar.ChartBar, (s, e) => ShowPlaceholder("TÍNH NĂNG: TỔNG QUAN")));
+        pnlSidebar.Controls.Add(CreateMenuButton("Tổng quan", IconChar.ChartBar, (s, e) => NavigateTo<UC_Dashboard>("DASHBOARD")));
         // pnlSidebar.Controls.Add(CreateMenuButton("Sản phẩm", IconChar.Coffee,
         //      (s,e) => NavigateTo<UC_ManageProducts>("PRODUCTS") ));
 
@@ -147,8 +150,15 @@ public partial class AdminDashboardForm : Form
 
     private void ShowPlaceholder(string moduleName)
     {
+        foreach (var view in _viewCache.Values)
+        {
+            view.Visible = false;
+        }
+
         lblPlaceholder.Text = $"{moduleName}\n\nĐang được các Kỹ sư xây dựng...";
         lblPlaceholder.ForeColor = Color.FromArgb(0, 122, 204);
+        lblPlaceholder.Visible = true;
+        lblPlaceholder.BringToFront();
     }
 
     private void BtnLogout_Click(object? sender, EventArgs e)
@@ -163,8 +173,6 @@ public partial class AdminDashboardForm : Form
 
     private void NavigateTo<T>(string viewKey) where T : UserControl
     {
-        lblPlaceholder.Visible = false;
-
         if (!_viewCache.TryGetValue(viewKey, out UserControl? value))
         {
             var newView = _serviceProvider.GetRequiredService<T>();
@@ -179,6 +187,7 @@ public partial class AdminDashboardForm : Form
             view.Visible = false;
         }
 
+        lblPlaceholder.Visible = false;
         value.Visible = true;
         value.BringToFront();
     }
