@@ -14,7 +14,7 @@ public class PdfPrintWorker(PdfPrintQueue printQueue) : BackgroundService
             {
                 var job = await _printQueue.DequeueJobAsync(stoppingToken);
 
-                await InvoiceGenerator.GenerateAndOpenPdfAsync(job.BillId, job.BuzzerNumber, job.TotalAmount, job.Details, job.IsReprint);
+                await InvoiceGenerator.GenerateAndOpenPdfAsync(job);
             }
             catch (OperationCanceledException)
             {

@@ -8,6 +8,7 @@ public partial class ShiftReportForm : Form
 {
     private readonly IUserSession _session;
     private readonly IShiftReportRepository _shiftRepo;
+    private readonly PdfPrintQueue _pdfQueue;
 
     // UI Controls
     private Label lblTotalBills = null!;
@@ -22,11 +23,12 @@ public partial class ShiftReportForm : Form
     private decimal _expectedCash = 0;
     private readonly DateTime _endTime;
 
-    public ShiftReportForm(IUserSession session, IShiftReportRepository shiftRepo)
+    public ShiftReportForm(IUserSession session, IShiftReportRepository shiftRepo, PdfPrintQueue pdfQueue)
     {
         _session = session;
         _shiftRepo = shiftRepo;
         _endTime = DateTime.Now;
+        _pdfQueue = pdfQueue;
 
         InitializeUI();
         LoadDataAsync();
@@ -196,6 +198,17 @@ public partial class ShiftReportForm : Form
             };
 
             await _shiftRepo.SaveReportAsync(report);
+
+            await _pdfQueue.EnqueueJobAsync(new ShiftReportPrintPayload
+            {
+                CashierName = _session.CurrentUser!.FullName,
+                StartTime = _session.LoginTime!.Value,
+                EndTime = _endTime,
+                TotalBills = _totalBills,
+                ExpectedCash = _expectedCash,
+                ActualCash = actualCash,
+                Variance = actualCash - _expectedCash
+            });
 
             // Bắn tín hiệu chốt ca thành công
             DialogResult = DialogResult.OK;

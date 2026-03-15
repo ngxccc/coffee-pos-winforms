@@ -160,7 +160,7 @@ public partial class MainForm : Form
 
                     var billItems = await _billRepo.GetBillDetailsAsync(bill.Id);
 
-                    await _pdfQueue.EnqueueJobAsync(new PdfJobPayload
+                    await _pdfQueue.EnqueueJobAsync(new BillPrintPayload
                     {
                         BillId = bill.Id,
                         BuzzerNumber = bill.BuzzerNumber,
@@ -215,7 +215,7 @@ public partial class MainForm : Form
 
             int billId = await _billRepo.ProcessFullOrderAsync(buzzerNumber, finalAmount, cartItems);
 
-            await _pdfQueue.EnqueueJobAsync(new PdfJobPayload
+            await _pdfQueue.EnqueueJobAsync(new BillPrintPayload
             {
                 BillId = billId,
                 BuzzerNumber = buzzerNumber,

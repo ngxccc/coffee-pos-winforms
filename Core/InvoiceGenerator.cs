@@ -14,47 +14,31 @@ public static class InvoiceGenerator
         QuestPDF.Settings.License = LicenseType.Community;
     }
 
-    public static async Task GenerateAndOpenPdfAsync(int billId, int buzzerNumber, decimal totalAmount, List<BillDetail> details, bool isReprint)
+    public static async Task GenerateAndOpenPdfAsync(IPdfPayload payload)
     {
-        var document = Document.Create(container =>
+        Document document;
+        string fileNamePrefix;
+
+        switch (payload)
         {
-            container.Page(page =>
-            {
-                // page.Size(new PageSize(80, 2000, Unit.Millimetre)); // Kích thước bill thường dùng A5 hoặc in nhiệt (Roll80mm)
-                page.ContinuousSize(80, Unit.Millimetre);
-                page.Margin(2, Unit.Millimetre);
-                page.PageColor(Colors.White);
-                page.DefaultTextStyle(x => x.FontSize(10).FontFamily(Fonts.Arial));
+            case BillPrintPayload bill:
+                document = CreateBillDocument(bill);
+                fileNamePrefix = $"Bill_{bill.BillId}_{(bill.IsReprint ? "reprint_" : "")}";
+                break;
 
-                page.Header().Element(x => ComposeHeader(x, billId, buzzerNumber));
-                page.Content().Element(x => ComposeContent(x, details));
-                page.Footer().Element(x => ComposeFooter(x, totalAmount));
+            case ShiftReportPrintPayload report:
+                document = CreateShiftReportDocument(report);
+                fileNamePrefix = $"ZReport_{report.CashierName}_";
+                break;
 
-                if (isReprint)
-                {
-                    page.Background().Column(col =>
-                    {
-                        for (int i = 0; i < 15; i++)
-                        {
-                            col.Item()
-                               .Height(120)
-                               .AlignBottom()
-                               .Unconstrained()
-                               .Rotate(-45)
-                               .Text("BẢN SAO")
-                               .FontSize(50)
-                               .FontColor(Colors.Grey.Lighten3)
-                               .SemiBold();
-                        }
-                    });
-                }
-            });
-        });
+            default:
+                throw new NotSupportedException("Loại tài liệu in không được hỗ trợ!");
+        }
 
         string directory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Invoices");
         if (!Directory.Exists(directory)) Directory.CreateDirectory(directory);
 
-        string filePath = Path.Combine(directory, $"Bill_{billId}_{(isReprint ? "reprint_" : "")}{DateTime.Now:yyyyMMdd_HHmmss}.pdf");
+        string filePath = Path.Combine(directory, $"{fileNamePrefix}{DateTime.Now:yyyyMMdd_HHmmss}.pdf");
 
         document.GeneratePdf(filePath);
 
@@ -100,6 +84,11 @@ public static class InvoiceGenerator
                     row.RelativeItem(2).AlignRight().Text($"{item.Price:N0}đ");
                     row.RelativeItem(3).AlignRight().Text($"{item.Quantity * item.Price:N0}đ");
                 });
+
+                if (!string.IsNullOrWhiteSpace(item.Note))
+                {
+                    column.Item().PaddingLeft(10).Text($"- Ghi chú: {item.Note}").FontSize(9).FontColor(Colors.Grey.Darken2).Italic();
+                }
             }
         });
     }
@@ -110,6 +99,97 @@ public static class InvoiceGenerator
         {
             text.Span("Tổng cộng: ").SemiBold().FontSize(12);
             text.Span($"{totalAmount:N0} VNĐ").Bold().FontSize(14).FontColor(Colors.Red.Medium);
+        });
+    }
+
+    private static Document CreateBillDocument(BillPrintPayload payload)
+    {
+        return Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.ContinuousSize(80, Unit.Millimetre);
+                page.Margin(2, Unit.Millimetre);
+                page.PageColor(Colors.White);
+                page.DefaultTextStyle(x => x.FontSize(10).FontFamily(Fonts.Arial));
+
+                page.Header().Element(x => ComposeHeader(x, payload.BillId, payload.BuzzerNumber));
+                page.Content().Element(x => ComposeContent(x, payload.Details));
+                page.Footer().Element(x => ComposeFooter(x, payload.TotalAmount));
+
+                if (payload.IsReprint)
+                {
+                    page.Background().Column(col =>
+                    {
+                        for (int i = 0; i < 15; i++)
+                        {
+                            col.Item()
+                               .Height(120)
+                               .AlignBottom()
+                               .Unconstrained()
+                               .Rotate(-45)
+                               .Text("BẢN SAO")
+                               .FontSize(50)
+                               .FontColor(Colors.Grey.Lighten3)
+                               .SemiBold();
+                        }
+                    });
+                }
+            });
+        });
+    }
+
+    private static Document CreateShiftReportDocument(ShiftReportPrintPayload payload)
+    {
+        return Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.ContinuousSize(80, Unit.Millimetre);
+                page.Margin(2, Unit.Millimetre);
+                page.PageColor(Colors.White);
+                page.DefaultTextStyle(x => x.FontSize(11).FontFamily(Fonts.Arial));
+
+                page.Content().Column(col =>
+                {
+                    col.Spacing(5);
+                    col.Item().Text("BIÊN LAI CHỐT CA").FontSize(16).SemiBold().AlignCenter();
+
+                    col.Item().Text($"Thu ngân: {payload.CashierName}");
+                    col.Item().Text($"Bắt đầu: {payload.StartTime:dd/MM/yyyy HH:mm}");
+                    col.Item().Text($"Kết thúc: {payload.EndTime:dd/MM/yyyy HH:mm}");
+
+                    col.Item().PaddingVertical(5).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
+
+                    col.Item().Row(r =>
+                    {
+                        r.RelativeItem().Text("Tổng số hóa đơn:");
+                        r.RelativeItem().AlignRight().Text(payload.TotalBills.ToString());
+                    });
+                    col.Item().Row(r =>
+                    {
+                        r.RelativeItem().Text("Tiền hệ thống:");
+                        r.RelativeItem().AlignRight().Text($"{payload.ExpectedCash:N0} đ");
+                    });
+                    col.Item().Row(r =>
+                    {
+                        r.RelativeItem().Text("Tiền mặt thực tế:").SemiBold();
+                        r.RelativeItem().AlignRight().Text($"{payload.ActualCash:N0} đ").SemiBold();
+                    });
+
+                    string varianceSign = payload.Variance > 0 ? "+" : "";
+                    col.Item().Row(r =>
+                    {
+                        r.RelativeItem().Text("Độ lệch:");
+                        r.RelativeItem().AlignRight().Text($"{varianceSign}{payload.Variance:N0} đ").FontColor(payload.Variance < 0 ? Colors.Red.Medium : Colors.Black);
+                    });
+
+                    col.Item().PaddingVertical(5).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
+
+                    col.Item().PaddingTop(15).AlignCenter().Text("Chữ ký thu ngân");
+                    col.Item().PaddingTop(30).AlignCenter().Text("........................................");
+                });
+            });
         });
     }
 }
