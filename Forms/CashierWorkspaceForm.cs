@@ -8,7 +8,7 @@ using Panel = System.Windows.Forms.Panel;
 
 namespace CoffeePOS.Forms;
 
-public partial class MainForm : Form
+public partial class CashierWorkspaceForm : Form
 {
     // DEPENDENCIES & CONTROLS
     private readonly IBillRepository _billRepo;
@@ -29,7 +29,7 @@ public partial class MainForm : Form
     private bool _isLoggingOut = false;
 
     // CONSTRUCTOR & INIT
-    public MainForm(IServiceProvider serviceProvider, IUserSession session,
+    public CashierWorkspaceForm(IServiceProvider serviceProvider, IUserSession session,
                     IBillRepository billRepo, PdfPrintQueue pdfQueue)
     {
         InitializeUI();

@@ -124,7 +124,7 @@ public static class DbInitializer
         using var checkAdminCmd = new NpgsqlCommand(checkAdminSql, conn);
         long countAdmin = (long)checkAdminCmd.ExecuteScalar()!;
 
-        string checkEmployeeSql = "SELECT COUNT(1) FROM users WHERE username = 'employee'";
+        string checkEmployeeSql = "SELECT COUNT(1) FROM users WHERE username = 'staff'";
         using var checkEmployeeCmd = new NpgsqlCommand(checkEmployeeSql, conn);
         long countEmployee = (long)checkEmployeeCmd.ExecuteScalar()!;
 
@@ -146,7 +146,7 @@ public static class DbInitializer
 
             string insertSql = @"
                 INSERT INTO users (username, password_hash, full_name, role)
-                VALUES ('employee', @hash, 'Employee', 1)";
+                VALUES ('staff', @hash, 'Staff', 1)";
             using var insertCmd = new NpgsqlCommand(insertSql, conn);
             insertCmd.Parameters.AddWithValue("hash", hash);
             insertCmd.ExecuteNonQuery();

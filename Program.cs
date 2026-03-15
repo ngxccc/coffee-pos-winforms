@@ -76,10 +76,12 @@ static class Program
                 services.AddSingleton<Core.PdfPrintQueue>();
                 services.AddHostedService<Core.PdfPrintWorker>();
 
-                services.AddTransient<MainForm>();
                 services.AddTransient<LoginForm>();
                 services.AddTransient<SettingForm>();
                 services.AddTransient<ShiftReportForm>();
+                services.AddTransient<AdminDashboardForm>();
+                services.AddTransient<CashierWorkspaceForm>();
+
                 services.AddTransient<UC_Menu>();
                 services.AddTransient<UC_Sidebar>();
                 services.AddTransient<UC_Billing>();
