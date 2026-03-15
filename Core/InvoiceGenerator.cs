@@ -32,14 +32,21 @@ public static class InvoiceGenerator
 
                 if (isReprint)
                 {
-                    page.Background()
-                        .AlignMiddle()
-                        .Rotate(-45)
-                        .Unconstrained()
-                        .Text("BẢN SAO")
-                        .FontSize(50)
-                        .FontColor(Colors.Grey.Lighten2)
-                        .SemiBold();
+                    page.Background().Column(col =>
+                    {
+                        for (int i = 0; i < 15; i++)
+                        {
+                            col.Item()
+                               .Height(120)
+                               .AlignBottom()
+                               .Unconstrained()
+                               .Rotate(-45)
+                               .Text("BẢN SAO")
+                               .FontSize(50)
+                               .FontColor(Colors.Grey.Lighten3)
+                               .SemiBold();
+                        }
+                    });
                 }
             });
         });
