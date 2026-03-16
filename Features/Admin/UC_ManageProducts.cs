@@ -1,0 +1,213 @@
+using CoffeePOS.Data.Repositories;
+using CoffeePOS.Models;
+using FontAwesome.Sharp;
+
+namespace CoffeePOS.Features.Admin;
+
+public partial class UC_ManageProducts : UserControl
+{
+    private readonly IProductRepository _productRepo;
+    private readonly IServiceProvider _serviceProvider;
+
+    // UI Controls
+    private DataGridView dgvProducts = null!;
+    private TextBox txtSearch = null!;
+    private IconButton btnAdd = null!;
+    private IconButton btnEdit = null!;
+    private IconButton btnDelete = null!;
+
+    // State
+    private List<Product> _allProducts = [];
+
+    public UC_ManageProducts(IProductRepository productRepo, IServiceProvider serviceProvider)
+    {
+        _productRepo = productRepo;
+        _serviceProvider = serviceProvider;
+
+        InitializeUI();
+        _ = LoadDataAsync();
+    }
+
+    private void InitializeUI()
+    {
+        Dock = DockStyle.Fill;
+        BackColor = Color.White;
+
+        Panel pnlTop = new()
+        {
+            Dock = DockStyle.Top,
+            Height = 80,
+            Padding = new Padding(0, 10, 0, 10)
+        };
+
+        Label lblTitle = new()
+        {
+            Text = "QUẢN LÝ SẢN PHẨM",
+            Font = new Font("Segoe UI", 16, FontStyle.Bold),
+            ForeColor = Color.FromArgb(0, 122, 204),
+            AutoSize = true,
+            Location = new Point(0, 20)
+        };
+
+        // Thanh tìm kiếm
+        txtSearch = new TextBox
+        {
+            Width = 300,
+            Font = new Font("Segoe UI", 12),
+            Location = new Point(250, 22),
+            PlaceholderText = "Nhập tên món để tìm..."
+        };
+        txtSearch.TextChanged += TxtSearch_TextChanged;
+
+        // Cụm nút thao tác (Nằm bên phải)
+        FlowLayoutPanel flpButtons = new()
+        {
+            Dock = DockStyle.Right,
+            Width = 400,
+            FlowDirection = FlowDirection.RightToLeft,
+            Padding = new Padding(0, 10, 0, 0)
+        };
+
+        btnDelete = CreateActionButton("Xóa", IconChar.Trash, Color.FromArgb(231, 76, 60), BtnDelete_Click);
+        btnEdit = CreateActionButton("Sửa", IconChar.Pen, Color.FromArgb(243, 156, 18), BtnEdit_Click);
+        btnAdd = CreateActionButton("Thêm Mới", IconChar.Plus, Color.FromArgb(46, 204, 113), BtnAdd_Click);
+
+        flpButtons.Controls.AddRange([btnDelete, btnEdit, btnAdd]);
+
+        pnlTop.Controls.Add(lblTitle);
+        pnlTop.Controls.Add(txtSearch);
+        pnlTop.Controls.Add(flpButtons);
+
+        dgvProducts = new DataGridView
+        {
+            Dock = DockStyle.Fill,
+            AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
+            AllowUserToAddRows = false,
+            AllowUserToDeleteRows = false,
+            ReadOnly = true,
+            SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+            BackgroundColor = Color.WhiteSmoke,
+            BorderStyle = BorderStyle.None,
+            RowHeadersVisible = false,
+            RowTemplate = { Height = 40 },
+            Font = new Font("Segoe UI", 11),
+            EnableHeadersVisualStyles = false,
+
+            AllowUserToResizeColumns = false,
+            AllowUserToResizeRows = false,
+            ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing,
+            RowHeadersWidthSizeMode = DataGridViewRowHeadersWidthSizeMode.DisableResizing
+        };
+        dgvProducts.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(31, 30, 68);
+        dgvProducts.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
+        dgvProducts.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 11, FontStyle.Bold);
+        dgvProducts.ColumnHeadersHeight = 40;
+
+        Controls.Add(dgvProducts);
+        Controls.Add(pnlTop);
+    }
+
+    private static IconButton CreateActionButton(string text, IconChar icon, Color backColor, EventHandler clickEvent)
+    {
+        IconButton btn = new()
+        {
+            Text = " " + text,
+            IconChar = icon,
+            IconSize = 24,
+            IconColor = Color.White,
+            ForeColor = Color.White,
+            BackColor = backColor,
+            Font = new Font("Segoe UI", 10, FontStyle.Bold),
+            Size = new Size(120, 40),
+            FlatStyle = FlatStyle.Flat,
+            TextImageRelation = TextImageRelation.ImageBeforeText,
+            Cursor = Cursors.Hand,
+            Margin = new Padding(5, 0, 0, 0)
+        };
+        btn.FlatAppearance.BorderSize = 0;
+        btn.Click += clickEvent;
+        return btn;
+    }
+
+    // BUSINESS LOGIC
+
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            _allProducts = await _productRepo.GetAllProductsAsync();
+            RenderGrid(_allProducts);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Lỗi tải dữ liệu: {ex.Message}");
+        }
+    }
+
+    private void RenderGrid(List<Product> data)
+    {
+        dgvProducts.DataSource = null;
+        dgvProducts.DataSource = data;
+
+        // Custom Cột
+        dgvProducts.Columns["Id"].HeaderText = "Mã";
+        dgvProducts.Columns["Id"].FillWeight = 10;
+
+        dgvProducts.Columns["Name"].HeaderText = "Tên Sản Phẩm";
+        dgvProducts.Columns["Name"].FillWeight = 40;
+
+        dgvProducts.Columns["Price"].HeaderText = "Giá Bán";
+        dgvProducts.Columns["Price"].DefaultCellStyle.Format = "N0";
+        dgvProducts.Columns["Price"].FillWeight = 20;
+
+        if (dgvProducts.Columns["CategoryName"] != null)
+        {
+            dgvProducts.Columns["CategoryName"].HeaderText = "Danh Mục";
+            dgvProducts.Columns["CategoryName"].FillWeight = 30;
+        }
+
+        if (dgvProducts.Columns["CategoryId"] != null) dgvProducts.Columns["CategoryId"].Visible = false;
+        if (dgvProducts.Columns["IsDeleted"] != null) dgvProducts.Columns["IsDeleted"].Visible = false;
+    }
+
+    private void TxtSearch_TextChanged(object? sender, EventArgs e)
+    {
+        string keyword = txtSearch.Text.ToLower().Trim();
+        if (string.IsNullOrEmpty(keyword))
+        {
+            RenderGrid(_allProducts);
+            return;
+        }
+
+        var filteredData = _allProducts.Where(p => p.Name.Contains(keyword, StringComparison.CurrentCultureIgnoreCase)).ToList();
+        RenderGrid(filteredData);
+    }
+
+    private async void BtnDelete_Click(object? sender, EventArgs e)
+    {
+        if (dgvProducts.SelectedRows.Count == 0) return;
+
+        var selectedRow = dgvProducts.SelectedRows[0];
+        int productId = (int)selectedRow.Cells["Id"].Value;
+        string productName = selectedRow.Cells["Name"].Value.ToString()!;
+
+        if (MessageBox.Show($"Xóa món '{productName}' khỏi Menu bán hàng?\n(Dữ liệu báo cáo cũ vẫn được giữ nguyên)",
+            "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+        {
+            await _productRepo.DeleteProductAsync(productId);
+            await LoadDataAsync();
+        }
+    }
+
+    private void BtnAdd_Click(object? sender, EventArgs e)
+    {
+        MessageBox.Show("Mở Form thêm mới ở đây!");
+    }
+
+    private void BtnEdit_Click(object? sender, EventArgs e)
+    {
+        if (dgvProducts.SelectedRows.Count == 0) return;
+        int productId = (int)dgvProducts.SelectedRows[0].Cells["Id"].Value;
+        MessageBox.Show($"Mở Form sửa cho món ID: {productId}");
+    }
+}

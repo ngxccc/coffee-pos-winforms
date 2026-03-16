@@ -105,10 +105,8 @@ public partial class AdminDashboardForm : Form
         pnlSidebar.Controls.Add(CreateMenuButton("Hóa đơn & Báo cáo", IconChar.FileInvoiceDollar, (s, e) => ShowPlaceholder("TÍNH NĂNG: HÓA ĐƠN")));
         pnlSidebar.Controls.Add(CreateMenuButton("Nhân sự", IconChar.Users, (s, e) => ShowPlaceholder("TÍNH NĂNG: QUẢN LÝ NHÂN VIÊN")));
         pnlSidebar.Controls.Add(CreateMenuButton("Danh mục", IconChar.Tags, (s, e) => ShowPlaceholder("TÍNH NĂNG: DANH MỤC")));
-        pnlSidebar.Controls.Add(CreateMenuButton("Sản phẩm", IconChar.Coffee, (s, e) => ShowPlaceholder("TÍNH NĂNG: SẢN PHẨM")));
+        pnlSidebar.Controls.Add(CreateMenuButton("Sản phẩm", IconChar.Coffee, (s, e) => NavigateTo<UC_ManageProducts>("PRODUCTS")));
         pnlSidebar.Controls.Add(CreateMenuButton("Tổng quan", IconChar.ChartBar, (s, e) => NavigateTo<UC_Dashboard>("DASHBOARD")));
-        // pnlSidebar.Controls.Add(CreateMenuButton("Sản phẩm", IconChar.Coffee,
-        //      (s,e) => NavigateTo<UC_ManageProducts>("PRODUCTS") ));
 
         pnlSidebar.Controls.Add(lblLogo);
     }

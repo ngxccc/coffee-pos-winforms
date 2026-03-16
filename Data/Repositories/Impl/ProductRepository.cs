@@ -5,18 +5,20 @@ namespace CoffeePOS.Data.Repositories.Impl;
 
 public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
 {
-    private readonly NpgsqlDataSource _dataSource = dataSource;
 
-    public List<Product> GetProducts()
+    public async Task<List<Product>> GetAllProductsAsync()
     {
         var list = new List<Product>();
-        using var conn = _dataSource.OpenConnection();
+        using var conn = await dataSource.OpenConnectionAsync();
 
-        string sql = "SELECT id, name, price, category_id FROM products ORDER BY name";
+        string sql = @"SELECT id, name, price, category_id
+                    FROM products
+                    WHERE is_deleted = false
+                    ORDER BY name";
         using var cmd = new NpgsqlCommand(sql, conn);
-        using var reader = cmd.ExecuteReader();
+        using var reader = await cmd.ExecuteReaderAsync();
 
-        while (reader.Read())
+        while (await reader.ReadAsync())
         {
             list.Add(new Product
             {
@@ -27,5 +29,18 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
             });
         }
         return list;
+    }
+
+    public async Task<bool> DeleteProductAsync(int productId)
+    {
+        using var conn = await dataSource.OpenConnectionAsync();
+
+        string sql = "UPDATE products SET is_deleted = true WHERE id = @id";
+
+        using var cmd = new NpgsqlCommand(sql, conn);
+        cmd.Parameters.AddWithValue("id", productId);
+
+        int rowsAffected = await cmd.ExecuteNonQueryAsync();
+        return rowsAffected > 0;
     }
 }

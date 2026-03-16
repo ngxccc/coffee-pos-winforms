@@ -33,7 +33,7 @@ public class UC_Menu : UserControl
         BackColor = Color.FromArgb(245, 245, 245);
 
         InitializeComponents();
-        LoadDataFromDatabase();
+        _ = LoadDataFromDatabaseAsync();
 
         RenderCategories();
         FilterProducts(0);
@@ -94,12 +94,12 @@ public class UC_Menu : UserControl
         return pnl;
     }
 
-    private void LoadDataFromDatabase()
+    private async Task LoadDataFromDatabaseAsync()
     {
         try
         {
             _allCategories = _categoryRepo.GetCategories();
-            _allProducts = _productRepo.GetProducts();
+            _allProducts = await _productRepo.GetAllProductsAsync();
         }
         catch (Exception ex)
         {

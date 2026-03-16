@@ -4,5 +4,6 @@ namespace CoffeePOS.Data.Repositories;
 
 public interface IProductRepository
 {
-    List<Product> GetProducts();
+    Task<List<Product>> GetAllProductsAsync();
+    Task<bool> DeleteProductAsync(int productId);
 }

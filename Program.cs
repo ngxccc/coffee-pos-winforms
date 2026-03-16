@@ -89,5 +89,6 @@ static class Program
                 services.AddTransient<UC_Billing>();
                 services.AddTransient<UC_Dashboard>();
                 services.AddTransient<UC_BillHistory>();
+                services.AddTransient<UC_ManageProducts>();
             });
 }
