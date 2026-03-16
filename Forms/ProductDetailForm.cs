@@ -245,6 +245,22 @@ public partial class ProductDetailForm : Form
             {
                 await _productRepo.UpdateProductAsync(product);
                 MessageBox.Show("Cập nhật món thành công!");
+
+                if (!string.IsNullOrEmpty(_selectedImagePath) && !string.IsNullOrEmpty(_currentSavedImage))
+                {
+                    try
+                    {
+                        string oldPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Images", "Products", _currentSavedImage);
+                        if (File.Exists(oldPath))
+                        {
+                            File.Delete(oldPath);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[Cảnh báo Dọn Rác]: Không thể xóa ảnh cũ '{_currentSavedImage}'. Chi tiết: {ex.Message}");
+                    }
+                }
             }
 
             DialogResult = DialogResult.OK;
