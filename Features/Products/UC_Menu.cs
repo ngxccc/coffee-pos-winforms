@@ -98,7 +98,7 @@ public class UC_Menu : UserControl
     {
         try
         {
-            _allCategories = _categoryRepo.GetCategories();
+            _allCategories = await _categoryRepo.GetAllCategoriesAsync();
             _allProducts = await _productRepo.GetAllProductsAsync();
         }
         catch (Exception ex)

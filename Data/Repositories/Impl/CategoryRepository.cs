@@ -5,9 +5,8 @@ namespace CoffeePOS.Data.Repositories.Impl;
 
 public class CategoryRepository(NpgsqlDataSource dataSource) : ICategoryRepository
 {
-    private readonly NpgsqlDataSource _dataSource = dataSource;
 
-    public List<Category> GetCategories()
+    public async Task<List<Category>> GetAllCategoriesAsync()
     {
         var list = new List<Category>
         {
@@ -15,12 +14,12 @@ public class CategoryRepository(NpgsqlDataSource dataSource) : ICategoryReposito
             new() { Id = 0, Name = "Tất cả" }
         };
 
-        using var conn = _dataSource.OpenConnection();
+        using var conn = await dataSource.OpenConnectionAsync();
 
         using var cmd = new NpgsqlCommand("SELECT id, name FROM categories ORDER BY id", conn);
-        using var reader = cmd.ExecuteReader();
+        using var reader = await cmd.ExecuteReaderAsync();
 
-        while (reader.Read())
+        while (await reader.ReadAsync())
         {
             list.Add(new Category
             {

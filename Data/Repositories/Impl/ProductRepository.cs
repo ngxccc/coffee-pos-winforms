@@ -31,6 +31,46 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
         return list;
     }
 
+    public async Task AddProductAsync(Product product)
+    {
+        using var conn = await dataSource.OpenConnectionAsync();
+
+        const string sql = @"
+            INSERT INTO products (name, price, category_id, image_url)
+            VALUES (@name, @price, @categoryId, @imageUrl);";
+
+        using var cmd = new NpgsqlCommand(sql, conn);
+        cmd.Parameters.AddWithValue("name", product.Name);
+        cmd.Parameters.AddWithValue("price", product.Price);
+        cmd.Parameters.AddWithValue("categoryId", product.CategoryId > 0 ? product.CategoryId : DBNull.Value);
+        cmd.Parameters.AddWithValue("imageUrl", (object?)product.ImageUrl ?? DBNull.Value);
+
+        await cmd.ExecuteNonQueryAsync();
+    }
+
+    public async Task UpdateProductAsync(Product product)
+    {
+        using var conn = await dataSource.OpenConnectionAsync();
+
+        const string sql = @"
+            UPDATE products
+            SET name = @name,
+                price = @price,
+                category_id = @categoryId,
+                image_url = @imageUrl
+            WHERE id = @id
+              AND is_deleted = false;";
+
+        using var cmd = new NpgsqlCommand(sql, conn);
+        cmd.Parameters.AddWithValue("id", product.Id);
+        cmd.Parameters.AddWithValue("name", product.Name);
+        cmd.Parameters.AddWithValue("price", product.Price);
+        cmd.Parameters.AddWithValue("categoryId", product.CategoryId > 0 ? product.CategoryId : DBNull.Value);
+        cmd.Parameters.AddWithValue("imageUrl", (object?)product.ImageUrl ?? DBNull.Value);
+
+        await cmd.ExecuteNonQueryAsync();
+    }
+
     public async Task<bool> DeleteProductAsync(int productId)
     {
         using var conn = await dataSource.OpenConnectionAsync();

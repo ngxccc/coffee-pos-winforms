@@ -81,6 +81,7 @@ static class Program
                 services.AddTransient<LoginForm>();
                 services.AddTransient<SettingForm>();
                 services.AddTransient<ShiftReportForm>();
+                services.AddTransient<ProductDetailForm>();
                 services.AddTransient<AdminDashboardForm>();
                 services.AddTransient<CashierWorkspaceForm>();
 

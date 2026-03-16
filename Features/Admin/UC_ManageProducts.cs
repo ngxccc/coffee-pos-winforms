@@ -1,6 +1,8 @@
 using CoffeePOS.Data.Repositories;
+using CoffeePOS.Forms;
 using CoffeePOS.Models;
 using FontAwesome.Sharp;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace CoffeePOS.Features.Admin;
 
@@ -49,7 +51,6 @@ public partial class UC_ManageProducts : UserControl
             Location = new Point(0, 20)
         };
 
-        // Thanh tìm kiếm
         txtSearch = new TextBox
         {
             Width = 300,
@@ -59,7 +60,6 @@ public partial class UC_ManageProducts : UserControl
         };
         txtSearch.TextChanged += TxtSearch_TextChanged;
 
-        // Cụm nút thao tác (Nằm bên phải)
         FlowLayoutPanel flpButtons = new()
         {
             Dock = DockStyle.Right,
@@ -168,6 +168,7 @@ public partial class UC_ManageProducts : UserControl
 
         if (dgvProducts.Columns["CategoryId"] != null) dgvProducts.Columns["CategoryId"].Visible = false;
         if (dgvProducts.Columns["IsDeleted"] != null) dgvProducts.Columns["IsDeleted"].Visible = false;
+        if (dgvProducts.Columns["ImageUrl"] != null) dgvProducts.Columns["ImageUrl"].Visible = false;
     }
 
     private void TxtSearch_TextChanged(object? sender, EventArgs e)
@@ -201,7 +202,11 @@ public partial class UC_ManageProducts : UserControl
 
     private void BtnAdd_Click(object? sender, EventArgs e)
     {
-        MessageBox.Show("Mở Form thêm mới ở đây!");
+        var form = _serviceProvider.GetRequiredService<ProductDetailForm>();
+        if (form.ShowDialog() == DialogResult.OK)
+        {
+            _ = LoadDataAsync();
+        }
     }
 
     private void BtnEdit_Click(object? sender, EventArgs e)

@@ -4,5 +4,5 @@ namespace CoffeePOS.Data.Repositories;
 
 public interface ICategoryRepository
 {
-    List<Category> GetCategories();
+    Task<List<Category>> GetAllCategoriesAsync();
 }
