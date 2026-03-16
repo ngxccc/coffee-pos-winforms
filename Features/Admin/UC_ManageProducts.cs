@@ -20,6 +20,9 @@ public partial class UC_ManageProducts : UserControl
 
     // State
     private List<Product> _allProducts = [];
+    private List<Product> _filteredProducts = [];
+    private string? _sortColumnName;
+    private bool _sortAscending = true;
 
     public UC_ManageProducts(IProductRepository productRepo, IServiceProvider serviceProvider)
     {
@@ -102,6 +105,7 @@ public partial class UC_ManageProducts : UserControl
         dgvProducts.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
         dgvProducts.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 11, FontStyle.Bold);
         dgvProducts.ColumnHeadersHeight = 40;
+        dgvProducts.ColumnHeaderMouseClick += DgvProducts_ColumnHeaderMouseClick;
 
         Controls.Add(dgvProducts);
         Controls.Add(pnlTop);
@@ -136,7 +140,8 @@ public partial class UC_ManageProducts : UserControl
         try
         {
             _allProducts = await _productRepo.GetAllProductsAsync();
-            RenderGrid(_allProducts);
+            _filteredProducts = [.. _allProducts];
+            RenderGrid(GetSortedData(_filteredProducts));
         }
         catch (Exception ex)
         {
@@ -149,7 +154,6 @@ public partial class UC_ManageProducts : UserControl
         dgvProducts.DataSource = null;
         dgvProducts.DataSource = data;
 
-        // Custom Cột
         dgvProducts.Columns["Id"].HeaderText = "Mã";
         dgvProducts.Columns["Id"].FillWeight = 10;
 
@@ -169,6 +173,18 @@ public partial class UC_ManageProducts : UserControl
         if (dgvProducts.Columns["CategoryId"] != null) dgvProducts.Columns["CategoryId"].Visible = false;
         if (dgvProducts.Columns["IsDeleted"] != null) dgvProducts.Columns["IsDeleted"].Visible = false;
         if (dgvProducts.Columns["ImageUrl"] != null) dgvProducts.Columns["ImageUrl"].Visible = false;
+
+        foreach (DataGridViewColumn col in dgvProducts.Columns)
+        {
+            col.SortMode = DataGridViewColumnSortMode.Programmatic;
+            col.HeaderCell.SortGlyphDirection = SortOrder.None;
+        }
+
+        if (!string.IsNullOrEmpty(_sortColumnName) && dgvProducts.Columns.Contains(_sortColumnName))
+        {
+            dgvProducts.Columns[_sortColumnName].HeaderCell.SortGlyphDirection =
+                _sortAscending ? SortOrder.Ascending : SortOrder.Descending;
+        }
     }
 
     private void TxtSearch_TextChanged(object? sender, EventArgs e)
@@ -176,12 +192,62 @@ public partial class UC_ManageProducts : UserControl
         string keyword = txtSearch.Text.ToLower().Trim();
         if (string.IsNullOrEmpty(keyword))
         {
-            RenderGrid(_allProducts);
+            _filteredProducts = [.. _allProducts];
+            RenderGrid(GetSortedData(_filteredProducts));
             return;
         }
 
-        var filteredData = _allProducts.Where(p => p.Name.Contains(keyword, StringComparison.CurrentCultureIgnoreCase)).ToList();
-        RenderGrid(filteredData);
+        _filteredProducts = [.. _allProducts.Where(p => p.Name.Contains(keyword, StringComparison.CurrentCultureIgnoreCase))];
+        RenderGrid(GetSortedData(_filteredProducts));
+    }
+
+    private void DgvProducts_ColumnHeaderMouseClick(object? sender, DataGridViewCellMouseEventArgs e)
+    {
+        if (e.ColumnIndex < 0 || e.ColumnIndex >= dgvProducts.Columns.Count) return;
+
+        var column = dgvProducts.Columns[e.ColumnIndex];
+        string columnName = column.DataPropertyName;
+        if (string.IsNullOrWhiteSpace(columnName)) columnName = column.Name;
+
+        if (!IsSortableColumn(columnName)) return;
+
+        if (string.Equals(_sortColumnName, columnName, StringComparison.Ordinal))
+        {
+            _sortAscending = !_sortAscending;
+        }
+        else
+        {
+            _sortColumnName = columnName;
+            _sortAscending = true;
+        }
+
+        RenderGrid(GetSortedData(_filteredProducts));
+    }
+
+    private List<Product> GetSortedData(IEnumerable<Product> source)
+    {
+        if (string.IsNullOrEmpty(_sortColumnName)) return [.. source];
+
+        return (_sortColumnName, _sortAscending) switch
+        {
+            (nameof(Product.Id), true) => [.. source.OrderBy(p => p.Id)],
+            (nameof(Product.Id), false) => [.. source.OrderByDescending(p => p.Id)],
+            (nameof(Product.Name), true) => [.. source.OrderBy(p => p.Name)],
+            (nameof(Product.Name), false) => [.. source.OrderByDescending(p => p.Name)],
+            (nameof(Product.Price), true) => [.. source.OrderBy(p => p.Price)],
+            (nameof(Product.Price), false) => [.. source.OrderByDescending(p => p.Price)],
+            (nameof(Product.CategoryId), true) => [.. source.OrderBy(p => p.CategoryId)],
+            (nameof(Product.CategoryId), false) => [.. source.OrderByDescending(p => p.CategoryId)],
+            _ => [.. source]
+        };
+    }
+
+    private static bool IsSortableColumn(string columnName)
+    {
+        return columnName == nameof(Product.Id)
+            || columnName == nameof(Product.Name)
+            || columnName == nameof(Product.Price)
+            || columnName == nameof(Product.CategoryId);
     }
 
     private async void BtnDelete_Click(object? sender, EventArgs e)
