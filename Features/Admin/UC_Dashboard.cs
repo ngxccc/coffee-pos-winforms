@@ -1,11 +1,10 @@
+using System.Globalization;
 using CoffeePOS.Data.Repositories;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
 using LiveChartsCore.SkiaSharpView.WinForms;
-using Microsoft.Extensions.DependencyInjection;
 using SkiaSharp;
-using System.Globalization;
 
 namespace CoffeePOS.Features.Admin;
 
@@ -15,6 +14,8 @@ public class UC_Dashboard : UserControl
 
     // UI Controls
     private Label lblTodayRevenue = null!;
+    private Label lblTodayOrders = null!;
+    private Label lblTodayAverageOrder = null!;
     private CartesianChart chartRevenue = null!;
     private PieChart chartTopProducts = null!;
 
@@ -42,14 +43,23 @@ public class UC_Dashboard : UserControl
         tlpMain.RowStyles.Add(new RowStyle(SizeType.Percent, 100));  // Dòng 2: Biểu đồ chiếm phần còn lại
 
         // DÒNG 1: KHU VỰC KPI CARDS
-        FlowLayoutPanel flpKPIs = new()
+        TableLayoutPanel tlpKPIs = new()
         {
-            Dock = DockStyle.Fill
+            Dock = DockStyle.Fill,
+            RowCount = 1,
+            ColumnCount = 3
         };
+        tlpKPIs.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.3333f));
+        tlpKPIs.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.3333f));
+        tlpKPIs.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.3333f));
         lblTodayRevenue = CreateKpiCard("DOANH THU HÔM NAY", "Đang tải...");
-        flpKPIs.Controls.Add(lblTodayRevenue);
-        // Có thể add thêm thẻ Số Đơn, TB Đơn ở đây...
-        tlpMain.Controls.Add(flpKPIs, 0, 0);
+        lblTodayOrders = CreateKpiCard("SỐ ĐƠN", "Đang tải...");
+        lblTodayAverageOrder = CreateKpiCard("TB ĐƠN", "Đang tải...");
+        tlpKPIs.Controls.Add(lblTodayRevenue, 0, 0);
+        tlpKPIs.Controls.Add(lblTodayOrders, 1, 0);
+        tlpKPIs.Controls.Add(lblTodayAverageOrder, 2, 0);
+
+        tlpMain.Controls.Add(tlpKPIs, 0, 0);
 
         // DÒNG 2: KHU VỰC BIỂU ĐỒ (Chia làm 2 cột)
         TableLayoutPanel tlpCharts = new()
@@ -90,9 +100,9 @@ public class UC_Dashboard : UserControl
             Font = new Font("Segoe UI", 16, FontStyle.Bold),
             ForeColor = Color.White,
             BackColor = Color.FromArgb(46, 204, 113),
-            Size = new Size(300, 80),
+            Dock = DockStyle.Fill,
             TextAlign = ContentAlignment.MiddleCenter,
-            Margin = new Padding(0, 0, 20, 0)
+            Margin = new Padding(8, 6, 8, 6)
         };
         return lbl;
     }
@@ -102,14 +112,19 @@ public class UC_Dashboard : UserControl
         try
         {
             var taskTodayRevenue = _dashboardRepo.GetTodayRevenueAsync();
+            var taskTodayOrders = _dashboardRepo.GetTodayOrderCountAsync();
+            var taskTodayAverageOrder = _dashboardRepo.GetTodayAverageOrderAsync();
 
             var taskRev = _dashboardRepo.Get7DaysRevenueAsync();
             var taskTop = _dashboardRepo.GetTop5ProductsAsync();
 
-            await Task.WhenAll(taskTodayRevenue, taskRev, taskTop);
+            await Task.WhenAll(taskTodayRevenue, taskTodayOrders, taskTodayAverageOrder, taskRev, taskTop);
 
             lblTodayRevenue.Text =
                 $"DOANH THU HÔM NAY\n{taskTodayRevenue.Result.ToString("N0", CultureInfo.GetCultureInfo("vi-VN"))} đ";
+            lblTodayOrders.Text = $"SỐ ĐƠN\n{taskTodayOrders.Result:N0}";
+            lblTodayAverageOrder.Text =
+                $"TB ĐƠN\n{taskTodayAverageOrder.Result.ToString("N0", CultureInfo.GetCultureInfo("vi-VN"))} đ";
 
             var revData = taskRev.Result;
             chartRevenue.Series =

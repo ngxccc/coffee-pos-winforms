@@ -22,6 +22,40 @@ public class DashboardRepository(NpgsqlDataSource dataSource) : IDashboardReposi
         return result is decimal revenue ? revenue : 0m;
     }
 
+    public async Task<int> GetTodayOrderCountAsync()
+    {
+        using var conn = await dataSource.OpenConnectionAsync();
+
+        const string sql = @"
+            SELECT COUNT(*)
+            FROM bills
+            WHERE created_at::date = CURRENT_DATE
+              AND is_deleted = FALSE
+              AND status = 1;";
+
+        using var cmd = new NpgsqlCommand(sql, conn);
+        var result = await cmd.ExecuteScalarAsync();
+
+        return result is long count ? (int)count : 0;
+    }
+
+    public async Task<decimal> GetTodayAverageOrderAsync()
+    {
+        using var conn = await dataSource.OpenConnectionAsync();
+
+        const string sql = @"
+            SELECT COALESCE(AVG(total_amount), 0)
+            FROM bills
+            WHERE created_at::date = CURRENT_DATE
+              AND is_deleted = FALSE
+              AND status = 1;";
+
+        using var cmd = new NpgsqlCommand(sql, conn);
+        var result = await cmd.ExecuteScalarAsync();
+
+        return result is decimal avgOrder ? avgOrder : 0m;
+    }
+
     public async Task<List<DailyRevenue>> Get7DaysRevenueAsync()
     {
         var list = new List<DailyRevenue>();
@@ -83,5 +117,5 @@ public class DashboardRepository(NpgsqlDataSource dataSource) : IDashboardReposi
         return list;
     }
 
-    
+
 }
