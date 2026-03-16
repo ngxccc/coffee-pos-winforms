@@ -141,6 +141,7 @@ public partial class UC_ManageProducts : UserControl
         {
             _allProducts = await _productRepo.GetAllProductsAsync();
             _filteredProducts = [.. _allProducts];
+
             RenderGrid(GetSortedData(_filteredProducts));
         }
         catch (Exception ex)
@@ -221,7 +222,8 @@ public partial class UC_ManageProducts : UserControl
             _sortAscending = true;
         }
 
-        RenderGrid(GetSortedData(_filteredProducts));
+        var source = _filteredProducts.Count > 0 ? _filteredProducts : _allProducts;
+        RenderGrid(GetSortedData(source));
     }
 
     private List<Product> GetSortedData(IEnumerable<Product> source)
@@ -281,4 +283,5 @@ public partial class UC_ManageProducts : UserControl
         int productId = (int)dgvProducts.SelectedRows[0].Cells["Id"].Value;
         MessageBox.Show($"Mở Form sửa cho món ID: {productId}");
     }
+
 }
