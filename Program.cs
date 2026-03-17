@@ -1,11 +1,4 @@
 using CoffeePOS.Data;
-using CoffeePOS.Data.Repositories;
-using CoffeePOS.Data.Repositories.Impl;
-using CoffeePOS.Features.Admin;
-using CoffeePOS.Features.Billing;
-using CoffeePOS.Features.Products;
-using CoffeePOS.Features.Sidebar;
-using CoffeePOS.Forms;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -67,29 +60,32 @@ static class Program
 
                 services.AddSingleton(dataSource);
                 services.AddSingleton<Core.AppStateManager>();
-                services.AddSingleton<IUserRepository, UserRepository>();
-                services.AddSingleton<IBillRepository, BillRepository>();
                 services.AddSingleton<Core.IUserSession, Core.UserSession>();
-                services.AddSingleton<IProductRepository, ProductRepository>();
-                services.AddSingleton<ICategoryRepository, CategoryRepository>();
-                services.AddSingleton<IShiftReportRepository, ShiftReportRepository>();
-                services.AddSingleton<IDashboardRepository, DashboardRepository>();
-
                 services.AddSingleton<Core.PdfPrintQueue>();
+
                 services.AddHostedService<Core.PdfPrintWorker>();
 
-                services.AddTransient<LoginForm>();
-                services.AddTransient<SettingForm>();
-                services.AddTransient<ShiftReportForm>();
-                services.AddTransient<ProductDetailForm>();
-                services.AddTransient<AdminDashboardForm>();
-                services.AddTransient<CashierWorkspaceForm>();
+                services.Scan(scan => scan
+                    .FromAssemblies(typeof(Program).Assembly) // Quét từ lõi project
 
-                services.AddTransient<UC_Menu>();
-                services.AddTransient<UC_Sidebar>();
-                services.AddTransient<UC_Billing>();
-                services.AddTransient<UC_Dashboard>();
-                services.AddTransient<UC_BillHistory>();
-                services.AddTransient<UC_ManageProducts>();
+                    // QUY TẮC A: Repositories và Services
+                    // Tự động map Interface -> Class (vd: IProductRepository -> ProductRepository)
+                    .AddClasses(classes => classes.Where(c =>
+                        c.Name.EndsWith("Repository") ||
+                        c.Name.EndsWith("Service")))
+                    .AsImplementedInterfaces()
+                    .WithSingletonLifetime()
+
+                    // QUY TẮC B: Tất cả các Forms
+                    // Map chính nó (AsSelf) để gọi đẻ ra Form
+                    .AddClasses(classes => classes.Where(c => c.Name.EndsWith("Form")))
+                    .AsSelf()
+                    .WithTransientLifetime()
+
+                    // QUY TẮC C: Tất cả các UserControls (UC_*)
+                    .AddClasses(classes => classes.Where(c => c.Name.StartsWith("UC_")))
+                    .AsSelf()
+                    .WithTransientLifetime()
+                );
             });
 }

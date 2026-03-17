@@ -1,11 +1,12 @@
 using CoffeePOS.Data.Repositories;
 using CoffeePOS.Models;
+using CoffeePOS.Services;
 
 namespace CoffeePOS.Forms;
 
 public partial class ProductDetailForm : Form
 {
-    private readonly IProductRepository _productRepo;
+    private readonly IProductService _productService;
     private readonly ICategoryRepository _categoryRepo;
 
     private int _productId = 0;
@@ -21,9 +22,9 @@ public partial class ProductDetailForm : Form
     private Button btnSave = null!;
     private Button btnCancel = null!;
 
-    public ProductDetailForm(IProductRepository productRepo, ICategoryRepository categoryRepo)
+    public ProductDetailForm(IProductService productService, ICategoryRepository categoryRepo)
     {
-        _productRepo = productRepo;
+        _productService = productService;
         _categoryRepo = categoryRepo;
         InitializeUI();
     }
@@ -197,18 +198,6 @@ public partial class ProductDetailForm : Form
 
     private async Task SaveProductAsync()
     {
-        if (string.IsNullOrWhiteSpace(txtName.Text) || nudPrice.Value <= 0 || cboCategory.SelectedValue == null)
-        {
-            MessageBox.Show("Vui lòng điền đầy đủ Tên, Giá và Chọn danh mục!");
-            return;
-        }
-
-        if ((int)cboCategory.SelectedValue <= 0)
-        {
-            MessageBox.Show("Vui lòng chọn danh mục hợp lệ!");
-            return;
-        }
-
         btnSave.Enabled = false;
 
         try
@@ -232,18 +221,18 @@ public partial class ProductDetailForm : Form
                 Id = _productId,
                 Name = txtName.Text.Trim(),
                 Price = nudPrice.Value,
-                CategoryId = (int)cboCategory.SelectedValue,
+                CategoryId = (int)cboCategory.SelectedValue!,
                 ImageUrl = finalFileName
             };
 
             if (_productId == 0)
             {
-                await _productRepo.AddProductAsync(product);
+                await _productService.AddProductAsync(product);
                 MessageBox.Show("Thêm món mới thành công!");
             }
             else
             {
-                await _productRepo.UpdateProductAsync(product);
+                await _productService.UpdateProductAsync(product);
                 MessageBox.Show("Cập nhật món thành công!");
 
                 if (!string.IsNullOrEmpty(_selectedImagePath) && !string.IsNullOrEmpty(_currentSavedImage))
@@ -266,9 +255,20 @@ public partial class ProductDetailForm : Form
             DialogResult = DialogResult.OK;
             Close();
         }
+        catch (ArgumentException ex)
+        {
+            MessageBox.Show(ex.Message, "Lỗi nhập liệu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+        catch (InvalidOperationException ex)
+        {
+            MessageBox.Show(ex.Message, "Cảnh báo trùng lặp", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
         catch (Exception ex)
         {
             MessageBox.Show($"Lỗi lưu dữ liệu: {ex.Message}");
+        }
+        finally
+        {
             btnSave.Enabled = true;
         }
     }
