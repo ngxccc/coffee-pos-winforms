@@ -5,6 +5,8 @@ namespace CoffeePOS.Services;
 
 public class ProductService(IProductRepository productRepo) : IProductService
 {
+    public Task<List<Product>> GetAllProductsAsync() => productRepo.GetAllProductsAsync();
+
     public async Task AddProductAsync(Product product)
     {
         ValidateCommonRules(product);
@@ -27,6 +29,12 @@ public class ProductService(IProductRepository productRepo) : IProductService
 
         product.Name = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(product.Name.ToLower());
         await productRepo.UpdateProductAsync(product);
+    }
+
+    public Task<bool> DeleteProductAsync(int productId)
+    {
+        if (productId <= 0) throw new ArgumentException("Sản phẩm không hợp lệ!");
+        return productRepo.DeleteProductAsync(productId);
     }
 
     private static void ValidateCommonRules(Product product)

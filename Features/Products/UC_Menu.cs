@@ -1,5 +1,5 @@
-using CoffeePOS.Data.Repositories;
 using CoffeePOS.Models;
+using CoffeePOS.Services;
 
 namespace CoffeePOS.Features.Products;
 
@@ -13,8 +13,8 @@ public class UC_Menu : UserControl
     private const int PAGE_SIZE = 20;
     private bool _isLoading = false;
 
-    private readonly IProductRepository _productRepo;
-    private readonly ICategoryRepository _categoryRepo;
+    private readonly IProductService _productService;
+    private readonly ICategoryService _categoryService;
 
     // Data Cache
     private List<Product> _allProducts = [];
@@ -24,10 +24,10 @@ public class UC_Menu : UserControl
     public event Action<int, string, decimal>? OnProductSelected;
     public event EventHandler? OnBackClicked;
 
-    public UC_Menu(IProductRepository productRepo, ICategoryRepository categoryRepo)
+    public UC_Menu(IProductService productService, ICategoryService categoryService)
     {
-        _productRepo = productRepo;
-        _categoryRepo = categoryRepo;
+        _productService = productService;
+        _categoryService = categoryService;
 
         Dock = DockStyle.Fill;
         BackColor = Color.FromArgb(245, 245, 245);
@@ -98,8 +98,11 @@ public class UC_Menu : UserControl
     {
         try
         {
-            _allCategories = await _categoryRepo.GetAllCategoriesAsync();
-            _allProducts = await _productRepo.GetAllProductsAsync();
+            _allCategories = await _categoryService.GetAllCategoriesAsync();
+            _allProducts = await _productService.GetAllProductsAsync();
+
+            RenderCategories();
+            FilterProducts(0);
         }
         catch (Exception ex)
         {

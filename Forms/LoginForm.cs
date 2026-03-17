@@ -1,11 +1,11 @@
 using CoffeePOS.Core;
-using CoffeePOS.Data.Repositories;
+using CoffeePOS.Services;
 
 namespace CoffeePOS.Forms;
 
 public partial class LoginForm : Form
 {
-    private readonly IUserRepository _userRepo;
+    private readonly IUserService _userService;
     private readonly IServiceProvider _serviceProvider;
     private readonly IUserSession _session;
 
@@ -13,9 +13,9 @@ public partial class LoginForm : Form
     private TextBox txtPassword = null!;
     private Button btnLogin = null!;
 
-    public LoginForm(IUserRepository userRepo, IServiceProvider serviceProvider, IUserSession session)
+    public LoginForm(IUserService userService, IServiceProvider serviceProvider, IUserSession session)
     {
-        _userRepo = userRepo;
+        _userService = userService;
         _serviceProvider = serviceProvider;
         _session = session;
 
@@ -135,7 +135,7 @@ public partial class LoginForm : Form
 
         try
         {
-            var user = await _userRepo.AuthenticateAsync(username, password);
+            var user = await _userService.AuthenticateAsync(username, password);
 
             if (user != null)
             {

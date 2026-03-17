@@ -1,22 +1,22 @@
 using CoffeePOS.Core;
-using CoffeePOS.Data.Repositories;
+using CoffeePOS.Services;
 
 namespace CoffeePOS.Forms;
 
 public partial class SettingForm : Form
 {
     private readonly IUserSession _session;
-    private readonly IUserRepository _userRepo;
+    private readonly IUserService _userService;
 
     private TextBox txtOldPass = null!;
     private TextBox txtNewPass = null!;
     private TextBox txtConfirmPass = null!;
     private Button btnSave = null!;
 
-    public SettingForm(IUserSession session, IUserRepository userRepo)
+    public SettingForm(IUserSession session, IUserService userService)
     {
         _session = session;
-        _userRepo = userRepo;
+        _userService = userService;
 
         InitializeUI();
 
@@ -181,43 +181,29 @@ public partial class SettingForm : Form
         string newPass = txtNewPass.Text;
         string confirmPass = txtConfirmPass.Text;
 
-        if (string.IsNullOrEmpty(oldPass) || string.IsNullOrEmpty(newPass) || string.IsNullOrEmpty(confirmPass))
-        {
-            MessageBox.Show("Vui lòng nhập đầy đủ các trường mật khẩu!");
-            return;
-        }
-
-        if (newPass != confirmPass)
-        {
-            MessageBox.Show("Mật khẩu mới và Xác nhận không khớp!");
-            return;
-        }
-
-        if (newPass.Length < 6)
-        {
-            MessageBox.Show("Mật khẩu mới phải có ít nhất 6 ký tự!");
-            return;
-        }
-
         btnSave.Enabled = false;
         btnSave.Text = "ĐANG XỬ LÝ...";
 
         try
         {
-            var verifyUser = await _userRepo.AuthenticateAsync(_session.CurrentUser!.Username, oldPass);
-            if (verifyUser == null)
-            {
-                MessageBox.Show("Mật khẩu hiện tại không chính xác!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-
-            string newHash = BCrypt.Net.BCrypt.HashPassword(newPass, workFactor: 11);
-
-            await _userRepo.UpdatePasswordAsync(_session.CurrentUser.Id, newHash);
+            await _userService.ChangePasswordAsync(
+                _session.CurrentUser!.Id,
+                _session.CurrentUser.Username,
+                oldPass,
+                newPass,
+                confirmPass);
 
             MessageBox.Show("Đổi mật khẩu thành công!", "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
             DialogResult = DialogResult.OK;
             Close();
+        }
+        catch (ArgumentException ex)
+        {
+            MessageBox.Show(ex.Message, "Lỗi nhập liệu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+        catch (InvalidOperationException ex)
+        {
+            MessageBox.Show(ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
         catch (Exception ex)
         {

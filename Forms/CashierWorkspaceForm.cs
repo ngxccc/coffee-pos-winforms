@@ -1,8 +1,8 @@
 using CoffeePOS.Core;
-using CoffeePOS.Data.Repositories;
 using CoffeePOS.Features.Billing;
 using CoffeePOS.Features.Products;
 using CoffeePOS.Features.Sidebar;
+using CoffeePOS.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Panel = System.Windows.Forms.Panel;
 
@@ -11,7 +11,7 @@ namespace CoffeePOS.Forms;
 public partial class CashierWorkspaceForm : Form
 {
     // DEPENDENCIES & CONTROLS
-    private readonly IBillRepository _billRepo;
+    private readonly IBillService _billService;
     private readonly IServiceProvider _serviceProvider;
     private readonly IUserSession _session;
     private readonly PdfPrintQueue _pdfQueue;
@@ -30,13 +30,13 @@ public partial class CashierWorkspaceForm : Form
 
     // CONSTRUCTOR & INIT
     public CashierWorkspaceForm(IServiceProvider serviceProvider, IUserSession session,
-                    IBillRepository billRepo, PdfPrintQueue pdfQueue)
+                    IBillService billService, PdfPrintQueue pdfQueue)
     {
         InitializeUI();
 
         _serviceProvider = serviceProvider;
         _session = session;
-        _billRepo = billRepo;
+        _billService = billService;
         _pdfQueue = pdfQueue;
         _ucSidebar = _serviceProvider.GetRequiredService<UC_Sidebar>();
         _ucBilling = _serviceProvider.GetRequiredService<UC_Billing>();
@@ -105,7 +105,7 @@ public partial class CashierWorkspaceForm : Form
 
         _ucSidebar.OnBillHistoryClicked += async (s, e) =>
         {
-            var todayBills = await _billRepo.GetTodayBillsByUserAsync(_session.CurrentUser!.Id);
+            var todayBills = await _billService.GetTodayBillsByUserAsync(_session.CurrentUser!.Id);
             _ucBillHistory.BindData(todayBills);
 
             _ucMenu.Visible = false;
@@ -159,7 +159,7 @@ public partial class CashierWorkspaceForm : Form
                 {
                     Cursor.Current = Cursors.WaitCursor;
 
-                    var billItems = await _billRepo.GetBillDetailsAsync(bill.Id);
+                    var billItems = await _billService.GetBillDetailsAsync(bill.Id);
 
                     await _pdfQueue.EnqueueJobAsync(new BillPrintPayload
                     {
@@ -214,7 +214,7 @@ public partial class CashierWorkspaceForm : Form
         {
             _isProcessingPayment = true;
 
-            int billId = await _billRepo.ProcessFullOrderAsync(buzzerNumber, finalAmount, cartItems);
+            int billId = await _billService.ProcessFullOrderAsync(buzzerNumber, finalAmount, cartItems);
 
             await _pdfQueue.EnqueueJobAsync(new BillPrintPayload
             {

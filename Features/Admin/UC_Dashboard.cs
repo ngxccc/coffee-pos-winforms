@@ -1,5 +1,5 @@
 using System.Globalization;
-using CoffeePOS.Data.Repositories;
+using CoffeePOS.Services;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
@@ -10,7 +10,7 @@ namespace CoffeePOS.Features.Admin;
 
 public class UC_Dashboard : UserControl
 {
-    private readonly IDashboardRepository _dashboardRepo;
+    private readonly IDashboardService _dashboardService;
 
     // UI Controls
     private Label lblTodayRevenue = null!;
@@ -19,9 +19,9 @@ public class UC_Dashboard : UserControl
     private CartesianChart chartRevenue = null!;
     private PieChart chartTopProducts = null!;
 
-    public UC_Dashboard(IDashboardRepository dashboardRepo)
+    public UC_Dashboard(IDashboardService dashboardService)
     {
-        _dashboardRepo = dashboardRepo;
+        _dashboardService = dashboardService;
         InitializeUI();
         _ = LoadDashboardDataAsync();
     }
@@ -111,12 +111,12 @@ public class UC_Dashboard : UserControl
     {
         try
         {
-            var taskTodayRevenue = _dashboardRepo.GetTodayRevenueAsync();
-            var taskTodayOrders = _dashboardRepo.GetTodayOrderCountAsync();
-            var taskTodayAverageOrder = _dashboardRepo.GetTodayAverageOrderAsync();
+            var taskTodayRevenue = _dashboardService.GetTodayRevenueAsync();
+            var taskTodayOrders = _dashboardService.GetTodayOrderCountAsync();
+            var taskTodayAverageOrder = _dashboardService.GetTodayAverageOrderAsync();
 
-            var taskRev = _dashboardRepo.Get7DaysRevenueAsync();
-            var taskTop = _dashboardRepo.GetTop5ProductsAsync();
+            var taskRev = _dashboardService.Get7DaysRevenueAsync();
+            var taskTop = _dashboardService.GetTop5ProductsAsync();
 
             await Task.WhenAll(taskTodayRevenue, taskTodayOrders, taskTodayAverageOrder, taskRev, taskTop);
 

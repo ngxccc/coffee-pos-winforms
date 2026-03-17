@@ -1,13 +1,13 @@
 using CoffeePOS.Core;
-using CoffeePOS.Data.Repositories;
 using CoffeePOS.Models;
+using CoffeePOS.Services;
 
 namespace CoffeePOS.Forms;
 
 public partial class ShiftReportForm : Form
 {
     private readonly IUserSession _session;
-    private readonly IShiftReportRepository _shiftRepo;
+    private readonly IShiftReportService _shiftReportService;
     private readonly PdfPrintQueue _pdfQueue;
 
     // UI Controls
@@ -23,10 +23,10 @@ public partial class ShiftReportForm : Form
     private decimal _expectedCash = 0;
     private readonly DateTime _endTime;
 
-    public ShiftReportForm(IUserSession session, IShiftReportRepository shiftRepo, PdfPrintQueue pdfQueue)
+    public ShiftReportForm(IUserSession session, IShiftReportService shiftReportService, PdfPrintQueue pdfQueue)
     {
         _session = session;
-        _shiftRepo = shiftRepo;
+        _shiftReportService = shiftReportService;
         _endTime = DateTime.Now;
         _pdfQueue = pdfQueue;
 
@@ -140,7 +140,7 @@ public partial class ShiftReportForm : Form
         try
         {
             btnConfirm.Enabled = false;
-            var (TotalBills, ExpectedCash) = await _shiftRepo.GetShiftSummaryAsync(_session.CurrentUser!.Id, _session.LoginTime!.Value, _endTime);
+            var (TotalBills, ExpectedCash) = await _shiftReportService.GetShiftSummaryAsync(_session.CurrentUser!.Id, _session.LoginTime!.Value, _endTime);
             _totalBills = TotalBills;
             _expectedCash = ExpectedCash;
 
@@ -197,7 +197,7 @@ public partial class ShiftReportForm : Form
                 Note = txtNote.Text
             };
 
-            await _shiftRepo.SaveReportAsync(report);
+            await _shiftReportService.SaveReportAsync(report);
 
             await _pdfQueue.EnqueueJobAsync(new ShiftReportPrintPayload
             {

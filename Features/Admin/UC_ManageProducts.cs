@@ -1,6 +1,6 @@
-using CoffeePOS.Data.Repositories;
 using CoffeePOS.Forms;
 using CoffeePOS.Models;
+using CoffeePOS.Services;
 using FontAwesome.Sharp;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -8,7 +8,7 @@ namespace CoffeePOS.Features.Admin;
 
 public partial class UC_ManageProducts : UserControl
 {
-    private readonly IProductRepository _productRepo;
+    private readonly IProductService _productService;
     private readonly IServiceProvider _serviceProvider;
 
     // UI Controls
@@ -24,9 +24,9 @@ public partial class UC_ManageProducts : UserControl
     private string? _sortColumnName;
     private bool _sortAscending = true;
 
-    public UC_ManageProducts(IProductRepository productRepo, IServiceProvider serviceProvider)
+    public UC_ManageProducts(IProductService productService, IServiceProvider serviceProvider)
     {
-        _productRepo = productRepo;
+        _productService = productService;
         _serviceProvider = serviceProvider;
 
         InitializeUI();
@@ -139,7 +139,7 @@ public partial class UC_ManageProducts : UserControl
     {
         try
         {
-            _allProducts = await _productRepo.GetAllProductsAsync();
+            _allProducts = await _productService.GetAllProductsAsync();
             _filteredProducts = [.. _allProducts];
 
             RenderGrid(GetSortedData(_filteredProducts));
@@ -263,7 +263,7 @@ public partial class UC_ManageProducts : UserControl
         if (MessageBox.Show($"Xóa món '{productName}' khỏi Menu bán hàng?\n(Dữ liệu báo cáo cũ vẫn được giữ nguyên)",
             "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
         {
-            await _productRepo.DeleteProductAsync(productId);
+            await _productService.DeleteProductAsync(productId);
             await LoadDataAsync();
         }
     }
