@@ -1,4 +1,3 @@
-using CoffeePOS.Data.Repositories;
 using CoffeePOS.Models;
 using CoffeePOS.Services;
 
@@ -7,7 +6,7 @@ namespace CoffeePOS.Forms;
 public partial class ProductDetailForm : Form
 {
     private readonly IProductService _productService;
-    private readonly ICategoryRepository _categoryRepo;
+    private readonly ICategoryService _categoryService;
 
     private int _productId = 0;
     private string _selectedImagePath = "";
@@ -22,10 +21,10 @@ public partial class ProductDetailForm : Form
     private Button btnSave = null!;
     private Button btnCancel = null!;
 
-    public ProductDetailForm(IProductService productService, ICategoryRepository categoryRepo)
+    public ProductDetailForm(IProductService productService, ICategoryService categoryService)
     {
         _productService = productService;
-        _categoryRepo = categoryRepo;
+        _categoryService = categoryService;
         InitializeUI();
     }
 
@@ -51,9 +50,7 @@ public partial class ProductDetailForm : Form
     {
         try
         {
-            var categories = (await _categoryRepo.GetAllCategoriesAsync())
-                .Where(c => c.Id > 0)
-                .ToList();
+            var categories = await _categoryService.GetSelectableCategoriesAsync();
             cboCategory.DataSource = categories;
             cboCategory.DisplayMember = "Name";
             cboCategory.ValueMember = "Id";
