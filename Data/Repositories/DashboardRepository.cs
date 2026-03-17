@@ -1,7 +1,7 @@
 using CoffeePOS.Models;
 using Npgsql;
 
-namespace CoffeePOS.Data.Repositories.Impl;
+namespace CoffeePOS.Data.Repositories;
 
 public class DashboardRepository(NpgsqlDataSource dataSource) : IDashboardRepository
 {
@@ -116,6 +116,4 @@ public class DashboardRepository(NpgsqlDataSource dataSource) : IDashboardReposi
         }
         return list;
     }
-
-
 }

@@ -1,11 +1,10 @@
 using CoffeePOS.Models;
 using Npgsql;
 
-namespace CoffeePOS.Data.Repositories.Impl;
+namespace CoffeePOS.Data.Repositories;
 
 public class CategoryRepository(NpgsqlDataSource dataSource) : ICategoryRepository
 {
-
     public async Task<List<Category>> GetAllCategoriesAsync()
     {
         var list = new List<Category>

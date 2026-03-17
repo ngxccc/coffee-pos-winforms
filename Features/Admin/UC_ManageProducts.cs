@@ -1,6 +1,7 @@
 using CoffeePOS.Forms;
 using CoffeePOS.Models;
 using CoffeePOS.Services;
+using CoffeePOS.Shared.Dtos;
 using FontAwesome.Sharp;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -9,6 +10,7 @@ namespace CoffeePOS.Features.Admin;
 public partial class UC_ManageProducts : UserControl
 {
     private readonly IProductService _productService;
+    private readonly IProductQueryService _productQueryService;
     private readonly IServiceProvider _serviceProvider;
 
     // UI Controls
@@ -19,14 +21,15 @@ public partial class UC_ManageProducts : UserControl
     private IconButton btnDelete = null!;
 
     // State
-    private List<Product> _allProducts = [];
-    private List<Product> _filteredProducts = [];
+    private List<ProductGridDto> _allProducts = [];
+    private List<ProductGridDto> _filteredProducts = [];
     private string? _sortColumnName;
     private bool _sortAscending = true;
 
-    public UC_ManageProducts(IProductService productService, IServiceProvider serviceProvider)
+    public UC_ManageProducts(IProductService productService, IProductQueryService productQueryService, IServiceProvider serviceProvider)
     {
         _productService = productService;
+        _productQueryService = productQueryService;
         _serviceProvider = serviceProvider;
 
         InitializeUI();
@@ -139,7 +142,7 @@ public partial class UC_ManageProducts : UserControl
     {
         try
         {
-            _allProducts = await _productService.GetAllProductsAsync();
+            _allProducts = await _productQueryService.GetProductGridAsync();
             _filteredProducts = [.. _allProducts];
 
             RenderGrid(GetSortedData(_filteredProducts));
@@ -150,7 +153,7 @@ public partial class UC_ManageProducts : UserControl
         }
     }
 
-    private void RenderGrid(List<Product> data)
+    private void RenderGrid(List<ProductGridDto> data)
     {
         dgvProducts.DataSource = null;
         dgvProducts.DataSource = data;
@@ -226,30 +229,30 @@ public partial class UC_ManageProducts : UserControl
         RenderGrid(GetSortedData(source));
     }
 
-    private List<Product> GetSortedData(IEnumerable<Product> source)
+    private List<ProductGridDto> GetSortedData(IEnumerable<ProductGridDto> source)
     {
         if (string.IsNullOrEmpty(_sortColumnName)) return [.. source];
 
         return (_sortColumnName, _sortAscending) switch
         {
-            (nameof(Product.Id), true) => [.. source.OrderBy(p => p.Id)],
-            (nameof(Product.Id), false) => [.. source.OrderByDescending(p => p.Id)],
-            (nameof(Product.Name), true) => [.. source.OrderBy(p => p.Name)],
-            (nameof(Product.Name), false) => [.. source.OrderByDescending(p => p.Name)],
-            (nameof(Product.Price), true) => [.. source.OrderBy(p => p.Price)],
-            (nameof(Product.Price), false) => [.. source.OrderByDescending(p => p.Price)],
-            (nameof(Product.CategoryId), true) => [.. source.OrderBy(p => p.CategoryId)],
-            (nameof(Product.CategoryId), false) => [.. source.OrderByDescending(p => p.CategoryId)],
+            (nameof(ProductGridDto.Id), true) => [.. source.OrderBy(p => p.Id)],
+            (nameof(ProductGridDto.Id), false) => [.. source.OrderByDescending(p => p.Id)],
+            (nameof(ProductGridDto.Name), true) => [.. source.OrderBy(p => p.Name)],
+            (nameof(ProductGridDto.Name), false) => [.. source.OrderByDescending(p => p.Name)],
+            (nameof(ProductGridDto.Price), true) => [.. source.OrderBy(p => p.Price)],
+            (nameof(ProductGridDto.Price), false) => [.. source.OrderByDescending(p => p.Price)],
+            (nameof(ProductGridDto.CategoryName), true) => [.. source.OrderBy(p => p.CategoryName)],
+            (nameof(ProductGridDto.CategoryName), false) => [.. source.OrderByDescending(p => p.CategoryName)],
             _ => [.. source]
         };
     }
 
     private static bool IsSortableColumn(string columnName)
     {
-        return columnName == nameof(Product.Id)
-            || columnName == nameof(Product.Name)
-            || columnName == nameof(Product.Price)
-            || columnName == nameof(Product.CategoryId);
+        return columnName == nameof(ProductGridDto.Id)
+            || columnName == nameof(ProductGridDto.Name)
+            || columnName == nameof(ProductGridDto.Price)
+            || columnName == nameof(ProductGridDto.CategoryName);
     }
 
     private async void BtnDelete_Click(object? sender, EventArgs e)
@@ -277,11 +280,31 @@ public partial class UC_ManageProducts : UserControl
         }
     }
 
-    private void BtnEdit_Click(object? sender, EventArgs e)
+    private async void BtnEdit_Click(object? sender, EventArgs e)
     {
         if (dgvProducts.SelectedRows.Count == 0) return;
         int productId = (int)dgvProducts.SelectedRows[0].Cells["Id"].Value;
-        MessageBox.Show($"Mở Form sửa cho món ID: {productId}");
+
+        try
+        {
+            var product = await _productService.GetProductByIdAsync(productId);
+            if (product == null)
+            {
+                MessageBox.Show("Không tìm thấy sản phẩm!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            var form = _serviceProvider.GetRequiredService<ProductDetailForm>();
+            form.LoadProductDetails(product);
+            if (form.ShowDialog() == DialogResult.OK)
+            {
+                await LoadDataAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Lỗi tải dữ liệu sản phẩm: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
 
 }

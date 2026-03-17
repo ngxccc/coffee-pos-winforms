@@ -2,6 +2,7 @@ using CoffeePOS.Core;
 using CoffeePOS.Features.Billing;
 using CoffeePOS.Features.Products;
 using CoffeePOS.Features.Sidebar;
+using CoffeePOS.Models;
 using CoffeePOS.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Panel = System.Windows.Forms.Panel;
@@ -12,6 +13,7 @@ public partial class CashierWorkspaceForm : Form
 {
     // DEPENDENCIES & CONTROLS
     private readonly IBillService _billService;
+    private readonly IBillQueryService _billQueryService;
     private readonly IServiceProvider _serviceProvider;
     private readonly IUserSession _session;
     private readonly PdfPrintQueue _pdfQueue;
@@ -30,13 +32,14 @@ public partial class CashierWorkspaceForm : Form
 
     // CONSTRUCTOR & INIT
     public CashierWorkspaceForm(IServiceProvider serviceProvider, IUserSession session,
-                    IBillService billService, PdfPrintQueue pdfQueue)
+                    IBillService billService, IBillQueryService billQueryService, PdfPrintQueue pdfQueue)
     {
         InitializeUI();
 
         _serviceProvider = serviceProvider;
         _session = session;
         _billService = billService;
+        _billQueryService = billQueryService;
         _pdfQueue = pdfQueue;
         _ucSidebar = _serviceProvider.GetRequiredService<UC_Sidebar>();
         _ucBilling = _serviceProvider.GetRequiredService<UC_Billing>();
@@ -105,7 +108,14 @@ public partial class CashierWorkspaceForm : Form
 
         _ucSidebar.OnBillHistoryClicked += async (s, e) =>
         {
-            var todayBills = await _billService.GetTodayBillsByUserAsync(_session.CurrentUser!.Id);
+            var billDtos = await _billQueryService.GetTodayBillsByUserAsync(_session.CurrentUser!.Id);
+            var todayBills = billDtos.Select(b => new Bill
+            {
+                Id = b.Id,
+                BuzzerNumber = b.BuzzerNumber,
+                TotalAmount = b.TotalAmount,
+                CreatedAt = b.CreatedAt
+            }).ToList();
             _ucBillHistory.BindData(todayBills);
 
             _ucMenu.Visible = false;

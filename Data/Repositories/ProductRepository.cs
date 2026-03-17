@@ -1,7 +1,7 @@
 using CoffeePOS.Models;
 using Npgsql;
 
-namespace CoffeePOS.Data.Repositories.Impl;
+namespace CoffeePOS.Data.Repositories;
 
 public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
 {
@@ -29,6 +29,31 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
             });
         }
         return list;
+    }
+
+    public async Task<Product?> GetProductByIdAsync(int productId)
+    {
+        using var conn = await dataSource.OpenConnectionAsync();
+
+        string sql = @"SELECT id, name, price, category_id, image_url
+                    FROM products
+                    WHERE id = @id AND is_deleted = false";
+        using var cmd = new NpgsqlCommand(sql, conn);
+        cmd.Parameters.AddWithValue("id", productId);
+        using var reader = await cmd.ExecuteReaderAsync();
+
+        if (await reader.ReadAsync())
+        {
+            return new Product
+            {
+                Id = reader.GetInt32(0),
+                Name = reader.GetString(1),
+                Price = reader.GetDecimal(2),
+                CategoryId = reader.IsDBNull(3) ? 0 : reader.GetInt32(3),
+                ImageUrl = reader.IsDBNull(4) ? null : reader.GetString(4)
+            };
+        }
+        return null;
     }
 
     public async Task AddProductAsync(Product product)

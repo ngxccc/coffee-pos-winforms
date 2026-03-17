@@ -11,6 +11,7 @@ namespace CoffeePOS.Features.Admin;
 public class UC_Dashboard : UserControl
 {
     private readonly IDashboardService _dashboardService;
+    private readonly IDashboardQueryService _dashboardQueryService;
 
     // UI Controls
     private Label lblTodayRevenue = null!;
@@ -19,9 +20,10 @@ public class UC_Dashboard : UserControl
     private CartesianChart chartRevenue = null!;
     private PieChart chartTopProducts = null!;
 
-    public UC_Dashboard(IDashboardService dashboardService)
+    public UC_Dashboard(IDashboardService dashboardService, IDashboardQueryService dashboardQueryService)
     {
         _dashboardService = dashboardService;
+        _dashboardQueryService = dashboardQueryService;
         InitializeUI();
         _ = LoadDashboardDataAsync();
     }
@@ -111,20 +113,19 @@ public class UC_Dashboard : UserControl
     {
         try
         {
-            var taskTodayRevenue = _dashboardService.GetTodayRevenueAsync();
-            var taskTodayOrders = _dashboardService.GetTodayOrderCountAsync();
-            var taskTodayAverageOrder = _dashboardService.GetTodayAverageOrderAsync();
+            // Fetch all data in parallel
+            var taskKpis = _dashboardQueryService.GetTodayKpisAsync();
+            var taskRev = _dashboardQueryService.Get7DaysRevenueChartAsync();
+            var taskTop = _dashboardQueryService.GetTop5ProductsAsync();
 
-            var taskRev = _dashboardService.Get7DaysRevenueAsync();
-            var taskTop = _dashboardService.GetTop5ProductsAsync();
+            await Task.WhenAll(taskKpis, taskRev, taskTop);
 
-            await Task.WhenAll(taskTodayRevenue, taskTodayOrders, taskTodayAverageOrder, taskRev, taskTop);
-
+            var kpis = taskKpis.Result;
             lblTodayRevenue.Text =
-                $"DOANH THU HÔM NAY\n{taskTodayRevenue.Result.ToString("N0", CultureInfo.GetCultureInfo("vi-VN"))} đ";
-            lblTodayOrders.Text = $"SỐ ĐƠN\n{taskTodayOrders.Result:N0}";
+                $"DOANH THU HÔM NAY\n{kpis.TodayRevenue.ToString("N0", CultureInfo.GetCultureInfo("vi-VN"))} đ";
+            lblTodayOrders.Text = $"SỐ ĐƠN\n{kpis.TodayOrderCount:N0}";
             lblTodayAverageOrder.Text =
-                $"TB ĐƠN\n{taskTodayAverageOrder.Result.ToString("N0", CultureInfo.GetCultureInfo("vi-VN"))} đ";
+                $"TB ĐƠN\n{kpis.TodayAverageOrder.ToString("N0", CultureInfo.GetCultureInfo("vi-VN"))} đ";
 
             var revData = taskRev.Result;
             chartRevenue.Series =

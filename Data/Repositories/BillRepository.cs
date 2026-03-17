@@ -1,4 +1,4 @@
-namespace CoffeePOS.Data.Repositories.Impl;
+namespace CoffeePOS.Data.Repositories;
 
 using CoffeePOS.Core;
 using CoffeePOS.Models;

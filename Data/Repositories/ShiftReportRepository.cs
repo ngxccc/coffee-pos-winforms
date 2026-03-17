@@ -1,7 +1,7 @@
 using CoffeePOS.Models;
 using Npgsql;
 
-namespace CoffeePOS.Data.Repositories.Impl;
+namespace CoffeePOS.Data.Repositories;
 
 public class ShiftReportRepository(NpgsqlDataSource dataSource) : IShiftReportRepository
 {
