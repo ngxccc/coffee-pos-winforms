@@ -2,6 +2,7 @@ namespace CoffeePOS.Models;
 
 public class ShiftReport
 {
+    public int Id { get; set; }
     public int UserId { get; set; }
     public DateTime StartTime { get; set; }
     public DateTime EndTime { get; set; }
@@ -10,4 +11,5 @@ public class ShiftReport
     public decimal ActualCash { get; set; }
     public decimal Variance { get; set; }
     public string Note { get; set; } = "";
+    public DateTime CreatedAt { get; set; }
 }
