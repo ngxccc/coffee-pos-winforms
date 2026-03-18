@@ -86,13 +86,19 @@ public class BillRepository(NpgsqlDataSource dataSource, IUserSession session) :
         return list;
     }
 
-    public void CancelBill(int billId)
+    public async Task CancelBillAsync(int billId)
     {
-        using var conn = dataSource.OpenConnection();
-        string sql = "UPDATE bills SET is_deleted = true, deleted_at = NOW(), updated_at = NOW() WHERE id = @id";
+        using var conn = await dataSource.OpenConnectionAsync();
+        string sql = @"
+            UPDATE bills
+            SET is_deleted = true,
+                deleted_at = NOW(),
+                updated_at = NOW()
+            WHERE id = @id
+                AND is_deleted = false";
         using var cmd = new NpgsqlCommand(sql, conn);
         cmd.Parameters.AddWithValue("id", billId);
-        cmd.ExecuteNonQuery();
+        await cmd.ExecuteNonQueryAsync();
     }
 
     public async Task<List<Bill>> GetTodayBillsByUserAsync(int userId)

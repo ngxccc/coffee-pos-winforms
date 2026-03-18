@@ -143,7 +143,14 @@ public class CategoryRepository(NpgsqlDataSource dataSource) : ICategoryReposito
     public async Task<bool> RestoreCategoryAsync(int categoryId)
     {
         using var conn = await dataSource.OpenConnectionAsync();
-        using var cmd = new NpgsqlCommand("UPDATE categories SET is_deleted = false WHERE id = @id AND is_deleted = true", conn);
+        string sql = @"
+            UPDATE categories
+            SET is_deleted = false,
+                updated_at = NOW(),
+                deleted_at = NULL
+            WHERE id = @id
+                AND is_deleted = true";
+        using var cmd = new NpgsqlCommand(sql, conn);
         cmd.Parameters.AddWithValue("id", categoryId);
         return await cmd.ExecuteNonQueryAsync() > 0;
     }

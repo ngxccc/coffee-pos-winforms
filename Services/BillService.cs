@@ -18,5 +18,5 @@ public class BillService(IBillRepository billRepo) : IBillService
 
     public Task<List<Bill>> GetTodayBillsByUserAsync(int userId) => billRepo.GetTodayBillsByUserAsync(userId);
 
-    public void CancelBill(int billId) => billRepo.CancelBill(billId);
+    public Task CancelBillAsync(int billId) => billRepo.CancelBillAsync(billId);
 }
