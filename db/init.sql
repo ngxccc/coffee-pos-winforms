@@ -42,7 +42,8 @@ CREATE TABLE IF NOT EXISTS bills (
     status INT DEFAULT 1, -- 0: Unpaid, 1: Paid
     is_deleted BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    updated_at TIMESTAMP DEFAULT NOW(),
+    deleted_at TIMESTAMP NULL
 );
 CREATE INDEX IF NOT EXISTS idx_bills_userid ON bills(user_id);
 CREATE INDEX IF NOT EXISTS idx_bills_reporting ON bills(created_at) WHERE is_deleted = false;

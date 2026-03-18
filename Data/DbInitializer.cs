@@ -58,7 +58,7 @@ public static class DbInitializer
                 status INT DEFAULT 1, -- 0: Unpaid, 1: Paid
                 is_deleted BOOLEAN DEFAULT FALSE,
                 created_at TIMESTAMP DEFAULT NOW(),
-                updated_at TIMESTAMP DEFAULT NOW()
+                updated_at TIMESTAMP DEFAULT NOW(),deleted_at TIMESTAMP NULL
             );";
         ExecuteSql(conn, sqlBills);
         ExecuteSql(conn, @"
