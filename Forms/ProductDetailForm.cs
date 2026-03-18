@@ -38,11 +38,15 @@ public partial class ProductDetailForm : Form
         Text = $"CẬP NHẬT SẢN PHẨM: {product.Name}";
         btnSave.Text = "CẬP NHẬT";
 
-        if (!string.IsNullOrEmpty(product.ImageUrl))
+        if (!string.IsNullOrWhiteSpace(product.ImageUrl))
         {
             _currentSavedImage = product.ImageUrl;
-            string fullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Images", "Products", product.ImageUrl);
+            string? fullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Images", "Products", product.ImageUrl);
             LoadImageSafely(fullPath);
+        }
+        else
+        {
+            _currentSavedImage = "";
         }
     }
 
@@ -188,9 +192,11 @@ public partial class ProductDetailForm : Form
         if (!File.Exists(imagePath)) return;
 
         picImage.Image?.Dispose();
+        picImage.Image = null;
 
-        using var fs = new FileStream(imagePath, FileMode.Open, FileAccess.Read);
-        picImage.Image = Image.FromStream(fs);
+        using var fs = new FileStream(imagePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+        using var img = Image.FromStream(fs);
+        picImage.Image = new Bitmap(img);
     }
 
     private async Task SaveProductAsync()
