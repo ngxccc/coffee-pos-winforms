@@ -64,6 +64,7 @@ static class Program
                 services.AddSingleton<Core.PdfPrintQueue>();
 
                 services.AddHostedService<Core.PdfPrintWorker>();
+                services.AddHostedService<Core.TrashCleanupWorker>();
 
                 services.Scan(scan => scan
                     .FromAssemblies(typeof(Program).Assembly) // Quét từ lõi project
