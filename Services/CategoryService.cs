@@ -7,9 +7,39 @@ public class CategoryService(ICategoryRepository categoryRepo) : ICategoryServic
 {
     public Task<List<Category>> GetAllCategoriesAsync() => categoryRepo.GetAllCategoriesAsync();
 
-    public async Task<List<Category>> GetSelectableCategoriesAsync()
+    public Task<List<Category>> GetSelectableCategoriesAsync()
+    => categoryRepo.GetAllCategoriesAsync();
+
+    public Task<Category?> GetCategoryByIdAsync(int id) => categoryRepo.GetCategoryByIdAsync(id);
+
+    public async Task AddCategoryAsync(Category category)
     {
-        var categories = await categoryRepo.GetAllCategoriesAsync();
-        return [.. categories.Where(category => category.Id > 0)];
+        if (string.IsNullOrWhiteSpace(category.Name)) throw new ArgumentException("Tên danh mục không được để trống!");
+
+        var all = await categoryRepo.GetAllCategoriesAsync();
+        if (all.Any(c => c.Name.Equals(category.Name, StringComparison.OrdinalIgnoreCase)))
+            throw new InvalidOperationException("Danh mục này đã tồn tại!");
+
+        category.Name = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(category.Name.ToLower());
+        await categoryRepo.AddCategoryAsync(category);
+    }
+
+    public async Task UpdateCategoryAsync(Category category)
+    {
+        if (string.IsNullOrWhiteSpace(category.Name)) throw new ArgumentException("Tên danh mục không được để trống!");
+
+        var all = await categoryRepo.GetAllCategoriesAsync();
+        // Khác ID nhưng trùng tên
+        if (all.Any(c => c.Id != category.Id && c.Name.Equals(category.Name, StringComparison.OrdinalIgnoreCase)))
+            throw new InvalidOperationException("Tên danh mục đã bị trùng với danh mục khác!");
+
+        category.Name = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(category.Name.ToLower());
+        await categoryRepo.UpdateCategoryAsync(category);
+    }
+
+    public async Task DeleteCategoryAsync(int id)
+    {
+        if (id <= 0) throw new ArgumentException("ID không hợp lệ!");
+        await categoryRepo.DeleteCategoryAsync(id);
     }
 }
