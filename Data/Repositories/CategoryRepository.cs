@@ -49,7 +49,13 @@ public class CategoryRepository(NpgsqlDataSource dataSource) : ICategoryReposito
     public async Task UpdateCategoryAsync(Category category)
     {
         using var conn = await dataSource.OpenConnectionAsync();
-        using var cmd = new NpgsqlCommand("UPDATE categories SET name = @name WHERE id = @id AND is_deleted = false", conn);
+        const string sql = @"
+            UPDATE categories
+            SET name = @name,
+                updated_at = NOW()
+            WHERE id = @id
+                AND is_deleted = false";
+        using var cmd = new NpgsqlCommand(sql, conn);
         cmd.Parameters.AddWithValue("id", category.Id);
         cmd.Parameters.AddWithValue("name", category.Name);
         await cmd.ExecuteNonQueryAsync();
@@ -62,14 +68,26 @@ public class CategoryRepository(NpgsqlDataSource dataSource) : ICategoryReposito
 
         try
         {
-            string sqlCat = "UPDATE categories SET is_deleted = true WHERE id = @id AND is_deleted = false";
+            string sqlCat = @"
+                UPDATE categories
+                SET is_deleted = true,
+                    updated_at = NOW(),
+                    deleted_at = NOW()
+                WHERE id = @id
+                    AND is_deleted = false";
             using var cmdCat = new NpgsqlCommand(sqlCat, conn, tx);
             cmdCat.Parameters.AddWithValue("id", id);
             int rowsAffected = await cmdCat.ExecuteNonQueryAsync();
 
             if (rowsAffected == 0) return false;
 
-            string sqlProd = "UPDATE products SET is_deleted = true WHERE category_id = @id AND is_deleted = false";
+            string sqlProd = @"
+                UPDATE products
+                SET is_deleted = true,
+                    updated_at = NOW(),
+                    deleted_at = NOW()
+                WHERE category_id = @id
+                    AND is_deleted = false";
             using var cmdProd = new NpgsqlCommand(sqlProd, conn, tx);
             cmdProd.Parameters.AddWithValue("id", id);
             await cmdProd.ExecuteNonQueryAsync();

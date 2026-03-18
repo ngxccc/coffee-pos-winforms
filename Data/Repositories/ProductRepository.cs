@@ -83,7 +83,8 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
             SET name = @name,
                 price = @price,
                 category_id = @categoryId,
-                image_url = @imageUrl
+                image_url = @imageUrl,
+                updated_at = NOW()
             WHERE id = @id
               AND is_deleted = false;";
 
@@ -101,7 +102,12 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
     {
         using var conn = await dataSource.OpenConnectionAsync();
 
-        string sql = "UPDATE products SET is_deleted = true WHERE id = @id";
+        string sql = @"
+            UPDATE products
+            SET is_deleted = true,
+                updated_at = NOW(),
+                deleted_at = NOW()
+            WHERE id = @id";
 
         using var cmd = new NpgsqlCommand(sql, conn);
         cmd.Parameters.AddWithValue("id", productId);

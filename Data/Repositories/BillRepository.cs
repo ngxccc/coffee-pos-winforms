@@ -89,7 +89,7 @@ public class BillRepository(NpgsqlDataSource dataSource, IUserSession session) :
     public void CancelBill(int billId)
     {
         using var conn = dataSource.OpenConnection();
-        string sql = "UPDATE bills SET is_deleted = true, updated_at = NOW() WHERE id = @id";
+        string sql = "UPDATE bills SET is_deleted = true, deleted_at = NOW(), updated_at = NOW() WHERE id = @id";
         using var cmd = new NpgsqlCommand(sql, conn);
         cmd.Parameters.AddWithValue("id", billId);
         cmd.ExecuteNonQuery();
