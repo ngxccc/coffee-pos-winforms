@@ -11,6 +11,7 @@ public partial class ProductDetailForm : Form
     private int _productId = 0;
     private string _selectedImagePath = "";
     private string _currentSavedImage = "";
+    private int _initialCategoryId = 0;
 
     // UI Controls
     private TextBox txtName = null!;
@@ -33,7 +34,7 @@ public partial class ProductDetailForm : Form
         _productId = product.Id;
         txtName.Text = product.Name;
         nudPrice.Value = product.Price;
-        cboCategory.SelectedValue = product.CategoryId;
+        _initialCategoryId = product.CategoryId;
 
         Text = $"CẬP NHẬT SẢN PHẨM: {product.Name}";
         btnSave.Text = "CẬP NHẬT";
@@ -58,6 +59,11 @@ public partial class ProductDetailForm : Form
             cboCategory.DataSource = categories;
             cboCategory.DisplayMember = "Name";
             cboCategory.ValueMember = "Id";
+
+            if (_initialCategoryId > 0)
+            {
+                cboCategory.SelectedValue = _initialCategoryId;
+            }
         }
         catch (Exception ex)
         {
