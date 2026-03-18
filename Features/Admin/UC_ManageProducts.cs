@@ -19,6 +19,7 @@ public partial class UC_ManageProducts : UserControl
     private IconButton btnAdd = null!;
     private IconButton btnEdit = null!;
     private IconButton btnDelete = null!;
+    private CheckBox chkTrashMode = null!;
 
     // State
     private List<ProductGridDto> _allProducts = [];
@@ -66,6 +67,17 @@ public partial class UC_ManageProducts : UserControl
         };
         txtSearch.TextChanged += TxtSearch_TextChanged;
 
+        chkTrashMode = new CheckBox
+        {
+            Text = "Xem Thùng Rác",
+            Font = new Font("Segoe UI", 12, FontStyle.Bold),
+            ForeColor = Color.Red,
+            AutoSize = true,
+            Location = new Point(570, 25),
+            Cursor = Cursors.Hand
+        };
+        chkTrashMode.CheckedChanged += ChkTrashMode_CheckedChanged;
+
         FlowLayoutPanel flpButtons = new()
         {
             Dock = DockStyle.Right,
@@ -83,6 +95,7 @@ public partial class UC_ManageProducts : UserControl
         pnlTop.Controls.Add(lblTitle);
         pnlTop.Controls.Add(txtSearch);
         pnlTop.Controls.Add(flpButtons);
+        pnlTop.Controls.Add(chkTrashMode);
 
         dgvProducts = new DataGridView
         {
@@ -142,7 +155,7 @@ public partial class UC_ManageProducts : UserControl
     {
         try
         {
-            _allProducts = await _productQueryService.GetProductGridAsync();
+            _allProducts = await _productQueryService.GetProductGridAsync(chkTrashMode.Checked);
             _filteredProducts = [.. _allProducts];
 
             RenderGrid(GetSortedData(_filteredProducts));
@@ -189,6 +202,20 @@ public partial class UC_ManageProducts : UserControl
             dgvProducts.Columns[_sortColumnName].HeaderCell.SortGlyphDirection =
                 _sortAscending ? SortOrder.Ascending : SortOrder.Descending;
         }
+    }
+
+    private async void ChkTrashMode_CheckedChanged(object? sender, EventArgs e)
+    {
+        dgvProducts.BackgroundColor = chkTrashMode.Checked ? Color.MistyRose : Color.WhiteSmoke;
+
+        btnDelete.Text = chkTrashMode.Checked ? " Khôi phục" : " Xóa";
+        btnDelete.IconChar = chkTrashMode.Checked ? IconChar.TrashRestore : IconChar.Trash;
+        btnDelete.BackColor = chkTrashMode.Checked ? Color.FromArgb(46, 204, 113) : Color.FromArgb(231, 76, 60);
+
+        btnAdd.Visible = !chkTrashMode.Checked;
+        btnEdit.Visible = !chkTrashMode.Checked;
+
+        await LoadDataAsync();
     }
 
     private void TxtSearch_TextChanged(object? sender, EventArgs e)
@@ -263,12 +290,32 @@ public partial class UC_ManageProducts : UserControl
         int productId = (int)selectedRow.Cells["Id"].Value;
         string productName = selectedRow.Cells["Name"].Value.ToString()!;
 
-        if (MessageBox.Show($"Xóa món '{productName}' khỏi Menu bán hàng?\n(Dữ liệu báo cáo cũ vẫn được giữ nguyên)",
-            "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+        try
         {
-            await _productService.DeleteProductAsync(productId);
+            if (chkTrashMode.Checked)
+            {
+                if (MessageBox.Show($"Khôi phục '{productName}' trở lại Menu bán hàng?",
+            "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+                {
+                    await _productService.RestoreProductAsync(productId);
+                }
+            }
+            else
+            {
+                if (MessageBox.Show($"Xóa món '{productName}' khỏi Menu bán hàng?\n(Dữ liệu báo cáo cũ vẫn được giữ nguyên)",
+            "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+                {
+                    await _productService.DeleteProductAsync(productId);
+                }
+            }
             await LoadDataAsync();
         }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message, "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+
     }
 
     private void BtnAdd_Click(object? sender, EventArgs e)

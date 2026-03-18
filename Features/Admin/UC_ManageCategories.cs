@@ -9,18 +9,24 @@ namespace CoffeePOS.Features.Admin;
 public class UC_ManageCategories : UserControl
 {
     private readonly ICategoryService _categoryService;
+    private readonly ICategoryQueryService _categoryQueryService;
     private readonly IServiceProvider _serviceProvider;
     private DataGridView dgvCategories = null!;
     private TextBox txtSearch = null!;
+    private IconButton btnDelete = null!;
+    private IconButton btnEdit = null!;
+    private IconButton btnAdd = null!;
+    private CheckBox chkTrashMode = null!;
 
     private List<Category> _allCategories = [];
     private List<Category> _filteredCategories = [];
     private string? _sortColumnName;
     private bool _sortAscending = true;
 
-    public UC_ManageCategories(ICategoryService categoryService, IServiceProvider serviceProvider)
+    public UC_ManageCategories(ICategoryService categoryService, ICategoryQueryService categoryQueryService, IServiceProvider serviceProvider)
     {
         _categoryService = categoryService;
+        _categoryQueryService = categoryQueryService;
         _serviceProvider = serviceProvider;
         InitializeUI();
         _ = LoadDataAsync();
@@ -34,7 +40,7 @@ public class UC_ManageCategories : UserControl
         {
             Dock = DockStyle.Top,
             Height = 80,
-            Padding = new Padding(20)
+            Padding = new Padding(0, 10, 0, 10)
         };
         Label lblTitle = new()
         {
@@ -54,18 +60,30 @@ public class UC_ManageCategories : UserControl
         };
         txtSearch.TextChanged += TxtSearch_TextChanged;
 
+        chkTrashMode = new CheckBox
+        {
+            Text = "Xem Thùng Rác",
+            Font = new Font("Segoe UI", 12, FontStyle.Bold),
+            ForeColor = Color.Red,
+            AutoSize = true,
+            Location = new Point(570, 25),
+            Cursor = Cursors.Hand
+        };
+        chkTrashMode.CheckedChanged += ChkTrashMode_CheckedChanged;
+
         FlowLayoutPanel flpBtns = new()
         {
             Dock = DockStyle.Right,
             Width = 400,
             FlowDirection = FlowDirection.RightToLeft,
+            Padding = new Padding(0, 10, 0, 0)
         };
 
-        var btnDel = CreateActionButton("Xóa", IconChar.Trash, Color.FromArgb(231, 76, 60), async (s, e) => await DeleteCategoryAsync());
-        var btnEdit = CreateActionButton("Sửa", IconChar.Pen, Color.FromArgb(243, 156, 18), EditCategory);
-        var btnAdd = CreateActionButton("Thêm Mới", IconChar.Plus, Color.FromArgb(46, 204, 113), AddCategory);
+        btnDelete = CreateActionButton("Xóa", IconChar.Trash, Color.FromArgb(231, 76, 60), async (s, e) => await DeleteCategoryAsync());
+        btnEdit = CreateActionButton("Sửa", IconChar.Pen, Color.FromArgb(243, 156, 18), EditCategory);
+        btnAdd = CreateActionButton("Thêm Mới", IconChar.Plus, Color.FromArgb(46, 204, 113), AddCategory);
 
-        flpBtns.Controls.AddRange([btnDel, btnEdit, btnAdd]);
+        flpBtns.Controls.AddRange([btnDelete, btnEdit, btnAdd]);
         pnlTop.Controls.AddRange([lblTitle, flpBtns]);
 
         dgvCategories = new DataGridView
@@ -97,6 +115,7 @@ public class UC_ManageCategories : UserControl
         Controls.Add(dgvCategories);
         Controls.Add(pnlTop);
         pnlTop.Controls.Add(txtSearch);
+        pnlTop.Controls.Add(chkTrashMode);
     }
 
     private static IconButton CreateActionButton(string text, IconChar icon, Color backColor, EventHandler clickEvent)
@@ -125,7 +144,7 @@ public class UC_ManageCategories : UserControl
     {
         try
         {
-            _allCategories = await _categoryService.GetAllCategoriesAsync();
+            _allCategories = await _categoryQueryService.GetCategoryGridAsync(chkTrashMode.Checked);
             _filteredCategories = [.. _allCategories];
 
             RenderGrid(GetSortedData(_filteredCategories));
@@ -205,6 +224,20 @@ public class UC_ManageCategories : UserControl
         RenderGrid(GetSortedData(_filteredCategories));
     }
 
+    private async void ChkTrashMode_CheckedChanged(object? sender, EventArgs e)
+    {
+        dgvCategories.BackgroundColor = chkTrashMode.Checked ? Color.MistyRose : Color.WhiteSmoke;
+
+        btnDelete.Text = chkTrashMode.Checked ? " Khôi phục" : " Xóa";
+        btnDelete.IconChar = chkTrashMode.Checked ? IconChar.TrashRestore : IconChar.Trash;
+        btnDelete.BackColor = chkTrashMode.Checked ? Color.FromArgb(46, 204, 113) : Color.FromArgb(231, 76, 60);
+
+        btnAdd.Visible = !chkTrashMode.Checked;
+        btnEdit.Visible = !chkTrashMode.Checked;
+
+        await LoadDataAsync();
+    }
+
     private List<Category> GetSortedData(IEnumerable<Category> source)
     {
         if (string.IsNullOrEmpty(_sortColumnName)) return [.. source];
@@ -249,16 +282,34 @@ public class UC_ManageCategories : UserControl
         string name = dgvCategories.SelectedRows[0].Cells["Name"].Value.ToString()!;
         int id = (int)dgvCategories.SelectedRows[0].Cells["Id"].Value;
 
-        if (MessageBox.Show($"Bạn có chắc chắn muốn xóa danh mục '{name}'?", "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+        if (chkTrashMode.Checked)
         {
-            try
+            if (MessageBox.Show($"Khôi phục danh mục '{name}'?", "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
             {
-                await _categoryService.DeleteCategoryAsync(id);
-                await LoadDataAsync();
+                try
+                {
+                    await _categoryService.RestoreCategoryAsync(id);
+                    await LoadDataAsync();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message, "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
             }
-            catch (Exception ex)
+        }
+        else
+        {
+            if (MessageBox.Show($"Bạn có chắc chắn muốn xóa danh mục '{name}'?", "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
             {
-                MessageBox.Show(ex.Message);
+                try
+                {
+                    await _categoryService.DeleteCategoryAsync(id);
+                    await LoadDataAsync();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
             }
         }
     }

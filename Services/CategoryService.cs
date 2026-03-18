@@ -42,4 +42,18 @@ public class CategoryService(ICategoryRepository categoryRepo) : ICategoryServic
         if (id <= 0) throw new ArgumentException("ID không hợp lệ!");
         await categoryRepo.DeleteCategoryAsync(id);
     }
+
+    public async Task RestoreCategoryAsync(int categoryId)
+    {
+        if (categoryId <= 0) throw new ArgumentException("ID danh mục không hợp lệ!");
+
+        var category = await categoryRepo.GetDeletedCategoryByIdAsync(categoryId)
+            ?? throw new ArgumentException("Danh mục không tồn tại hoặc chưa bị xóa!");
+
+        var activeCategories = await categoryRepo.GetAllCategoriesAsync();
+        if (activeCategories.Any(c => c.Name.Equals(category.Name, StringComparison.OrdinalIgnoreCase)))
+            throw new InvalidOperationException($"Tên danh mục '{category.Name}' đã được sử dụng bởi một danh mục đang hoạt động!");
+
+        await categoryRepo.RestoreCategoryAsync(categoryId);
+    }
 }

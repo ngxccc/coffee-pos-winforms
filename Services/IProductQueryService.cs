@@ -4,5 +4,5 @@ namespace CoffeePOS.Services;
 
 public interface IProductQueryService
 {
-    Task<List<ProductGridDto>> GetProductGridAsync();
+    Task<List<ProductGridDto>> GetProductGridAsync(bool isDeleted = false);
 }
