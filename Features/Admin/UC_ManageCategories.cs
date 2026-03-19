@@ -172,7 +172,10 @@ public class UC_ManageCategories : UserControl
             dgvCategories.Columns["Name"].FillWeight = 80;
         }
 
-        if (dgvCategories.Columns["IsDeleted"] != null) dgvCategories.Columns["IsDeleted"].Visible = false;
+        if (dgvCategories.Columns[nameof(Category.IsDeleted)] != null) dgvCategories.Columns[nameof(Category.IsDeleted)].Visible = false;
+        if (dgvCategories.Columns[nameof(Category.DeletedAt)] != null) dgvCategories.Columns[nameof(Category.DeletedAt)].Visible = false;
+        if (dgvCategories.Columns[nameof(Category.CreatedAt)] != null) dgvCategories.Columns[nameof(Category.CreatedAt)].Visible = false;
+        if (dgvCategories.Columns[nameof(Category.UpdatedAt)] != null) dgvCategories.Columns[nameof(Category.UpdatedAt)].Visible = false;
 
         foreach (DataGridViewColumn col in dgvCategories.Columns)
         {

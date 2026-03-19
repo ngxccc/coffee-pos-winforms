@@ -184,6 +184,12 @@ public static class InvoiceGenerator
                         r.RelativeItem().AlignRight().Text($"{varianceSign}{payload.Variance:N0} đ").FontColor(payload.Variance < 0 ? Colors.Red.Medium : Colors.Black);
                     });
 
+                    col.Item().Row(r =>
+                    {
+                        r.RelativeItem().Text("Lý do lệch tiền:");
+                        r.RelativeItem().AlignRight().Text(payload.Note.ToString());
+                    });
+
                     col.Item().PaddingVertical(5).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
 
                     col.Item().PaddingTop(15).AlignCenter().Text("Chữ ký thu ngân");

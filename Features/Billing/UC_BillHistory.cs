@@ -70,7 +70,8 @@ public class UC_BillHistory : UserControl
             "Status",
             "IsDeleted",
             "UpdatedAt",
-            "OrderType"
+            "OrderType",
+            nameof(Bill.DeletedAt)
         ];
         foreach (var col in nonVisibleColumns)
             if (_dgvBills.Columns[col] != null) _dgvBills.Columns[col].Visible = false;

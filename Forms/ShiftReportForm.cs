@@ -207,7 +207,8 @@ public partial class ShiftReportForm : Form
                 TotalBills = _totalBills,
                 ExpectedCash = _expectedCash,
                 ActualCash = actualCash,
-                Variance = actualCash - _expectedCash
+                Variance = actualCash - _expectedCash,
+                Note = txtNote.Text
             });
 
             // Bắn tín hiệu chốt ca thành công

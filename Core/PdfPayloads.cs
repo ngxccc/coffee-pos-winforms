@@ -22,4 +22,5 @@ public class ShiftReportPrintPayload : IPdfPayload
     public decimal ExpectedCash { get; set; }
     public decimal ActualCash { get; set; }
     public decimal Variance { get; set; }
+    public string Note { get; set; } = "";
 }
