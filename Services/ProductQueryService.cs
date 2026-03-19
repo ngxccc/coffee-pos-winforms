@@ -13,13 +13,13 @@ public class ProductQueryService(IProductRepository productRepo, ICategoryReposi
             : await productRepo.GetAllProductsAsync();
 
         return [.. products
-            .Select(p => new ProductGridDto
-            {
-                Id = p.Id,
-                Name = p.Name,
-                Price = p.Price,
-                CategoryId = p.CategoryId,
-                CategoryName = allCategories.FirstOrDefault(c => c.Id == p.CategoryId)?.Name ?? "---"
-            })];
+            .Select(p => new ProductGridDto(
+                p.Id,
+                p.Name,
+                p.Price,
+                allCategories.FirstOrDefault(c => c.Id == p.CategoryId)?.Name ?? "---",
+                p.CategoryId,
+                p.IsDeleted,
+                p.ImageUrl))];
     }
 }

@@ -32,4 +32,36 @@ public static class GridStateHelper
         }
         catch { }
     }
+
+    public static void ToggleSortState(this DataGridView dgv, int columnIndex, ref string? sortColumnName, ref bool sortAscending)
+    {
+        if (columnIndex < 0 || columnIndex >= dgv.Columns.Count) return;
+
+        string columnName = dgv.Columns[columnIndex].DataPropertyName;
+        if (string.IsNullOrWhiteSpace(columnName)) return;
+
+        if (string.Equals(sortColumnName, columnName, StringComparison.OrdinalIgnoreCase))
+        {
+            sortAscending = !sortAscending;
+        }
+        else
+        {
+            sortColumnName = columnName;
+            sortAscending = true;
+        }
+    }
+
+    public static void UpdateSortGlyphs(this DataGridView dgv, string? sortColumnName, bool sortAscending)
+    {
+        foreach (DataGridViewColumn col in dgv.Columns)
+        {
+            col.HeaderCell.SortGlyphDirection = SortOrder.None;
+        }
+
+        if (!string.IsNullOrEmpty(sortColumnName) && dgv.Columns.Contains(sortColumnName))
+        {
+            dgv.Columns[sortColumnName].HeaderCell.SortGlyphDirection =
+                sortAscending ? SortOrder.Ascending : SortOrder.Descending;
+        }
+    }
 }

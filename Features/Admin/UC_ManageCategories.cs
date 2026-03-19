@@ -121,57 +121,11 @@ public class UC_ManageCategories : UserControl
         }
     }
 
-    private void RenderGrid(List<CategoryGridDto> data)
-    {
-        dgvCategories.DataSource = null;
-        dgvCategories.DataSource = data;
-
-        if (dgvCategories.Columns[nameof(CategoryGridDto.Id)] != null)
-        {
-            dgvCategories.Columns[nameof(CategoryGridDto.Id)].HeaderText = "Mã";
-            dgvCategories.Columns[nameof(CategoryGridDto.Id)].FillWeight = 20;
-        }
-
-        if (dgvCategories.Columns[nameof(CategoryGridDto.Name)] != null)
-        {
-            dgvCategories.Columns[nameof(CategoryGridDto.Name)].HeaderText = "Tên Danh Mục";
-            dgvCategories.Columns[nameof(CategoryGridDto.Name)].FillWeight = 80;
-        }
-
-        foreach (DataGridViewColumn col in dgvCategories.Columns)
-        {
-            col.SortMode = DataGridViewColumnSortMode.Programmatic;
-            col.HeaderCell.SortGlyphDirection = SortOrder.None;
-        }
-
-        if (!string.IsNullOrEmpty(_sortColumnName) && dgvCategories.Columns.Contains(_sortColumnName))
-        {
-            dgvCategories.Columns[_sortColumnName].HeaderCell.SortGlyphDirection =
-                _sortAscending ? SortOrder.Ascending : SortOrder.Descending;
-        }
-    }
-
     private void DgvCategories_ColumnHeaderMouseClick(object? sender, DataGridViewCellMouseEventArgs e)
     {
-        if (e.ColumnIndex < 0 || e.ColumnIndex >= dgvCategories.Columns.Count) return;
+        dgvCategories.ToggleSortState(e.ColumnIndex, ref _sortColumnName, ref _sortAscending);
 
-        var column = dgvCategories.Columns[e.ColumnIndex];
-        string columnName = column.DataPropertyName;
-        if (string.IsNullOrWhiteSpace(columnName)) columnName = column.Name;
-
-        if (!IsSortableColumn(columnName)) return;
-
-        if (string.Equals(_sortColumnName, columnName, StringComparison.Ordinal))
-        {
-            _sortAscending = !_sortAscending;
-        }
-        else
-        {
-            _sortColumnName = columnName;
-            _sortAscending = true;
-        }
-
-        RenderGrid(GetSortedData(_filteredCategories));
+        ApplyFilterAndSort();
     }
 
     private async void ChkTrashMode_CheckedChanged(object? sender, EventArgs e)
@@ -186,26 +140,6 @@ public class UC_ManageCategories : UserControl
         btnEdit.Visible = !chkTrashMode.Checked;
 
         await LoadDataAsync();
-    }
-
-    private List<CategoryGridDto> GetSortedData(IEnumerable<CategoryGridDto> source)
-    {
-        if (string.IsNullOrEmpty(_sortColumnName)) return [.. source];
-
-        return (_sortColumnName, _sortAscending) switch
-        {
-            (nameof(CategoryGridDto.Id), true) => [.. source.OrderBy(c => c.Id)],
-            (nameof(CategoryGridDto.Id), false) => [.. source.OrderByDescending(c => c.Id)],
-            (nameof(CategoryGridDto.Name), true) => [.. source.OrderBy(c => c.Name)],
-            (nameof(CategoryGridDto.Name), false) => [.. source.OrderByDescending(c => c.Name)],
-            _ => [.. source]
-        };
-    }
-
-    private static bool IsSortableColumn(string columnName)
-    {
-        return columnName == nameof(CategoryGridDto.Id)
-            || columnName == nameof(CategoryGridDto.Name);
     }
 
     private async void AddCategoryAsync(object? s, EventArgs e)
@@ -268,18 +202,16 @@ public class UC_ManageCategories : UserControl
     {
         string keyword = txtSearch.Text.Trim();
 
-        if (string.IsNullOrEmpty(keyword))
-        {
-            _filteredCategories = [.. _allCategories];
-        }
-        else
-        {
-            // So sánh chuẩn .NET 8 (Không dùng ToLower)
-            _filteredCategories = [.. _allCategories.Where(c =>
-                c.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase))];
-        }
+        _filteredCategories = string.IsNullOrEmpty(keyword)
+            ? [.. _allCategories]
+            : [.. _allCategories.Where(c => c.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase))];
 
-        // Tự động ăn theo _sortColumnName và _sortAscending hiện tại
-        RenderGrid(GetSortedData(_filteredCategories));
+        // Sắp xếp dữ liệu bằng hàm Extension Reflection siêu việt (Sort)
+        var finalData = _filteredCategories.DynamicSort(_sortColumnName, _sortAscending).ToList();
+
+        // Đổ vào Grid. (DataGrid sẽ tự đọc [DisplayName] và [Browsable] để tự vẽ cột!)
+        dgvCategories.DataSource = finalData;
+
+        dgvCategories.UpdateSortGlyphs(_sortColumnName, _sortAscending);
     }
 }

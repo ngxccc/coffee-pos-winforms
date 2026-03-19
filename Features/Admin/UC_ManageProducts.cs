@@ -128,44 +128,6 @@ public partial class UC_ManageProducts : UserControl
         }
     }
 
-    private void RenderGrid(List<ProductGridDto> data)
-    {
-        dgvProducts.DataSource = null;
-        dgvProducts.DataSource = data;
-
-        dgvProducts.Columns["Id"].HeaderText = "Mã";
-        dgvProducts.Columns["Id"].FillWeight = 10;
-
-        dgvProducts.Columns["Name"].HeaderText = "Tên Sản Phẩm";
-        dgvProducts.Columns["Name"].FillWeight = 40;
-
-        dgvProducts.Columns["Price"].HeaderText = "Giá Bán";
-        dgvProducts.Columns["Price"].DefaultCellStyle.Format = "N0";
-        dgvProducts.Columns["Price"].FillWeight = 20;
-
-        if (dgvProducts.Columns["CategoryName"] != null)
-        {
-            dgvProducts.Columns["CategoryName"].HeaderText = "Danh Mục";
-            dgvProducts.Columns["CategoryName"].FillWeight = 30;
-        }
-
-        if (dgvProducts.Columns["CategoryId"] != null) dgvProducts.Columns["CategoryId"].Visible = false;
-        if (dgvProducts.Columns["IsDeleted"] != null) dgvProducts.Columns["IsDeleted"].Visible = false;
-        if (dgvProducts.Columns["ImageUrl"] != null) dgvProducts.Columns["ImageUrl"].Visible = false;
-
-        foreach (DataGridViewColumn col in dgvProducts.Columns)
-        {
-            col.SortMode = DataGridViewColumnSortMode.Programmatic;
-            col.HeaderCell.SortGlyphDirection = SortOrder.None;
-        }
-
-        if (!string.IsNullOrEmpty(_sortColumnName) && dgvProducts.Columns.Contains(_sortColumnName))
-        {
-            dgvProducts.Columns[_sortColumnName].HeaderCell.SortGlyphDirection =
-                _sortAscending ? SortOrder.Ascending : SortOrder.Descending;
-        }
-    }
-
     private async void ChkTrashMode_CheckedChanged(object? sender, EventArgs e)
     {
         dgvProducts.BackgroundColor = chkTrashMode.Checked ? Color.MistyRose : Color.WhiteSmoke;
@@ -182,52 +144,8 @@ public partial class UC_ManageProducts : UserControl
 
     private void DgvProducts_ColumnHeaderMouseClick(object? sender, DataGridViewCellMouseEventArgs e)
     {
-        if (e.ColumnIndex < 0 || e.ColumnIndex >= dgvProducts.Columns.Count) return;
-
-        var column = dgvProducts.Columns[e.ColumnIndex];
-        string columnName = column.DataPropertyName;
-        if (string.IsNullOrWhiteSpace(columnName)) columnName = column.Name;
-
-        if (!IsSortableColumn(columnName)) return;
-
-        if (string.Equals(_sortColumnName, columnName, StringComparison.Ordinal))
-        {
-            _sortAscending = !_sortAscending;
-        }
-        else
-        {
-            _sortColumnName = columnName;
-            _sortAscending = true;
-        }
-
-        var source = _filteredProducts.Count > 0 ? _filteredProducts : _allProducts;
-        RenderGrid(GetSortedData(source));
-    }
-
-    private List<ProductGridDto> GetSortedData(IEnumerable<ProductGridDto> source)
-    {
-        if (string.IsNullOrEmpty(_sortColumnName)) return [.. source];
-
-        return (_sortColumnName, _sortAscending) switch
-        {
-            (nameof(ProductGridDto.Id), true) => [.. source.OrderBy(p => p.Id)],
-            (nameof(ProductGridDto.Id), false) => [.. source.OrderByDescending(p => p.Id)],
-            (nameof(ProductGridDto.Name), true) => [.. source.OrderBy(p => p.Name)],
-            (nameof(ProductGridDto.Name), false) => [.. source.OrderByDescending(p => p.Name)],
-            (nameof(ProductGridDto.Price), true) => [.. source.OrderBy(p => p.Price)],
-            (nameof(ProductGridDto.Price), false) => [.. source.OrderByDescending(p => p.Price)],
-            (nameof(ProductGridDto.CategoryName), true) => [.. source.OrderBy(p => p.CategoryName)],
-            (nameof(ProductGridDto.CategoryName), false) => [.. source.OrderByDescending(p => p.CategoryName)],
-            _ => [.. source]
-        };
-    }
-
-    private static bool IsSortableColumn(string columnName)
-    {
-        return columnName == nameof(ProductGridDto.Id)
-            || columnName == nameof(ProductGridDto.Name)
-            || columnName == nameof(ProductGridDto.Price)
-            || columnName == nameof(ProductGridDto.CategoryName);
+        dgvProducts.ToggleSortState(e.ColumnIndex, ref _sortColumnName, ref _sortAscending);
+        ApplyFilterAndSort();
     }
 
     private async void DeleteProductAsync(object? sender, EventArgs e)
@@ -300,16 +218,16 @@ public partial class UC_ManageProducts : UserControl
     {
         string keyword = txtSearch.Text.Trim();
 
-        if (string.IsNullOrEmpty(keyword))
-        {
-            _filteredProducts = [.. _allProducts];
-        }
-        else
-        {
-            _filteredProducts = [.. _allProducts.Where(c =>
-                c.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase))];
-        }
+        _filteredProducts = string.IsNullOrEmpty(keyword)
+            ? [.. _allProducts]
+            : [.. _allProducts.Where(c => c.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase))];
 
-        RenderGrid(GetSortedData(_filteredProducts));
+        // Sắp xếp dữ liệu bằng hàm Extension Reflection siêu việt (Sort)
+        var finalData = _filteredProducts.DynamicSort(_sortColumnName, _sortAscending).ToList();
+
+        // Đổ vào Grid. (DataGrid sẽ tự đọc [DisplayName] và [Browsable] để tự vẽ cột!)
+        dgvProducts.DataSource = finalData;
+
+        dgvProducts.UpdateSortGlyphs(_sortColumnName, _sortAscending);
     }
 }

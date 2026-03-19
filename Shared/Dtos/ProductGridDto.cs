@@ -1,10 +1,14 @@
+using System.ComponentModel;
+
 namespace CoffeePOS.Shared.Dtos;
 
-public class ProductGridDto
-{
-    public int Id { get; set; }
-    public string Name { get; set; } = "";
-    public decimal Price { get; set; }
-    public int CategoryId { get; set; }
-    public string CategoryName { get; set; } = "";
-}
+public record ProductGridDto(
+    [property: DisplayName("Mã")] int Id,
+    [property: DisplayName("Tên Sản Phẩm")] string Name,
+    [property: DisplayName("Giá Bán")] decimal Price,
+    [property: DisplayName("Danh Mục")] string CategoryName,
+    // Gắn Browsable(false) để AutoGenerateColumns của DataGridView sẽ tự động ẨN nó đi
+    [property: Browsable(false)] int CategoryId,
+    [property: Browsable(false)] bool IsDeleted,
+    [property: Browsable(false)] string? ImageUrl
+);
