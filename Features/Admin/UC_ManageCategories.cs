@@ -58,7 +58,7 @@ public class UC_ManageCategories : UserControl
             Location = new Point(250, 22),
             PlaceholderText = "Nhập tên danh mục để tìm..."
         };
-        txtSearch.TextChanged += TxtSearch_TextChanged;
+        txtSearch.TextChanged += (s, e) => ApplyFilterAndSort();
 
         chkTrashMode = new CheckBox
         {
@@ -145,9 +145,8 @@ public class UC_ManageCategories : UserControl
         try
         {
             _allCategories = await _categoryQueryService.GetCategoryGridAsync(chkTrashMode.Checked);
-            _filteredCategories = [.. _allCategories];
 
-            RenderGrid(GetSortedData(_filteredCategories));
+            ApplyFilterAndSort();
         }
         catch (Exception ex)
         {
@@ -183,20 +182,6 @@ public class UC_ManageCategories : UserControl
             dgvCategories.Columns[_sortColumnName].HeaderCell.SortGlyphDirection =
                 _sortAscending ? SortOrder.Ascending : SortOrder.Descending;
         }
-    }
-
-    private void TxtSearch_TextChanged(object? sender, EventArgs e)
-    {
-        string keyword = txtSearch.Text.ToLower().Trim();
-        if (string.IsNullOrEmpty(keyword))
-        {
-            _filteredCategories = [.. _allCategories];
-            RenderGrid(GetSortedData(_filteredCategories));
-            return;
-        }
-
-        _filteredCategories = [.. _allCategories.Where(c => c.Name.Contains(keyword, StringComparison.CurrentCultureIgnoreCase))];
-        RenderGrid(GetSortedData(_filteredCategories));
     }
 
     private void DgvCategories_ColumnHeaderMouseClick(object? sender, DataGridViewCellMouseEventArgs e)
@@ -256,10 +241,10 @@ public class UC_ManageCategories : UserControl
             || columnName == nameof(CategoryGridDto.Name);
     }
 
-    private void AddCategory(object? s, EventArgs e)
+    private async void AddCategory(object? s, EventArgs e)
     {
         var form = _serviceProvider.GetRequiredService<CategoryDetailForm>();
-        if (form.ShowDialog() == DialogResult.OK) _ = LoadDataAsync();
+        if (form.ShowDialog() == DialogResult.OK) await LoadDataAsync();
     }
 
     private async void EditCategory(object? s, EventArgs e)
@@ -271,7 +256,7 @@ public class UC_ManageCategories : UserControl
 
         var form = _serviceProvider.GetRequiredService<CategoryDetailForm>();
         form.LoadCategory(cat);
-        if (form.ShowDialog() == DialogResult.OK) _ = LoadDataAsync();
+        if (form.ShowDialog() == DialogResult.OK) await LoadDataAsync();
     }
 
     private async Task DeleteCategoryAsync()
@@ -310,5 +295,24 @@ public class UC_ManageCategories : UserControl
                 }
             }
         }
+    }
+
+    private void ApplyFilterAndSort()
+    {
+        string keyword = txtSearch.Text.Trim();
+
+        if (string.IsNullOrEmpty(keyword))
+        {
+            _filteredCategories = [.. _allCategories];
+        }
+        else
+        {
+            // So sánh chuẩn .NET 8 (Không dùng ToLower)
+            _filteredCategories = [.. _allCategories.Where(c =>
+                c.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase))];
+        }
+
+        // Tự động ăn theo _sortColumnName và _sortAscending hiện tại
+        RenderGrid(GetSortedData(_filteredCategories));
     }
 }
