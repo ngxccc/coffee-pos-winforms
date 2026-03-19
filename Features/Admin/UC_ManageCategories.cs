@@ -1,6 +1,6 @@
 using CoffeePOS.Forms;
-using CoffeePOS.Models;
 using CoffeePOS.Services;
+using CoffeePOS.Shared.Dtos;
 using FontAwesome.Sharp;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -18,8 +18,8 @@ public class UC_ManageCategories : UserControl
     private IconButton btnAdd = null!;
     private CheckBox chkTrashMode = null!;
 
-    private List<Category> _allCategories = [];
-    private List<Category> _filteredCategories = [];
+    private List<CategoryGridDto> _allCategories = [];
+    private List<CategoryGridDto> _filteredCategories = [];
     private string? _sortColumnName;
     private bool _sortAscending = true;
 
@@ -155,27 +155,22 @@ public class UC_ManageCategories : UserControl
         }
     }
 
-    private void RenderGrid(List<Category> data)
+    private void RenderGrid(List<CategoryGridDto> data)
     {
         dgvCategories.DataSource = null;
         dgvCategories.DataSource = data;
 
-        if (dgvCategories.Columns["Id"] != null)
+        if (dgvCategories.Columns[nameof(CategoryGridDto.Id)] != null)
         {
-            dgvCategories.Columns["Id"].HeaderText = "Mã";
-            dgvCategories.Columns["Id"].FillWeight = 20;
+            dgvCategories.Columns[nameof(CategoryGridDto.Id)].HeaderText = "Mã";
+            dgvCategories.Columns[nameof(CategoryGridDto.Id)].FillWeight = 20;
         }
 
-        if (dgvCategories.Columns["Name"] != null)
+        if (dgvCategories.Columns[nameof(CategoryGridDto.Name)] != null)
         {
-            dgvCategories.Columns["Name"].HeaderText = "Tên Danh Mục";
-            dgvCategories.Columns["Name"].FillWeight = 80;
+            dgvCategories.Columns[nameof(CategoryGridDto.Name)].HeaderText = "Tên Danh Mục";
+            dgvCategories.Columns[nameof(CategoryGridDto.Name)].FillWeight = 80;
         }
-
-        if (dgvCategories.Columns[nameof(Category.IsDeleted)] != null) dgvCategories.Columns[nameof(Category.IsDeleted)].Visible = false;
-        if (dgvCategories.Columns[nameof(Category.DeletedAt)] != null) dgvCategories.Columns[nameof(Category.DeletedAt)].Visible = false;
-        if (dgvCategories.Columns[nameof(Category.CreatedAt)] != null) dgvCategories.Columns[nameof(Category.CreatedAt)].Visible = false;
-        if (dgvCategories.Columns[nameof(Category.UpdatedAt)] != null) dgvCategories.Columns[nameof(Category.UpdatedAt)].Visible = false;
 
         foreach (DataGridViewColumn col in dgvCategories.Columns)
         {
@@ -241,24 +236,24 @@ public class UC_ManageCategories : UserControl
         await LoadDataAsync();
     }
 
-    private List<Category> GetSortedData(IEnumerable<Category> source)
+    private List<CategoryGridDto> GetSortedData(IEnumerable<CategoryGridDto> source)
     {
         if (string.IsNullOrEmpty(_sortColumnName)) return [.. source];
 
         return (_sortColumnName, _sortAscending) switch
         {
-            (nameof(Category.Id), true) => [.. source.OrderBy(c => c.Id)],
-            (nameof(Category.Id), false) => [.. source.OrderByDescending(c => c.Id)],
-            (nameof(Category.Name), true) => [.. source.OrderBy(c => c.Name)],
-            (nameof(Category.Name), false) => [.. source.OrderByDescending(c => c.Name)],
+            (nameof(CategoryGridDto.Id), true) => [.. source.OrderBy(c => c.Id)],
+            (nameof(CategoryGridDto.Id), false) => [.. source.OrderByDescending(c => c.Id)],
+            (nameof(CategoryGridDto.Name), true) => [.. source.OrderBy(c => c.Name)],
+            (nameof(CategoryGridDto.Name), false) => [.. source.OrderByDescending(c => c.Name)],
             _ => [.. source]
         };
     }
 
     private static bool IsSortableColumn(string columnName)
     {
-        return columnName == nameof(Category.Id)
-            || columnName == nameof(Category.Name);
+        return columnName == nameof(CategoryGridDto.Id)
+            || columnName == nameof(CategoryGridDto.Name);
     }
 
     private void AddCategory(object? s, EventArgs e)

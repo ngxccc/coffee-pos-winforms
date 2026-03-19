@@ -1,8 +1,8 @@
-using CoffeePOS.Models;
+using CoffeePOS.Shared.Dtos;
 
 namespace CoffeePOS.Services;
 
 public interface ICategoryQueryService
 {
-    Task<List<Category>> GetCategoryGridAsync(bool isDeleted = false);
+    Task<List<CategoryGridDto>> GetCategoryGridAsync(bool isDeleted = false);
 }

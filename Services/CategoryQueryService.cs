@@ -1,14 +1,16 @@
 using CoffeePOS.Data.Repositories;
-using CoffeePOS.Models;
+using CoffeePOS.Shared.Dtos;
 
 namespace CoffeePOS.Services;
 
 public class CategoryQueryService(ICategoryRepository categoryRepo) : ICategoryQueryService
 {
-    public Task<List<Category>> GetCategoryGridAsync(bool isDeleted = false)
+    public async Task<List<CategoryGridDto>> GetCategoryGridAsync(bool isDeleted = false)
     {
-        return isDeleted
-            ? categoryRepo.GetDeletedCategoriesAsync()
-            : categoryRepo.GetAllCategoriesAsync();
+        var rawCategories = isDeleted
+            ? await categoryRepo.GetDeletedCategoriesAsync()
+            : await categoryRepo.GetAllCategoriesAsync();
+
+        return [.. rawCategories.Select(c => new CategoryGridDto(c.Id, c.Name))];
     }
 }
