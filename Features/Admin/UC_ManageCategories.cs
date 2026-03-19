@@ -1,6 +1,7 @@
 using CoffeePOS.Forms;
 using CoffeePOS.Services;
 using CoffeePOS.Shared.Dtos;
+using CoffeePOS.Shared.Helpers;
 using FontAwesome.Sharp;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -82,39 +83,20 @@ public class UC_ManageCategories : UserControl
             Padding = new Padding(0, 10, 0, 0)
         };
 
-        btnDelete = CreateActionButton("Xóa", IconChar.Trash, Color.FromArgb(231, 76, 60), async (s, e) => await DeleteCategoryAsync());
-        btnEdit = CreateActionButton("Sửa", IconChar.Pen, Color.FromArgb(243, 156, 18), EditCategory);
-        btnAdd = CreateActionButton("Thêm Mới", IconChar.Plus, Color.FromArgb(46, 204, 113), AddCategory);
+        btnDelete = UIHelper.CreateActionButton("Xóa", IconChar.Trash, Color.FromArgb(231, 76, 60), async (s, e) => await DeleteCategoryAsync());
+        btnEdit = UIHelper.CreateActionButton("Sửa", IconChar.Pen, Color.FromArgb(243, 156, 18), EditCategoryAsync);
+        btnAdd = UIHelper.CreateActionButton("Thêm Mới", IconChar.Plus, Color.FromArgb(46, 204, 113), AddCategoryAsync);
 
         flpBtns.Controls.AddRange([btnDelete, btnEdit, btnAdd]);
         pnlTop.Controls.AddRange([lblTitle, flpBtns]);
 
         dgvCategories = new DataGridView
         {
-            Dock = DockStyle.Fill,
-            AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
-            AllowUserToAddRows = false,
-            AllowUserToDeleteRows = false,
-            ReadOnly = true,
-            SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-            BackgroundColor = Color.WhiteSmoke,
-            BorderStyle = BorderStyle.None,
-            RowHeadersVisible = false,
-            RowTemplate = { Height = 40 },
-            Font = new Font("Segoe UI", 11),
-            EnableHeadersVisualStyles = false,
-
-            AllowUserToResizeColumns = false,
-            AllowUserToResizeRows = false,
-            ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing,
-            RowHeadersWidthSizeMode = DataGridViewRowHeadersWidthSizeMode.DisableResizing
+            Dock = DockStyle.Fill
         };
-        dgvCategories.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(31, 30, 68);
-        dgvCategories.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
-        dgvCategories.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 11, FontStyle.Bold);
-        dgvCategories.ColumnHeadersHeight = 40;
+        dgvCategories.ApplyStandardAdminStyle();
         dgvCategories.ColumnHeaderMouseClick += DgvCategories_ColumnHeaderMouseClick;
-        dgvCategories.CellDoubleClick += EditCategory;
+        dgvCategories.CellDoubleClick += EditCategoryAsync;
 
         Controls.Add(dgvCategories);
         Controls.Add(pnlTop);
@@ -122,84 +104,21 @@ public class UC_ManageCategories : UserControl
         pnlTop.Controls.Add(chkTrashMode);
     }
 
-    private static IconButton CreateActionButton(string text, IconChar icon, Color backColor, EventHandler clickEvent)
-    {
-        IconButton btn = new()
-        {
-            Text = " " + text,
-            IconChar = icon,
-            IconSize = 24,
-            IconColor = Color.White,
-            ForeColor = Color.White,
-            BackColor = backColor,
-            Font = new Font("Segoe UI", 10, FontStyle.Bold),
-            Size = new Size(120, 40),
-            FlatStyle = FlatStyle.Flat,
-            TextImageRelation = TextImageRelation.ImageBeforeText,
-            Cursor = Cursors.Hand,
-            Margin = new Padding(5, 0, 0, 0)
-        };
-        btn.FlatAppearance.BorderSize = 0;
-        btn.Click += clickEvent;
-        return btn;
-    }
-
     private async Task LoadDataAsync()
     {
         try
         {
-            SaveGridPosition();
+            dgvCategories.SavePosition(ref _savedScrollPosition, ref _savedSelectedRowId);
 
             _allCategories = await _categoryQueryService.GetCategoryGridAsync(chkTrashMode.Checked);
             ApplyFilterAndSort();
 
-            RestoreGridPosition();
+            dgvCategories.RestorePosition(_savedScrollPosition, _savedSelectedRowId);
         }
         catch (Exception ex)
         {
             MessageBox.Show($"Lỗi tải dữ liệu: {ex.Message}");
         }
-    }
-
-    private void SaveGridPosition()
-    {
-        if (dgvCategories.Rows.Count == 0) return;
-
-        _savedScrollPosition = dgvCategories.FirstDisplayedScrollingRowIndex;
-        _savedSelectedRowId = dgvCategories.SelectedRows.Count > 0
-            ? (int)dgvCategories.SelectedRows[0].Cells[nameof(CategoryGridDto.Id)].Value
-            : -1;
-    }
-
-    private void RestoreGridPosition()
-    {
-        if (dgvCategories.Rows.Count == 0) return;
-
-        try
-        {
-            // Dọn dẹp cái dòng bị bôi xanh mặc định ngớ ngẩn của WinForms
-            dgvCategories.ClearSelection();
-
-            // Phục hồi dòng bôi xanh bằng ID
-            if (_savedSelectedRowId > 0)
-            {
-                foreach (DataGridViewRow row in dgvCategories.Rows)
-                {
-                    if ((int)row.Cells[nameof(CategoryGridDto.Id)].Value == _savedSelectedRowId)
-                    {
-                        row.Selected = true;
-                        break;
-                    }
-                }
-            }
-
-            if (_savedScrollPosition >= 0)
-            {
-                int safeIndex = Math.Min(_savedScrollPosition, dgvCategories.Rows.Count - 1);
-                dgvCategories.FirstDisplayedScrollingRowIndex = safeIndex;
-            }
-        }
-        catch { }
     }
 
     private void RenderGrid(List<CategoryGridDto> data)
@@ -289,13 +208,13 @@ public class UC_ManageCategories : UserControl
             || columnName == nameof(CategoryGridDto.Name);
     }
 
-    private async void AddCategory(object? s, EventArgs e)
+    private async void AddCategoryAsync(object? s, EventArgs e)
     {
         var form = _serviceProvider.GetRequiredService<CategoryDetailForm>();
         if (form.ShowDialog() == DialogResult.OK) await LoadDataAsync();
     }
 
-    private async void EditCategory(object? s, EventArgs e)
+    private async void EditCategoryAsync(object? s, EventArgs e)
     {
         if (dgvCategories.SelectedRows.Count == 0) return;
         int id = (int)dgvCategories.SelectedRows[0].Cells["Id"].Value;

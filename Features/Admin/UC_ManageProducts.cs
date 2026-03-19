@@ -1,7 +1,7 @@
 using CoffeePOS.Forms;
-using CoffeePOS.Models;
 using CoffeePOS.Services;
 using CoffeePOS.Shared.Dtos;
+using CoffeePOS.Shared.Helpers;
 using FontAwesome.Sharp;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -26,6 +26,8 @@ public partial class UC_ManageProducts : UserControl
     private List<ProductGridDto> _filteredProducts = [];
     private string? _sortColumnName;
     private bool _sortAscending = true;
+    private int _savedScrollPosition = -1;
+    private int _savedSelectedRowId = -1;
 
     public UC_ManageProducts(IProductService productService, IProductQueryService productQueryService, IServiceProvider serviceProvider)
     {
@@ -65,7 +67,7 @@ public partial class UC_ManageProducts : UserControl
             Location = new Point(250, 22),
             PlaceholderText = "Nhập tên món để tìm..."
         };
-        txtSearch.TextChanged += TxtSearch_TextChanged;
+        txtSearch.TextChanged += (s, e) => ApplyFilterAndSort();
 
         chkTrashMode = new CheckBox
         {
@@ -86,9 +88,9 @@ public partial class UC_ManageProducts : UserControl
             Padding = new Padding(0, 10, 0, 0)
         };
 
-        btnDelete = CreateActionButton("Xóa", IconChar.Trash, Color.FromArgb(231, 76, 60), BtnDelete_Click);
-        btnEdit = CreateActionButton("Sửa", IconChar.Pen, Color.FromArgb(243, 156, 18), BtnEdit_Click);
-        btnAdd = CreateActionButton("Thêm Mới", IconChar.Plus, Color.FromArgb(46, 204, 113), BtnAdd_Click);
+        btnDelete = UIHelper.CreateActionButton("Xóa", IconChar.Trash, Color.FromArgb(231, 76, 60), DeleteProductAsync);
+        btnEdit = UIHelper.CreateActionButton("Sửa", IconChar.Pen, Color.FromArgb(243, 156, 18), EditProductAsync);
+        btnAdd = UIHelper.CreateActionButton("Thêm Mới", IconChar.Plus, Color.FromArgb(46, 204, 113), AddProductAsync);
 
         flpButtons.Controls.AddRange([btnDelete, btnEdit, btnAdd]);
 
@@ -99,67 +101,26 @@ public partial class UC_ManageProducts : UserControl
 
         dgvProducts = new DataGridView
         {
-            Dock = DockStyle.Fill,
-            AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
-            AllowUserToAddRows = false,
-            AllowUserToDeleteRows = false,
-            ReadOnly = true,
-            SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-            BackgroundColor = Color.WhiteSmoke,
-            BorderStyle = BorderStyle.None,
-            RowHeadersVisible = false,
-            RowTemplate = { Height = 40 },
-            Font = new Font("Segoe UI", 11),
-            EnableHeadersVisualStyles = false,
-
-            AllowUserToResizeColumns = false,
-            AllowUserToResizeRows = false,
-            ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing,
-            RowHeadersWidthSizeMode = DataGridViewRowHeadersWidthSizeMode.DisableResizing
+            Dock = DockStyle.Fill
         };
-        dgvProducts.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(31, 30, 68);
-        dgvProducts.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
-        dgvProducts.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 11, FontStyle.Bold);
-        dgvProducts.ColumnHeadersHeight = 40;
+        dgvProducts.ApplyStandardAdminStyle();
         dgvProducts.ColumnHeaderMouseClick += DgvProducts_ColumnHeaderMouseClick;
-        dgvProducts.CellDoubleClick += BtnEdit_Click;
+        dgvProducts.CellDoubleClick += EditProductAsync;
 
         Controls.Add(dgvProducts);
         Controls.Add(pnlTop);
     }
 
-    private static IconButton CreateActionButton(string text, IconChar icon, Color backColor, EventHandler clickEvent)
-    {
-        IconButton btn = new()
-        {
-            Text = " " + text,
-            IconChar = icon,
-            IconSize = 24,
-            IconColor = Color.White,
-            ForeColor = Color.White,
-            BackColor = backColor,
-            Font = new Font("Segoe UI", 10, FontStyle.Bold),
-            Size = new Size(120, 40),
-            FlatStyle = FlatStyle.Flat,
-            TextImageRelation = TextImageRelation.ImageBeforeText,
-            Cursor = Cursors.Hand,
-            Margin = new Padding(5, 0, 0, 0)
-        };
-        btn.FlatAppearance.BorderSize = 0;
-        btn.Click += clickEvent;
-        return btn;
-    }
-
-    // BUSINESS LOGIC
-
     private async Task LoadDataAsync()
     {
         try
         {
-            _allProducts = await _productQueryService.GetProductGridAsync(chkTrashMode.Checked);
-            _filteredProducts = [.. _allProducts];
+            dgvProducts.SavePosition(ref _savedScrollPosition, ref _savedSelectedRowId);
 
-            RenderGrid(GetSortedData(_filteredProducts));
+            _allProducts = await _productQueryService.GetProductGridAsync(chkTrashMode.Checked);
+            ApplyFilterAndSort();
+
+            dgvProducts.RestorePosition(_savedScrollPosition, _savedSelectedRowId);
         }
         catch (Exception ex)
         {
@@ -219,20 +180,6 @@ public partial class UC_ManageProducts : UserControl
         await LoadDataAsync();
     }
 
-    private void TxtSearch_TextChanged(object? sender, EventArgs e)
-    {
-        string keyword = txtSearch.Text.ToLower().Trim();
-        if (string.IsNullOrEmpty(keyword))
-        {
-            _filteredProducts = [.. _allProducts];
-            RenderGrid(GetSortedData(_filteredProducts));
-            return;
-        }
-
-        _filteredProducts = [.. _allProducts.Where(p => p.Name.Contains(keyword, StringComparison.CurrentCultureIgnoreCase))];
-        RenderGrid(GetSortedData(_filteredProducts));
-    }
-
     private void DgvProducts_ColumnHeaderMouseClick(object? sender, DataGridViewCellMouseEventArgs e)
     {
         if (e.ColumnIndex < 0 || e.ColumnIndex >= dgvProducts.Columns.Count) return;
@@ -283,13 +230,13 @@ public partial class UC_ManageProducts : UserControl
             || columnName == nameof(ProductGridDto.CategoryName);
     }
 
-    private async void BtnDelete_Click(object? sender, EventArgs e)
+    private async void DeleteProductAsync(object? sender, EventArgs e)
     {
         if (dgvProducts.SelectedRows.Count == 0) return;
 
         var selectedRow = dgvProducts.SelectedRows[0];
-        int productId = (int)selectedRow.Cells["Id"].Value;
-        string productName = selectedRow.Cells["Name"].Value.ToString()!;
+        int productId = (int)selectedRow.Cells[nameof(ProductGridDto.Id)].Value;
+        string productName = selectedRow.Cells[nameof(ProductGridDto.Name)].Value.ToString()!;
 
         try
         {
@@ -319,19 +266,16 @@ public partial class UC_ManageProducts : UserControl
 
     }
 
-    private void BtnAdd_Click(object? sender, EventArgs e)
+    private async void AddProductAsync(object? sender, EventArgs e)
     {
         var form = _serviceProvider.GetRequiredService<ProductDetailForm>();
-        if (form.ShowDialog() == DialogResult.OK)
-        {
-            _ = LoadDataAsync();
-        }
+        if (form.ShowDialog() == DialogResult.OK) await LoadDataAsync();
     }
 
-    private async void BtnEdit_Click(object? sender, EventArgs e)
+    private async void EditProductAsync(object? sender, EventArgs e)
     {
         if (dgvProducts.SelectedRows.Count == 0) return;
-        int productId = (int)dgvProducts.SelectedRows[0].Cells["Id"].Value;
+        int productId = (int)dgvProducts.SelectedRows[0].Cells[nameof(ProductGridDto.Id)].Value;
 
         try
         {
@@ -344,10 +288,7 @@ public partial class UC_ManageProducts : UserControl
 
             var form = _serviceProvider.GetRequiredService<ProductDetailForm>();
             form.LoadProductDetails(product);
-            if (form.ShowDialog() == DialogResult.OK)
-            {
-                await LoadDataAsync();
-            }
+            if (form.ShowDialog() == DialogResult.OK) await LoadDataAsync();
         }
         catch (Exception ex)
         {
@@ -355,4 +296,20 @@ public partial class UC_ManageProducts : UserControl
         }
     }
 
+    private void ApplyFilterAndSort()
+    {
+        string keyword = txtSearch.Text.Trim();
+
+        if (string.IsNullOrEmpty(keyword))
+        {
+            _filteredProducts = [.. _allProducts];
+        }
+        else
+        {
+            _filteredProducts = [.. _allProducts.Where(c =>
+                c.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase))];
+        }
+
+        RenderGrid(GetSortedData(_filteredProducts));
+    }
 }
