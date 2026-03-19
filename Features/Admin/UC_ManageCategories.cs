@@ -23,6 +23,9 @@ public class UC_ManageCategories : UserControl
     private string? _sortColumnName;
     private bool _sortAscending = true;
 
+    private int _savedScrollPosition = -1;
+    private int _savedSelectedRowId = -1;
+
     public UC_ManageCategories(ICategoryService categoryService, ICategoryQueryService categoryQueryService, IServiceProvider serviceProvider)
     {
         _categoryService = categoryService;
@@ -145,14 +148,58 @@ public class UC_ManageCategories : UserControl
     {
         try
         {
-            _allCategories = await _categoryQueryService.GetCategoryGridAsync(chkTrashMode.Checked);
+            SaveGridPosition();
 
+            _allCategories = await _categoryQueryService.GetCategoryGridAsync(chkTrashMode.Checked);
             ApplyFilterAndSort();
+
+            RestoreGridPosition();
         }
         catch (Exception ex)
         {
             MessageBox.Show($"Lỗi tải dữ liệu: {ex.Message}");
         }
+    }
+
+    private void SaveGridPosition()
+    {
+        if (dgvCategories.Rows.Count == 0) return;
+
+        _savedScrollPosition = dgvCategories.FirstDisplayedScrollingRowIndex;
+        _savedSelectedRowId = dgvCategories.SelectedRows.Count > 0
+            ? (int)dgvCategories.SelectedRows[0].Cells[nameof(CategoryGridDto.Id)].Value
+            : -1;
+    }
+
+    private void RestoreGridPosition()
+    {
+        if (dgvCategories.Rows.Count == 0) return;
+
+        try
+        {
+            // Dọn dẹp cái dòng bị bôi xanh mặc định ngớ ngẩn của WinForms
+            dgvCategories.ClearSelection();
+
+            // Phục hồi dòng bôi xanh bằng ID
+            if (_savedSelectedRowId > 0)
+            {
+                foreach (DataGridViewRow row in dgvCategories.Rows)
+                {
+                    if ((int)row.Cells[nameof(CategoryGridDto.Id)].Value == _savedSelectedRowId)
+                    {
+                        row.Selected = true;
+                        break;
+                    }
+                }
+            }
+
+            if (_savedScrollPosition >= 0)
+            {
+                int safeIndex = Math.Min(_savedScrollPosition, dgvCategories.Rows.Count - 1);
+                dgvCategories.FirstDisplayedScrollingRowIndex = safeIndex;
+            }
+        }
+        catch { }
     }
 
     private void RenderGrid(List<CategoryGridDto> data)
