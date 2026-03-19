@@ -111,6 +111,7 @@ public class UC_ManageCategories : UserControl
         dgvCategories.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 11, FontStyle.Bold);
         dgvCategories.ColumnHeadersHeight = 40;
         dgvCategories.ColumnHeaderMouseClick += DgvCategories_ColumnHeaderMouseClick;
+        dgvCategories.CellDoubleClick += EditCategory;
 
         Controls.Add(dgvCategories);
         Controls.Add(pnlTop);

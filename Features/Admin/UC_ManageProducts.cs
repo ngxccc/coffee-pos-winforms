@@ -122,6 +122,7 @@ public partial class UC_ManageProducts : UserControl
         dgvProducts.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 11, FontStyle.Bold);
         dgvProducts.ColumnHeadersHeight = 40;
         dgvProducts.ColumnHeaderMouseClick += DgvProducts_ColumnHeaderMouseClick;
+        dgvProducts.CellDoubleClick += BtnEdit_Click;
 
         Controls.Add(dgvProducts);
         Controls.Add(pnlTop);
