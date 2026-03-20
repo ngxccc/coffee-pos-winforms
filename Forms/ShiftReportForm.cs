@@ -185,6 +185,14 @@ public partial class ShiftReportForm : Form
             return;
         }
 
+        decimal variance = actualCash - _expectedCash;
+        if (variance != 0 && string.IsNullOrWhiteSpace(txtNote.Text))
+        {
+            MessageBox.Show("Ca có lệch tiền nên bắt buộc nhập ghi chú lý do!");
+            txtNote.Focus();
+            return;
+        }
+
         btnConfirm.Enabled = false;
         try
         {
@@ -195,7 +203,7 @@ public partial class ShiftReportForm : Form
                 _totalBills,
                 _expectedCash,
                 actualCash,
-                actualCash - _expectedCash,
+                variance,
                 txtNote.Text);
 
             await _shiftReportService.SaveReportAsync(command);
@@ -208,7 +216,7 @@ public partial class ShiftReportForm : Form
                 TotalBills = _totalBills,
                 ExpectedCash = _expectedCash,
                 ActualCash = actualCash,
-                Variance = actualCash - _expectedCash,
+                Variance = variance,
                 Note = txtNote.Text
             });
 

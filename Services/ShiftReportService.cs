@@ -12,6 +12,8 @@ public class ShiftReportService(IShiftReportRepository shiftReportRepo) : IShift
         if (command.EndTime < command.StartTime) throw new ArgumentException("Thời gian chốt ca không hợp lệ!");
         if (command.TotalBills < 0) throw new ArgumentException("Số hóa đơn không hợp lệ!");
         if (command.ExpectedCash < 0 || command.ActualCash < 0) throw new ArgumentException("Số tiền không hợp lệ!");
+        if (command.Variance != 0 && string.IsNullOrWhiteSpace(command.Note))
+            throw new ArgumentException("Ca có lệch tiền nên bắt buộc nhập ghi chú lý do!");
 
         return shiftReportRepo.SaveReportAsync(command);
     }
