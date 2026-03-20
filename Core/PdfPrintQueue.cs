@@ -30,4 +30,9 @@ public class PdfPrintQueue
     {
         return await _queue.Reader.ReadAsync(cancellationToken);
     }
+
+    public IAsyncEnumerable<IPdfPayload> StreamJobsAsync(CancellationToken ct)
+    {
+        return _queue.Reader.ReadAllAsync(ct);
+    }
 }
