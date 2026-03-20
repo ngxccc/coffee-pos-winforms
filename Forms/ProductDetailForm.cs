@@ -1,5 +1,6 @@
 using CoffeePOS.Models;
-using CoffeePOS.Services;
+using CoffeePOS.Services.Contracts.Commands;
+using CoffeePOS.Services.Contracts.Queries;
 using Serilog;
 
 namespace CoffeePOS.Forms;

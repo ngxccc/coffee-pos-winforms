@@ -1,7 +1,7 @@
 using CoffeePOS.Models;
 using CoffeePOS.Shared.Dtos;
 
-namespace CoffeePOS.Services.Contracts.Commands;
+namespace CoffeePOS.Services.Contracts.Queries;
 
 public interface IProductQueryService
 {

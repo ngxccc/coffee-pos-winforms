@@ -1,5 +1,5 @@
 using System.Globalization;
-using CoffeePOS.Services;
+using CoffeePOS.Services.Contracts.Queries;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;

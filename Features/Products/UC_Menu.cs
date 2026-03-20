@@ -1,5 +1,5 @@
 using CoffeePOS.Models;
-using CoffeePOS.Services;
+using CoffeePOS.Services.Contracts.Queries;
 
 namespace CoffeePOS.Features.Products;
 
