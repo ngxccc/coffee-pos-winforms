@@ -25,10 +25,7 @@ public class UserService(IUserRepository userRepo) : IUserService
         if (newPassword.Length < 6)
             throw new ArgumentException("Mật khẩu mới phải có ít nhất 6 ký tự!");
 
-        var verifiedUser = await userRepo.AuthenticateAsync(username, currentPassword);
-        if (verifiedUser == null)
-            throw new InvalidOperationException("Mật khẩu hiện tại không chính xác!");
-
+        var verifiedUser = await userRepo.AuthenticateAsync(username, currentPassword) ?? throw new InvalidOperationException("Mật khẩu hiện tại không chính xác!");
         string newHash = BCrypt.Net.BCrypt.HashPassword(newPassword, workFactor: 11);
         await userRepo.UpdatePasswordAsync(userId, newHash);
     }

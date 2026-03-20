@@ -125,6 +125,7 @@ public partial class CashierWorkspaceForm : Form
             {
                 _session.Logout();
                 DialogResult = DialogResult.Abort;
+                _isLoggingOut = true;
                 Close();
             }
         };
