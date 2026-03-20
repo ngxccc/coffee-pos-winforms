@@ -1,28 +1,27 @@
 using System.Data.Common;
 using CoffeePOS.Models;
+using CoffeePOS.Shared.Helpers;
 using Npgsql;
 
 namespace CoffeePOS.Data.Repositories;
 
 public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
 {
-    private const string ProductColumns = """
-        id, name, price, category_id, image_url,
-        is_deleted, created_at, updated_at, deleted_at
-        """;
+    private static readonly string SqlGetAll = SqlFileLoader.Load("Product.get_all.sql");
+    private static readonly string SqlGetById = SqlFileLoader.Load("Product.get_by_id.sql");
+    private static readonly string SqlInsert = SqlFileLoader.Load("Product.insert.sql");
+    private static readonly string SqlUpdate = SqlFileLoader.Load("Product.update.sql");
+    private static readonly string SqlSoftDelete = SqlFileLoader.Load("Product.soft_delete.sql");
+    private static readonly string SqlGetDeleted = SqlFileLoader.Load("Product.get_deleted.sql");
+    private static readonly string SqlGetDeletedById = SqlFileLoader.Load("Product.get_deleted_by_id.sql");
+    private static readonly string SqlRestore = SqlFileLoader.Load("Product.restore.sql");
 
     public async Task<List<Product>> GetAllProductsAsync()
     {
         var list = new List<Product>();
         using var conn = await dataSource.OpenConnectionAsync();
 
-        string sql = $"""
-            SELECT {ProductColumns}
-            FROM products
-            WHERE is_deleted = false
-        """;
-
-        using var cmd = new NpgsqlCommand(sql, conn);
+        using var cmd = new NpgsqlCommand(SqlGetAll, conn);
         using var reader = await cmd.ExecuteReaderAsync();
 
         while (await reader.ReadAsync())
@@ -36,13 +35,7 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
     {
         using var conn = await dataSource.OpenConnectionAsync();
 
-        string sql = $"""
-            SELECT {ProductColumns}
-            FROM products
-            WHERE id = @id AND is_deleted = false
-        """;
-
-        using var cmd = new NpgsqlCommand(sql, conn);
+        using var cmd = new NpgsqlCommand(SqlGetById, conn);
         cmd.Parameters.AddWithValue("id", productId);
 
         using var reader = await cmd.ExecuteReaderAsync();
@@ -53,12 +46,7 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
     {
         using var conn = await dataSource.OpenConnectionAsync();
 
-        const string sql = """
-            INSERT INTO products (name, price, category_id, image_url)
-            VALUES (@name, @price, @categoryId, @imageUrl);
-        """;
-
-        using var cmd = new NpgsqlCommand(sql, conn);
+        using var cmd = new NpgsqlCommand(SqlInsert, conn);
         cmd.Parameters.AddWithValue("name", product.Name);
         cmd.Parameters.AddWithValue("price", product.Price);
         cmd.Parameters.AddWithValue("categoryId", product.CategoryId > 0 ? product.CategoryId : DBNull.Value);
@@ -71,18 +59,7 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
     {
         using var conn = await dataSource.OpenConnectionAsync();
 
-        const string sql = """
-            UPDATE products
-            SET name = @name,
-                price = @price,
-                category_id = @categoryId,
-                image_url = @imageUrl,
-                updated_at = NOW()
-            WHERE id = @id
-              AND is_deleted = false;
-        """;
-
-        using var cmd = new NpgsqlCommand(sql, conn);
+        using var cmd = new NpgsqlCommand(SqlUpdate, conn);
         cmd.Parameters.AddWithValue("id", product.Id);
         cmd.Parameters.AddWithValue("name", product.Name);
         cmd.Parameters.AddWithValue("price", product.Price);
@@ -96,15 +73,7 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
     {
         using var conn = await dataSource.OpenConnectionAsync();
 
-        const string sql = """
-            UPDATE products
-            SET is_deleted = true,
-                updated_at = NOW(),
-                deleted_at = NOW()
-            WHERE id = @id
-        """;
-
-        using var cmd = new NpgsqlCommand(sql, conn);
+        using var cmd = new NpgsqlCommand(SqlSoftDelete, conn);
         cmd.Parameters.AddWithValue("id", productId);
 
         int rowsAffected = await cmd.ExecuteNonQueryAsync();
@@ -116,13 +85,7 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
         var list = new List<Product>();
         using var conn = await dataSource.OpenConnectionAsync();
 
-        string sql = $"""
-            SELECT {ProductColumns}
-            FROM products
-            WHERE is_deleted = true
-        """;
-
-        using var cmd = new NpgsqlCommand(sql, conn);
+        using var cmd = new NpgsqlCommand(SqlGetDeleted, conn);
         using var reader = await cmd.ExecuteReaderAsync();
 
         while (await reader.ReadAsync())
@@ -136,14 +99,7 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
     {
         using var conn = await dataSource.OpenConnectionAsync();
 
-        string sql = $"""
-            SELECT {ProductColumns}
-            FROM products
-            WHERE id = @id
-              AND is_deleted = true
-        """;
-
-        using var cmd = new NpgsqlCommand(sql, conn);
+        using var cmd = new NpgsqlCommand(SqlGetDeletedById, conn);
         cmd.Parameters.AddWithValue("id", productId);
 
         using var reader = await cmd.ExecuteReaderAsync();
@@ -154,16 +110,7 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
     {
         using var conn = await dataSource.OpenConnectionAsync();
 
-        const string sql = """
-            UPDATE products
-            SET is_deleted = false,
-                updated_at = NOW(),
-                deleted_at = NULL
-            WHERE id = @id
-              AND is_deleted = true
-        """;
-
-        using var cmd = new NpgsqlCommand(sql, conn);
+        using var cmd = new NpgsqlCommand(SqlRestore, conn);
         cmd.Parameters.AddWithValue("id", productId);
 
         return await cmd.ExecuteNonQueryAsync() > 0;

@@ -1,28 +1,28 @@
 using System.Data.Common;
 using CoffeePOS.Models;
+using CoffeePOS.Shared.Helpers;
 using Npgsql;
 
 namespace CoffeePOS.Data.Repositories;
 
 public class CategoryRepository(NpgsqlDataSource dataSource) : ICategoryRepository
 {
-    private const string CategoryColumns = """
-        id, name, is_deleted, created_at, updated_at, deleted_at
-        """;
+    private static readonly string SqlGetAll = SqlFileLoader.Load("Category.get_all.sql");
+    private static readonly string SqlGetById = SqlFileLoader.Load("Category.get_by_id.sql");
+    private static readonly string SqlInsert = SqlFileLoader.Load("Category.insert.sql");
+    private static readonly string SqlUpdate = SqlFileLoader.Load("Category.update.sql");
+    private static readonly string SqlSoftDelete = SqlFileLoader.Load("Category.soft_delete.sql");
+    private static readonly string SqlSoftDeleteProductsByCategory = SqlFileLoader.Load("Category.soft_delete_products_by_category.sql");
+    private static readonly string SqlGetDeleted = SqlFileLoader.Load("Category.get_deleted.sql");
+    private static readonly string SqlGetDeletedById = SqlFileLoader.Load("Category.get_deleted_by_id.sql");
+    private static readonly string SqlRestore = SqlFileLoader.Load("Category.restore.sql");
 
     public async Task<List<Category>> GetAllCategoriesAsync()
     {
         var list = new List<Category>();
         using var conn = await dataSource.OpenConnectionAsync();
 
-        string sql = $"""
-            SELECT {CategoryColumns}
-            FROM categories
-            WHERE is_deleted = false
-            ORDER BY id
-        """;
-
-        using var cmd = new NpgsqlCommand(sql, conn);
+        using var cmd = new NpgsqlCommand(SqlGetAll, conn);
         using var reader = await cmd.ExecuteReaderAsync();
 
         while (await reader.ReadAsync())
@@ -36,13 +36,7 @@ public class CategoryRepository(NpgsqlDataSource dataSource) : ICategoryReposito
     {
         using var conn = await dataSource.OpenConnectionAsync();
 
-        string sql = $"""
-            SELECT {CategoryColumns}
-            FROM categories
-            WHERE id = @id AND is_deleted = false
-        """;
-
-        using var cmd = new NpgsqlCommand(sql, conn);
+        using var cmd = new NpgsqlCommand(SqlGetById, conn);
         cmd.Parameters.AddWithValue("id", id);
 
         using var reader = await cmd.ExecuteReaderAsync();
@@ -53,12 +47,7 @@ public class CategoryRepository(NpgsqlDataSource dataSource) : ICategoryReposito
     {
         using var conn = await dataSource.OpenConnectionAsync();
 
-        const string sql = """
-            INSERT INTO categories (name)
-            VALUES (@name)
-        """;
-
-        using var cmd = new NpgsqlCommand(sql, conn);
+        using var cmd = new NpgsqlCommand(SqlInsert, conn);
         cmd.Parameters.AddWithValue("name", category.Name);
 
         await cmd.ExecuteNonQueryAsync();
@@ -68,15 +57,7 @@ public class CategoryRepository(NpgsqlDataSource dataSource) : ICategoryReposito
     {
         using var conn = await dataSource.OpenConnectionAsync();
 
-        const string sql = """
-            UPDATE categories
-            SET name = @name,
-                updated_at = NOW()
-            WHERE id = @id
-              AND is_deleted = false
-        """;
-
-        using var cmd = new NpgsqlCommand(sql, conn);
+        using var cmd = new NpgsqlCommand(SqlUpdate, conn);
         cmd.Parameters.AddWithValue("id", category.Id);
         cmd.Parameters.AddWithValue("name", category.Name);
 
@@ -90,31 +71,13 @@ public class CategoryRepository(NpgsqlDataSource dataSource) : ICategoryReposito
 
         try
         {
-            const string sqlCat = """
-                UPDATE categories
-                SET is_deleted = true,
-                    updated_at = NOW(),
-                    deleted_at = NOW()
-                WHERE id = @id
-                  AND is_deleted = false
-            """;
-
-            using var cmdCat = new NpgsqlCommand(sqlCat, conn, tx);
+            using var cmdCat = new NpgsqlCommand(SqlSoftDelete, conn, tx);
             cmdCat.Parameters.AddWithValue("id", id);
 
             int rowsAffected = await cmdCat.ExecuteNonQueryAsync();
             if (rowsAffected == 0) return false;
 
-            const string sqlProd = """
-                UPDATE products
-                SET is_deleted = true,
-                    updated_at = NOW(),
-                    deleted_at = NOW()
-                WHERE category_id = @id
-                  AND is_deleted = false
-            """;
-
-            using var cmdProd = new NpgsqlCommand(sqlProd, conn, tx);
+            using var cmdProd = new NpgsqlCommand(SqlSoftDeleteProductsByCategory, conn, tx);
             cmdProd.Parameters.AddWithValue("id", id);
             await cmdProd.ExecuteNonQueryAsync();
 
@@ -133,14 +96,7 @@ public class CategoryRepository(NpgsqlDataSource dataSource) : ICategoryReposito
         var list = new List<Category>();
         using var conn = await dataSource.OpenConnectionAsync();
 
-        string sql = $"""
-            SELECT {CategoryColumns}
-            FROM categories
-            WHERE is_deleted = true
-            ORDER BY id
-        """;
-
-        using var cmd = new NpgsqlCommand(sql, conn);
+        using var cmd = new NpgsqlCommand(SqlGetDeleted, conn);
         using var reader = await cmd.ExecuteReaderAsync();
 
         while (await reader.ReadAsync())
@@ -154,13 +110,7 @@ public class CategoryRepository(NpgsqlDataSource dataSource) : ICategoryReposito
     {
         using var conn = await dataSource.OpenConnectionAsync();
 
-        string sql = $"""
-            SELECT {CategoryColumns}
-            FROM categories
-            WHERE id = @id AND is_deleted = true
-        """;
-
-        using var cmd = new NpgsqlCommand(sql, conn);
+        using var cmd = new NpgsqlCommand(SqlGetDeletedById, conn);
         cmd.Parameters.AddWithValue("id", id);
 
         using var reader = await cmd.ExecuteReaderAsync();
@@ -171,16 +121,7 @@ public class CategoryRepository(NpgsqlDataSource dataSource) : ICategoryReposito
     {
         using var conn = await dataSource.OpenConnectionAsync();
 
-        const string sql = """
-            UPDATE categories
-            SET is_deleted = false,
-                updated_at = NOW(),
-                deleted_at = NULL
-            WHERE id = @id
-              AND is_deleted = true
-        """;
-
-        using var cmd = new NpgsqlCommand(sql, conn);
+        using var cmd = new NpgsqlCommand(SqlRestore, conn);
         cmd.Parameters.AddWithValue("id", id);
 
         return await cmd.ExecuteNonQueryAsync() > 0;

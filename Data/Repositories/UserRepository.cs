@@ -1,16 +1,20 @@
 using CoffeePOS.Models;
+using CoffeePOS.Shared.Helpers;
 using Npgsql;
 
 namespace CoffeePOS.Data.Repositories;
 
 public class UserRepository(NpgsqlDataSource dataSource) : IUserRepository
 {
+    private static readonly string SqlAuthenticate = SqlFileLoader.Load("User.authenticate.sql");
+    private static readonly string SqlDeactivateUser = SqlFileLoader.Load("User.deactivate_user.sql");
+    private static readonly string SqlUpdatePassword = SqlFileLoader.Load("User.update_password.sql");
+
     public async Task<User?> AuthenticateAsync(string username, string password)
     {
         using var conn = await dataSource.OpenConnectionAsync();
 
-        string sql = "SELECT id, username, password_hash, full_name, role FROM users WHERE username = @u AND is_active = true";
-        using var cmd = new NpgsqlCommand(sql, conn);
+        using var cmd = new NpgsqlCommand(SqlAuthenticate, conn);
         cmd.Parameters.AddWithValue("u", username);
 
         using var reader = await cmd.ExecuteReaderAsync();
@@ -44,12 +48,7 @@ public class UserRepository(NpgsqlDataSource dataSource) : IUserRepository
 
         using var conn = await dataSource.OpenConnectionAsync();
 
-        string sql = @"
-            UPDATE users
-            SET is_active = false, updated_at = NOW()
-            WHERE id = @id;";
-
-        using var cmd = new NpgsqlCommand(sql, conn);
+        using var cmd = new NpgsqlCommand(SqlDeactivateUser, conn);
         cmd.Parameters.AddWithValue("id", targetUserId);
 
         await cmd.ExecuteNonQueryAsync();
@@ -58,8 +57,7 @@ public class UserRepository(NpgsqlDataSource dataSource) : IUserRepository
     public async Task UpdatePasswordAsync(int userId, string newPasswordHash)
     {
         using var conn = await dataSource.OpenConnectionAsync();
-        string sql = "UPDATE users SET password_hash = @hash, updated_at = NOW() WHERE id = @id";
-        using var cmd = new NpgsqlCommand(sql, conn);
+        using var cmd = new NpgsqlCommand(SqlUpdatePassword, conn);
         cmd.Parameters.AddWithValue("hash", newPasswordHash);
         cmd.Parameters.AddWithValue("id", userId);
         await cmd.ExecuteNonQueryAsync();

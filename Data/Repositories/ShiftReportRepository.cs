@@ -1,25 +1,19 @@
 using CoffeePOS.Models;
+using CoffeePOS.Shared.Helpers;
 using Npgsql;
 
 namespace CoffeePOS.Data.Repositories;
 
 public class ShiftReportRepository(NpgsqlDataSource dataSource) : IShiftReportRepository
 {
+    private static readonly string SqlGetShiftSummary = SqlFileLoader.Load("ShiftReport.get_shift_summary.sql");
+    private static readonly string SqlInsertShiftReport = SqlFileLoader.Load("ShiftReport.insert_shift_report.sql");
+
     public async Task<(int TotalBills, decimal ExpectedCash)> GetShiftSummaryAsync(int userId, DateTime startTime, DateTime endTime)
     {
         using var conn = await dataSource.OpenConnectionAsync();
 
-        string sql = @"
-            SELECT
-                COUNT(id) as total_bills,
-                COALESCE(SUM(total_amount), 0) as expected_cash
-            FROM bills
-            WHERE user_id = @uid
-              AND created_at >= @start
-              AND created_at <= @end
-              AND is_deleted = false;";
-
-        using var cmd = new NpgsqlCommand(sql, conn);
+        using var cmd = new NpgsqlCommand(SqlGetShiftSummary, conn);
         cmd.Parameters.AddWithValue("uid", userId);
         cmd.Parameters.AddWithValue("start", startTime);
         cmd.Parameters.AddWithValue("end", endTime);
@@ -35,12 +29,8 @@ public class ShiftReportRepository(NpgsqlDataSource dataSource) : IShiftReportRe
     public async Task SaveReportAsync(ShiftReport report)
     {
         using var conn = await dataSource.OpenConnectionAsync();
-        string sql = @"
-            INSERT INTO shift_reports
-            (user_id, start_time, end_time, total_bills, expected_cash, actual_cash, variance, note)
-            VALUES (@u, @start, @end, @bills, @expected, @actual, @variance, @note);";
 
-        using var cmd = new NpgsqlCommand(sql, conn);
+        using var cmd = new NpgsqlCommand(SqlInsertShiftReport, conn);
         cmd.Parameters.AddWithValue("u", report.UserId);
         cmd.Parameters.AddWithValue("start", report.StartTime);
         cmd.Parameters.AddWithValue("end", report.EndTime);

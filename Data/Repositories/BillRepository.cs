@@ -2,10 +2,17 @@ namespace CoffeePOS.Data.Repositories;
 
 using CoffeePOS.Core;
 using CoffeePOS.Models;
+using CoffeePOS.Shared.Helpers;
 using Npgsql;
 
 public class BillRepository(NpgsqlDataSource dataSource, IUserSession session) : IBillRepository
 {
+    private static readonly string SqlInsertBill = SqlFileLoader.Load("Bill.insert_bill.sql");
+    private static readonly string SqlInsertBillDetail = SqlFileLoader.Load("Bill.insert_bill_detail.sql");
+    private static readonly string SqlGetBillDetails = SqlFileLoader.Load("Bill.get_bill_details.sql");
+    private static readonly string SqlCancelBill = SqlFileLoader.Load("Bill.cancel_bill.sql");
+    private static readonly string SqlGetTodayBillsByUser = SqlFileLoader.Load("Bill.get_today_bills_by_user.sql");
+
     public async Task<int> ProcessFullOrderAsync(int buzzerNumber, decimal totalAmount, List<BillDetail> items)
     {
         if (!session.IsLoggedIn) throw new UnauthorizedAccessException("Chưa đăng nhập không thể tạo bill!");
@@ -15,27 +22,18 @@ public class BillRepository(NpgsqlDataSource dataSource, IUserSession session) :
 
         try
         {
-            string sqlBill = @"
-                INSERT INTO bills (buzzer_number, user_id, status, total_amount)
-                VALUES (@b, @u, 1, @total)
-                RETURNING id;";
-
-            using var cmdBill = new NpgsqlCommand(sqlBill, conn, tx);
+            using var cmdBill = new NpgsqlCommand(SqlInsertBill, conn, tx);
             cmdBill.Parameters.AddWithValue("b", buzzerNumber);
             cmdBill.Parameters.AddWithValue("u", session.CurrentUser!.Id);
             cmdBill.Parameters.AddWithValue("total", totalAmount);
 
             int billId = Convert.ToInt32(await cmdBill.ExecuteScalarAsync());
 
-            string sqlDetail = @"
-                INSERT INTO bill_details (bill_id, product_id, product_name, quantity, price)
-                VALUES (@b, @p, @n, @q, @price);";
-
             await using var batch = new NpgsqlBatch(conn, tx);
 
             foreach (var item in items)
             {
-                var batchCommand = new NpgsqlBatchCommand(sqlDetail);
+                var batchCommand = new NpgsqlBatchCommand(SqlInsertBillDetail);
 
                 batchCommand.Parameters.AddWithValue("b", billId);
                 batchCommand.Parameters.AddWithValue("p", item.ProductId);
@@ -65,9 +63,7 @@ public class BillRepository(NpgsqlDataSource dataSource, IUserSession session) :
 
         using var conn = await dataSource.OpenConnectionAsync();
 
-        string sql = "SELECT product_id, product_name, quantity, price, note FROM bill_details WHERE bill_id = @b ORDER BY id";
-
-        using var cmd = new NpgsqlCommand(sql, conn);
+        using var cmd = new NpgsqlCommand(SqlGetBillDetails, conn);
         cmd.Parameters.AddWithValue("b", billId);
 
         using var reader = await cmd.ExecuteReaderAsync();
@@ -89,14 +85,7 @@ public class BillRepository(NpgsqlDataSource dataSource, IUserSession session) :
     public async Task CancelBillAsync(int billId)
     {
         using var conn = await dataSource.OpenConnectionAsync();
-        string sql = @"
-            UPDATE bills
-            SET is_deleted = true,
-                deleted_at = NOW(),
-                updated_at = NOW()
-            WHERE id = @id
-                AND is_deleted = false";
-        using var cmd = new NpgsqlCommand(sql, conn);
+        using var cmd = new NpgsqlCommand(SqlCancelBill, conn);
         cmd.Parameters.AddWithValue("id", billId);
         await cmd.ExecuteNonQueryAsync();
     }
@@ -106,15 +95,7 @@ public class BillRepository(NpgsqlDataSource dataSource, IUserSession session) :
         var list = new List<Bill>();
         using var conn = await dataSource.OpenConnectionAsync();
 
-        string sql = @"
-            SELECT id, buzzer_number, total_amount, created_at
-            FROM bills
-            WHERE user_id = @uid
-              AND created_at >= CURRENT_DATE
-              AND is_deleted = false
-            ORDER BY created_at DESC;";
-
-        using var cmd = new NpgsqlCommand(sql, conn);
+        using var cmd = new NpgsqlCommand(SqlGetTodayBillsByUser, conn);
         cmd.Parameters.AddWithValue("uid", userId);
 
         using var reader = await cmd.ExecuteReaderAsync();
