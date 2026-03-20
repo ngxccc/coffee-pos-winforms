@@ -5,10 +5,10 @@ namespace CoffeePOS.Features.Billing;
 public class UC_BillItem : Panel
 {
     // UI COMPONENTS
-    private Label? _lblCount;
-    private Label? _lblPrice;
-    private Label? _lblNote;
-    private Label? _lblName;
+    private Label _lblCount = null!;
+    private Label _lblPrice = null!;
+    private Label _lblNote = null!;
+    private Label _lblName = null!;
 
     // DATA FIELDS
     private int _quantity;
@@ -34,7 +34,15 @@ public class UC_BillItem : Panel
         _unitPrice = price;
         Note = note;
 
-        SetupMainContainer();
+        InitializeUI(foodName, note, price, foodImage);
+    }
+
+    private void InitializeUI(string foodName, string note, decimal price, Image? foodImage)
+    {
+        Size = new Size(400, 90);
+        BackColor = Color.White;
+        Padding = new Padding(5);
+        Margin = new Padding(0, 0, 0, 10);
 
         var picFood = BuildImagePanel(foodImage);
         var pnlQty = BuildQtyPanel();
@@ -48,14 +56,6 @@ public class UC_BillItem : Panel
         Controls.Add(picFood);
 
         BindDoubleClickRecursive(this);
-    }
-
-    private void SetupMainContainer()
-    {
-        Size = new Size(400, 90);
-        BackColor = Color.White;
-        Padding = new Padding(5);
-        Margin = new Padding(0, 0, 0, 10);
     }
 
     private static PictureBox BuildImagePanel(Image? img)

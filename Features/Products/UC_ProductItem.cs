@@ -1,3 +1,4 @@
+using System.Net.Http;
 using FontAwesome.Sharp;
 
 namespace CoffeePOS.Features.Products;
@@ -5,37 +6,46 @@ namespace CoffeePOS.Features.Products;
 public class UC_ProductItem : UserControl
 {
     // UI Components
-    private readonly IconPictureBox _iconFood;
-    private readonly Label _lblName;
-    private readonly Label _lblPrice;
+    private IconPictureBox _iconFood = null!;
+    private Label _lblName = null!;
+    private Label _lblPrice = null!;
 
     // Data
     public int ProductId { get; private set; }
     public new string ProductName { get; private set; }
     public decimal Price { get; private set; }
+    private string? ImageUrl { get; set; }
+
+    private static readonly HttpClient HttpClient = new();
 
     public event EventHandler? OnProductClicked;
 
-    public UC_ProductItem(int id, string name, decimal price)
+    public UC_ProductItem(int id, string name, decimal price, string? imageUrl = null)
     {
         ProductId = id;
         ProductName = name;
         Price = price;
+        ImageUrl = imageUrl;
 
+        InitializeUI();
+
+        BindClickRecursive(this);
+    }
+
+    private void InitializeUI()
+    {
         Size = new Size(130, 180);
         BackColor = Color.White;
         Cursor = Cursors.Hand;
         BorderStyle = BorderStyle.FixedSingle;
 
         _iconFood = BuildFoodIcon();
-        _lblName = BuildNameLabel(name);
-        _lblPrice = BuildPriceLabel(price);
+        _lblName = BuildNameLabel(ProductName);
+        _lblPrice = BuildPriceLabel(Price);
 
         Controls.Add(_lblName);
         Controls.Add(_iconFood);
         Controls.Add(_lblPrice);
-
-        BindClickRecursive(this);
     }
 
     private static Label BuildNameLabel(string name)
@@ -78,31 +88,12 @@ public class UC_ProductItem : UserControl
         };
     }
 
-    public async void LoadImageAsync(int colorSeed)
+    public async void LoadImageAsync()
     {
         // Chạy task ngầm để không đơ UI
         await Task.Run(async () =>
         {
-            // 1. Giả lập độ trễ mạng (Network Delay) từ 100ms - 500ms
-            // Nếu không có dòng này, code chạy nhanh quá ông sẽ không thấy hiệu ứng loading
-            await Task.Delay(new Random().Next(100, 500));
-
-            // 2. Tạo ảnh thật (Trong thực tế đoạn này là tải từ URL hoặc Disk)
-            Bitmap realImage = new(100, 100);
-            using (Graphics g = Graphics.FromImage(realImage))
-            {
-                // Random màu nền dựa trên ID món
-                Random rnd = new(colorSeed);
-                Color randomColor = Color.FromArgb(rnd.Next(200, 255), rnd.Next(200, 255), rnd.Next(200, 255));
-
-                g.Clear(randomColor);
-
-                // Vẽ chữ cái đầu
-                g.DrawString(ProductName[..1],
-                    new Font("Arial", 30, FontStyle.Bold),
-                    Brushes.DimGray,
-                    35, 25);
-            }
+            Bitmap realImage = await TryLoadImageFromUrlOrPathAsync(ImageUrl) ?? CreatePlaceholderImage(ProductName, ProductId);
 
             // 3. Cập nhật UI (Bắt buộc phải Invoke vì đang ở thread khác)
             if (!IsDisposed && IsHandleCreated)
@@ -115,6 +106,54 @@ public class UC_ProductItem : UserControl
                 });
             }
         });
+    }
+
+    private static async Task<Bitmap?> TryLoadImageFromUrlOrPathAsync(string? imageUrl)
+    {
+        if (string.IsNullOrWhiteSpace(imageUrl))
+        {
+            return null;
+        }
+
+        try
+        {
+            if (Uri.TryCreate(imageUrl, UriKind.Absolute, out Uri? uri) &&
+                (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
+            {
+                byte[] bytes = await HttpClient.GetByteArrayAsync(uri);
+                using var ms = new MemoryStream(bytes);
+                using var image = Image.FromStream(ms);
+                return new Bitmap(image);
+            }
+
+            if (File.Exists(imageUrl))
+            {
+                using var fs = new FileStream(imageUrl, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                using var image = Image.FromStream(fs);
+                return new Bitmap(image);
+            }
+        }
+        catch
+        {
+            return null;
+        }
+
+        return null;
+    }
+
+    private static Bitmap CreatePlaceholderImage(string productName, int colorSeed)
+    {
+        Bitmap placeholder = new(100, 100);
+        using Graphics g = Graphics.FromImage(placeholder);
+
+        Random rnd = new(colorSeed);
+        Color randomColor = Color.FromArgb(rnd.Next(200, 255), rnd.Next(200, 255), rnd.Next(200, 255));
+        g.Clear(randomColor);
+
+        string initials = string.IsNullOrWhiteSpace(productName) ? "?" : productName[..1].ToUpperInvariant();
+        g.DrawString(initials, new Font("Arial", 30, FontStyle.Bold), Brushes.DimGray, 35, 25);
+
+        return placeholder;
     }
 
     private void BindClickRecursive(Control ctrl)

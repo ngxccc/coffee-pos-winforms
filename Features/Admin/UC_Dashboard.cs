@@ -13,11 +13,11 @@ public class UC_Dashboard : UserControl
     private readonly IDashboardQueryService _dashboardQueryService;
 
     // UI Controls
-    private Label lblTodayRevenue = null!;
-    private Label lblTodayOrders = null!;
-    private Label lblTodayAverageOrder = null!;
-    private CartesianChart chartRevenue = null!;
-    private PieChart chartTopProducts = null!;
+    private Label _lblTodayRevenue = null!;
+    private Label _lblTodayOrders = null!;
+    private Label _lblTodayAverageOrder = null!;
+    private CartesianChart _chartRevenue = null!;
+    private PieChart _chartTopProducts = null!;
 
     public UC_Dashboard(IDashboardQueryService dashboardQueryService)
     {
@@ -52,12 +52,12 @@ public class UC_Dashboard : UserControl
         tlpKPIs.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.3333f));
         tlpKPIs.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.3333f));
         tlpKPIs.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.3333f));
-        lblTodayRevenue = CreateKpiCard("DOANH THU HÔM NAY", "Đang tải...");
-        lblTodayOrders = CreateKpiCard("SỐ ĐƠN", "Đang tải...");
-        lblTodayAverageOrder = CreateKpiCard("TB ĐƠN", "Đang tải...");
-        tlpKPIs.Controls.Add(lblTodayRevenue, 0, 0);
-        tlpKPIs.Controls.Add(lblTodayOrders, 1, 0);
-        tlpKPIs.Controls.Add(lblTodayAverageOrder, 2, 0);
+        _lblTodayRevenue = CreateKpiCard("DOANH THU HÔM NAY", "Đang tải...");
+        _lblTodayOrders = CreateKpiCard("SỐ ĐƠN", "Đang tải...");
+        _lblTodayAverageOrder = CreateKpiCard("TB ĐƠN", "Đang tải...");
+        tlpKPIs.Controls.Add(_lblTodayRevenue, 0, 0);
+        tlpKPIs.Controls.Add(_lblTodayOrders, 1, 0);
+        tlpKPIs.Controls.Add(_lblTodayAverageOrder, 2, 0);
 
         tlpMain.Controls.Add(tlpKPIs, 0, 0);
 
@@ -72,21 +72,21 @@ public class UC_Dashboard : UserControl
         tlpCharts.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35)); // Biểu đồ tròn chiếm 35%
 
         // Biểu đồ Cột (Doanh thu)
-        chartRevenue = new CartesianChart
+        _chartRevenue = new CartesianChart
         {
             Dock = DockStyle.Fill,
             Margin = new Padding(10)
         };
 
         // Biểu đồ Tròn (Top Món)
-        chartTopProducts = new PieChart
+        _chartTopProducts = new PieChart
         {
             Dock = DockStyle.Fill,
             Margin = new Padding(10)
         };
 
-        tlpCharts.Controls.Add(chartRevenue, 0, 0);
-        tlpCharts.Controls.Add(chartTopProducts, 1, 0);
+        tlpCharts.Controls.Add(_chartRevenue, 0, 0);
+        tlpCharts.Controls.Add(_chartTopProducts, 1, 0);
 
         tlpMain.Controls.Add(tlpCharts, 0, 1);
         Controls.Add(tlpMain);
@@ -119,14 +119,14 @@ public class UC_Dashboard : UserControl
             await Task.WhenAll(taskSummary, taskRev, taskTop);
 
             var summary = taskSummary.Result;
-            lblTodayRevenue.Text =
+            _lblTodayRevenue.Text =
                 $"DOANH THU HÔM NAY\n{summary.Revenue.ToString("N0", CultureInfo.GetCultureInfo("vi-VN"))} đ";
-            lblTodayOrders.Text = $"SỐ ĐƠN\n{summary.OrderCount:N0}";
-            lblTodayAverageOrder.Text =
+            _lblTodayOrders.Text = $"SỐ ĐƠN\n{summary.OrderCount:N0}";
+            _lblTodayAverageOrder.Text =
                 $"TB ĐƠN\n{summary.AverageOrder.ToString("N0", CultureInfo.GetCultureInfo("vi-VN"))} đ";
 
             var revData = taskRev.Result;
-            chartRevenue.Series =
+            _chartRevenue.Series =
             [
                 new ColumnSeries<decimal>
                 {
@@ -136,7 +136,7 @@ public class UC_Dashboard : UserControl
                     MaxBarWidth = 40
                 }
             ];
-            chartRevenue.XAxes =
+            _chartRevenue.XAxes =
             [
                 new Axis { Labels = [.. revData.Select(x => x.Date.ToString("dd/MM"))] }
             ];
@@ -152,7 +152,7 @@ public class UC_Dashboard : UserControl
                     DataLabelsFormatter = point => $"{point.Coordinate.PrimaryValue} ly"
                 });
             }
-            chartTopProducts.Series = pieSeries.ToArray();
+            _chartTopProducts.Series = pieSeries.ToArray();
         }
         catch (Exception ex)
         {

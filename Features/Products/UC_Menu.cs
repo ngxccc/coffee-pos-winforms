@@ -29,6 +29,11 @@ public class UC_Menu : UserControl
         _productService = productService;
         _categoryService = categoryService;
 
+        InitializeUI();
+    }
+
+    private void InitializeUI()
+    {
         Dock = DockStyle.Fill;
         BackColor = Color.FromArgb(245, 245, 245);
 
@@ -182,11 +187,11 @@ public class UC_Menu : UserControl
 
         foreach (var p in productsToRender)
         {
-            var pItem = new UC_ProductItem(p.Id, p.Name, p.Price);
+            var pItem = new UC_ProductItem(p.Id, p.Name, p.Price, p.ImageUrl);
             pItem.OnProductClicked += (s, e) =>
                 OnProductSelected?.Invoke(p.Id, p.Name, p.Price);
 
-            pItem.LoadImageAsync(p.Id);
+            pItem.LoadImageAsync();
 
             _flowProducts.Controls.Add(pItem);
         }

@@ -12,12 +12,13 @@ public class UC_ManageCategories : UserControl
     private readonly ICategoryService _categoryService;
     private readonly ICategoryQueryService _categoryQueryService;
     private readonly IServiceProvider _serviceProvider;
-    private DataGridView dgvCategories = null!;
-    private TextBox txtSearch = null!;
-    private IconButton btnDelete = null!;
-    private IconButton btnEdit = null!;
-    private IconButton btnAdd = null!;
-    private CheckBox chkTrashMode = null!;
+
+    private DataGridView _dgvCategories = null!;
+    private TextBox _txtSearch = null!;
+    private IconButton _btnDelete = null!;
+    private IconButton _btnEdit = null!;
+    private IconButton _btnAdd = null!;
+    private CheckBox _chkTrashMode = null!;
 
     private List<CategoryGridDto> _allCategories = [];
     private List<CategoryGridDto> _filteredCategories = [];
@@ -38,7 +39,8 @@ public class UC_ManageCategories : UserControl
 
     private void InitializeUI()
     {
-        Dock = DockStyle.Fill; BackColor = Color.White;
+        Dock = DockStyle.Fill;
+        BackColor = Color.White;
 
         Panel pnlTop = new()
         {
@@ -55,16 +57,16 @@ public class UC_ManageCategories : UserControl
             Location = new Point(0, 20)
         };
 
-        txtSearch = new TextBox
+        _txtSearch = new TextBox
         {
             Width = 300,
             Font = new Font("Segoe UI", 12),
             Location = new Point(250, 22),
             PlaceholderText = "Nhập tên danh mục để tìm..."
         };
-        txtSearch.OnDebouncedTextChanged(300, ApplyFilterAndSort);
+        _txtSearch.OnDebouncedTextChanged(300, ApplyFilterAndSort);
 
-        chkTrashMode = new CheckBox
+        _chkTrashMode = new CheckBox
         {
             Text = "Xem Thùng Rác",
             Font = new Font("Segoe UI", 12, FontStyle.Bold),
@@ -73,7 +75,7 @@ public class UC_ManageCategories : UserControl
             Location = new Point(570, 25),
             Cursor = Cursors.Hand
         };
-        chkTrashMode.CheckedChanged += ChkTrashMode_CheckedChanged;
+        _chkTrashMode.CheckedChanged += ChkTrashMode_CheckedChanged;
 
         FlowLayoutPanel flpBtns = new()
         {
@@ -83,37 +85,37 @@ public class UC_ManageCategories : UserControl
             Padding = new Padding(0, 10, 0, 0)
         };
 
-        btnDelete = UIHelper.CreateActionButton("Xóa", IconChar.Trash, Color.FromArgb(231, 76, 60), DeleteCategoryAsync);
-        btnEdit = UIHelper.CreateActionButton("Sửa", IconChar.Pen, Color.FromArgb(243, 156, 18), EditCategoryAsync);
-        btnAdd = UIHelper.CreateActionButton("Thêm Mới", IconChar.Plus, Color.FromArgb(46, 204, 113), AddCategoryAsync);
+        _btnDelete = UIHelper.CreateActionButton("Xóa", IconChar.Trash, Color.FromArgb(231, 76, 60), DeleteCategoryAsync);
+        _btnEdit = UIHelper.CreateActionButton("Sửa", IconChar.Pen, Color.FromArgb(243, 156, 18), EditCategoryAsync);
+        _btnAdd = UIHelper.CreateActionButton("Thêm Mới", IconChar.Plus, Color.FromArgb(46, 204, 113), AddCategoryAsync);
 
-        flpBtns.Controls.AddRange([btnDelete, btnEdit, btnAdd]);
+        flpBtns.Controls.AddRange([_btnDelete, _btnEdit, _btnAdd]);
         pnlTop.Controls.AddRange([lblTitle, flpBtns]);
 
-        dgvCategories = new DataGridView
+        _dgvCategories = new DataGridView
         {
             Dock = DockStyle.Fill
         };
-        dgvCategories.ApplyStandardAdminStyle();
-        dgvCategories.ColumnHeaderMouseClick += DgvCategories_ColumnHeaderMouseClick;
-        dgvCategories.CellDoubleClick += EditCategoryAsync;
+        _dgvCategories.ApplyStandardAdminStyle();
+        _dgvCategories.ColumnHeaderMouseClick += DgvCategories_ColumnHeaderMouseClick;
+        _dgvCategories.CellDoubleClick += EditCategoryAsync;
 
-        Controls.Add(dgvCategories);
+        Controls.Add(_dgvCategories);
         Controls.Add(pnlTop);
-        pnlTop.Controls.Add(txtSearch);
-        pnlTop.Controls.Add(chkTrashMode);
+        pnlTop.Controls.Add(_txtSearch);
+        pnlTop.Controls.Add(_chkTrashMode);
     }
 
     private async Task LoadDataAsync()
     {
         try
         {
-            dgvCategories.SavePosition(ref _savedScrollPosition, ref _savedSelectedRowId);
+            _dgvCategories.SavePosition(ref _savedScrollPosition, ref _savedSelectedRowId);
 
-            _allCategories = await _categoryQueryService.GetCategoryGridAsync(chkTrashMode.Checked);
+            _allCategories = await _categoryQueryService.GetCategoryGridAsync(_chkTrashMode.Checked);
             ApplyFilterAndSort();
 
-            dgvCategories.RestorePosition(_savedScrollPosition, _savedSelectedRowId);
+            _dgvCategories.RestorePosition(_savedScrollPosition, _savedSelectedRowId);
         }
         catch (Exception ex)
         {
@@ -123,21 +125,21 @@ public class UC_ManageCategories : UserControl
 
     private void DgvCategories_ColumnHeaderMouseClick(object? sender, DataGridViewCellMouseEventArgs e)
     {
-        dgvCategories.ToggleSortState(e.ColumnIndex, ref _sortColumnName, ref _sortAscending);
+        _dgvCategories.ToggleSortState(e.ColumnIndex, ref _sortColumnName, ref _sortAscending);
 
         ApplyFilterAndSort();
     }
 
     private async void ChkTrashMode_CheckedChanged(object? sender, EventArgs e)
     {
-        dgvCategories.BackgroundColor = chkTrashMode.Checked ? Color.MistyRose : Color.WhiteSmoke;
+        _dgvCategories.BackgroundColor = _chkTrashMode.Checked ? Color.MistyRose : Color.WhiteSmoke;
 
-        btnDelete.Text = chkTrashMode.Checked ? " Khôi phục" : " Xóa";
-        btnDelete.IconChar = chkTrashMode.Checked ? IconChar.TrashRestore : IconChar.Trash;
-        btnDelete.BackColor = chkTrashMode.Checked ? Color.FromArgb(46, 204, 113) : Color.FromArgb(231, 76, 60);
+        _btnDelete.Text = _chkTrashMode.Checked ? " Khôi phục" : " Xóa";
+        _btnDelete.IconChar = _chkTrashMode.Checked ? IconChar.TrashRestore : IconChar.Trash;
+        _btnDelete.BackColor = _chkTrashMode.Checked ? Color.FromArgb(46, 204, 113) : Color.FromArgb(231, 76, 60);
 
-        btnAdd.Visible = !chkTrashMode.Checked;
-        btnEdit.Visible = !chkTrashMode.Checked;
+        _btnAdd.Visible = !_chkTrashMode.Checked;
+        _btnEdit.Visible = !_chkTrashMode.Checked;
 
         await LoadDataAsync();
     }
@@ -150,8 +152,8 @@ public class UC_ManageCategories : UserControl
 
     private async void EditCategoryAsync(object? s, EventArgs e)
     {
-        if (dgvCategories.SelectedRows.Count == 0) return;
-        int id = (int)dgvCategories.SelectedRows[0].Cells["Id"].Value;
+        if (_dgvCategories.SelectedRows.Count == 0) return;
+        int id = (int)_dgvCategories.SelectedRows[0].Cells["Id"].Value;
         var cat = await _categoryService.GetCategoryByIdAsync(id);
         if (cat == null) return;
 
@@ -162,11 +164,11 @@ public class UC_ManageCategories : UserControl
 
     private async void DeleteCategoryAsync(object? s, EventArgs e)
     {
-        if (dgvCategories.SelectedRows.Count == 0) return;
-        string name = dgvCategories.SelectedRows[0].Cells["Name"].Value.ToString()!;
-        int id = (int)dgvCategories.SelectedRows[0].Cells["Id"].Value;
+        if (_dgvCategories.SelectedRows.Count == 0) return;
+        string name = _dgvCategories.SelectedRows[0].Cells["Name"].Value.ToString()!;
+        int id = (int)_dgvCategories.SelectedRows[0].Cells["Id"].Value;
 
-        if (chkTrashMode.Checked)
+        if (_chkTrashMode.Checked)
         {
             if (MessageBox.Show($"Khôi phục danh mục '{name}'?", "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
             {
@@ -200,7 +202,7 @@ public class UC_ManageCategories : UserControl
 
     private void ApplyFilterAndSort()
     {
-        string keyword = txtSearch.Text.Trim();
+        string keyword = _txtSearch.Text.Trim();
 
         _filteredCategories = string.IsNullOrEmpty(keyword)
             ? [.. _allCategories]
@@ -210,8 +212,8 @@ public class UC_ManageCategories : UserControl
         var finalData = _filteredCategories.DynamicSort(_sortColumnName, _sortAscending).ToList();
 
         // Đổ vào Grid. (DataGrid sẽ tự đọc [DisplayName] và [Browsable] để tự vẽ cột!)
-        dgvCategories.DataSource = finalData;
+        _dgvCategories.DataSource = finalData;
 
-        dgvCategories.UpdateSortGlyphs(_sortColumnName, _sortAscending);
+        _dgvCategories.UpdateSortGlyphs(_sortColumnName, _sortAscending);
     }
 }

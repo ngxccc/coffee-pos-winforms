@@ -14,12 +14,12 @@ public partial class UC_ManageProducts : UserControl
     private readonly IServiceProvider _serviceProvider;
 
     // UI Controls
-    private DataGridView dgvProducts = null!;
-    private TextBox txtSearch = null!;
-    private IconButton btnAdd = null!;
-    private IconButton btnEdit = null!;
-    private IconButton btnDelete = null!;
-    private CheckBox chkTrashMode = null!;
+    private DataGridView _dgvProducts = null!;
+    private TextBox _txtSearch = null!;
+    private IconButton _btnAdd = null!;
+    private IconButton _btnEdit = null!;
+    private IconButton _btnDelete = null!;
+    private CheckBox _chkTrashMode = null!;
 
     // State
     private List<ProductGridDto> _allProducts = [];
@@ -60,16 +60,16 @@ public partial class UC_ManageProducts : UserControl
             Location = new Point(0, 20)
         };
 
-        txtSearch = new TextBox
+        _txtSearch = new TextBox
         {
             Width = 300,
             Font = new Font("Segoe UI", 12),
             Location = new Point(250, 22),
             PlaceholderText = "Nhập tên món để tìm..."
         };
-        txtSearch.OnDebouncedTextChanged(300, ApplyFilterAndSort);
+        _txtSearch.OnDebouncedTextChanged(300, ApplyFilterAndSort);
 
-        chkTrashMode = new CheckBox
+        _chkTrashMode = new CheckBox
         {
             Text = "Xem Thùng Rác",
             Font = new Font("Segoe UI", 12, FontStyle.Bold),
@@ -78,7 +78,7 @@ public partial class UC_ManageProducts : UserControl
             Location = new Point(570, 25),
             Cursor = Cursors.Hand
         };
-        chkTrashMode.CheckedChanged += ChkTrashMode_CheckedChanged;
+        _chkTrashMode.CheckedChanged += ChkTrashMode_CheckedChanged;
 
         FlowLayoutPanel flpButtons = new()
         {
@@ -88,26 +88,26 @@ public partial class UC_ManageProducts : UserControl
             Padding = new Padding(0, 10, 0, 0)
         };
 
-        btnDelete = UIHelper.CreateActionButton("Xóa", IconChar.Trash, Color.FromArgb(231, 76, 60), DeleteProductAsync);
-        btnEdit = UIHelper.CreateActionButton("Sửa", IconChar.Pen, Color.FromArgb(243, 156, 18), EditProductAsync);
-        btnAdd = UIHelper.CreateActionButton("Thêm Mới", IconChar.Plus, Color.FromArgb(46, 204, 113), AddProductAsync);
+        _btnDelete = UIHelper.CreateActionButton("Xóa", IconChar.Trash, Color.FromArgb(231, 76, 60), DeleteProductAsync);
+        _btnEdit = UIHelper.CreateActionButton("Sửa", IconChar.Pen, Color.FromArgb(243, 156, 18), EditProductAsync);
+        _btnAdd = UIHelper.CreateActionButton("Thêm Mới", IconChar.Plus, Color.FromArgb(46, 204, 113), AddProductAsync);
 
-        flpButtons.Controls.AddRange([btnDelete, btnEdit, btnAdd]);
+        flpButtons.Controls.AddRange([_btnDelete, _btnEdit, _btnAdd]);
 
         pnlTop.Controls.Add(lblTitle);
-        pnlTop.Controls.Add(txtSearch);
+        pnlTop.Controls.Add(_txtSearch);
         pnlTop.Controls.Add(flpButtons);
-        pnlTop.Controls.Add(chkTrashMode);
+        pnlTop.Controls.Add(_chkTrashMode);
 
-        dgvProducts = new DataGridView
+        _dgvProducts = new DataGridView
         {
             Dock = DockStyle.Fill
         };
-        dgvProducts.ApplyStandardAdminStyle();
-        dgvProducts.ColumnHeaderMouseClick += DgvProducts_ColumnHeaderMouseClick;
-        dgvProducts.CellDoubleClick += EditProductAsync;
+        _dgvProducts.ApplyStandardAdminStyle();
+        _dgvProducts.ColumnHeaderMouseClick += DgvProducts_ColumnHeaderMouseClick;
+        _dgvProducts.CellDoubleClick += EditProductAsync;
 
-        Controls.Add(dgvProducts);
+        Controls.Add(_dgvProducts);
         Controls.Add(pnlTop);
     }
 
@@ -115,12 +115,12 @@ public partial class UC_ManageProducts : UserControl
     {
         try
         {
-            dgvProducts.SavePosition(ref _savedScrollPosition, ref _savedSelectedRowId);
+            _dgvProducts.SavePosition(ref _savedScrollPosition, ref _savedSelectedRowId);
 
-            _allProducts = await _productQueryService.GetProductGridAsync(chkTrashMode.Checked);
+            _allProducts = await _productQueryService.GetProductGridAsync(_chkTrashMode.Checked);
             ApplyFilterAndSort();
 
-            dgvProducts.RestorePosition(_savedScrollPosition, _savedSelectedRowId);
+            _dgvProducts.RestorePosition(_savedScrollPosition, _savedSelectedRowId);
         }
         catch (Exception ex)
         {
@@ -130,35 +130,35 @@ public partial class UC_ManageProducts : UserControl
 
     private async void ChkTrashMode_CheckedChanged(object? sender, EventArgs e)
     {
-        dgvProducts.BackgroundColor = chkTrashMode.Checked ? Color.MistyRose : Color.WhiteSmoke;
+        _dgvProducts.BackgroundColor = _chkTrashMode.Checked ? Color.MistyRose : Color.WhiteSmoke;
 
-        btnDelete.Text = chkTrashMode.Checked ? " Khôi phục" : " Xóa";
-        btnDelete.IconChar = chkTrashMode.Checked ? IconChar.TrashRestore : IconChar.Trash;
-        btnDelete.BackColor = chkTrashMode.Checked ? Color.FromArgb(46, 204, 113) : Color.FromArgb(231, 76, 60);
+        _btnDelete.Text = _chkTrashMode.Checked ? " Khôi phục" : " Xóa";
+        _btnDelete.IconChar = _chkTrashMode.Checked ? IconChar.TrashRestore : IconChar.Trash;
+        _btnDelete.BackColor = _chkTrashMode.Checked ? Color.FromArgb(46, 204, 113) : Color.FromArgb(231, 76, 60);
 
-        btnAdd.Visible = !chkTrashMode.Checked;
-        btnEdit.Visible = !chkTrashMode.Checked;
+        _btnAdd.Visible = !_chkTrashMode.Checked;
+        _btnEdit.Visible = !_chkTrashMode.Checked;
 
         await LoadDataAsync();
     }
 
     private void DgvProducts_ColumnHeaderMouseClick(object? sender, DataGridViewCellMouseEventArgs e)
     {
-        dgvProducts.ToggleSortState(e.ColumnIndex, ref _sortColumnName, ref _sortAscending);
+        _dgvProducts.ToggleSortState(e.ColumnIndex, ref _sortColumnName, ref _sortAscending);
         ApplyFilterAndSort();
     }
 
     private async void DeleteProductAsync(object? sender, EventArgs e)
     {
-        if (dgvProducts.SelectedRows.Count == 0) return;
+        if (_dgvProducts.SelectedRows.Count == 0) return;
 
-        var selectedRow = dgvProducts.SelectedRows[0];
+        var selectedRow = _dgvProducts.SelectedRows[0];
         int productId = (int)selectedRow.Cells[nameof(ProductGridDto.Id)].Value;
         string productName = selectedRow.Cells[nameof(ProductGridDto.Name)].Value.ToString()!;
 
         try
         {
-            if (chkTrashMode.Checked)
+            if (_chkTrashMode.Checked)
             {
                 if (MessageBox.Show($"Khôi phục '{productName}' trở lại Menu bán hàng?",
             "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
@@ -192,8 +192,8 @@ public partial class UC_ManageProducts : UserControl
 
     private async void EditProductAsync(object? sender, EventArgs e)
     {
-        if (dgvProducts.SelectedRows.Count == 0) return;
-        int productId = (int)dgvProducts.SelectedRows[0].Cells[nameof(ProductGridDto.Id)].Value;
+        if (_dgvProducts.SelectedRows.Count == 0) return;
+        int productId = (int)_dgvProducts.SelectedRows[0].Cells[nameof(ProductGridDto.Id)].Value;
 
         try
         {
@@ -216,7 +216,7 @@ public partial class UC_ManageProducts : UserControl
 
     private void ApplyFilterAndSort()
     {
-        string keyword = txtSearch.Text.Trim();
+        string keyword = _txtSearch.Text.Trim();
 
         _filteredProducts = string.IsNullOrEmpty(keyword)
             ? [.. _allProducts]
@@ -226,8 +226,8 @@ public partial class UC_ManageProducts : UserControl
         var finalData = _filteredProducts.DynamicSort(_sortColumnName, _sortAscending).ToList();
 
         // Đổ vào Grid. (DataGrid sẽ tự đọc [DisplayName] và [Browsable] để tự vẽ cột!)
-        dgvProducts.DataSource = finalData;
+        _dgvProducts.DataSource = finalData;
 
-        dgvProducts.UpdateSortGlyphs(_sortColumnName, _sortAscending);
+        _dgvProducts.UpdateSortGlyphs(_sortColumnName, _sortAscending);
     }
 }

@@ -8,9 +8,9 @@ namespace CoffeePOS.Features.Billing;
 public class UC_Billing : UserControl
 {
     // UI COMPONENTS
-    private FlowLayoutPanel? _flowBillItemList;
-    private Label? _lblTotalPrice;
-    private Label? _lblOrderTitle;
+    private FlowLayoutPanel _flowBillItemList = null!;
+    private Label _lblTotalPrice = null!;
+    private Label _lblOrderTitle = null!;
 
     // DATA
     private decimal _grandTotal = 0;
@@ -23,21 +23,17 @@ public class UC_Billing : UserControl
 
     public UC_Billing()
     {
-        InitializeLayout();
-        InitializeComponents();
+        InitializeUI();
     }
 
     // UI CONSTRUCTION METHODS
 
-    private void InitializeLayout()
+    private void InitializeUI()
     {
         Width = 420;
         Dock = DockStyle.Right;
         BackColor = Color.White;
-    }
 
-    private void InitializeComponents()
-    {
         var pnlHeader = BuildHeaderPanel();
 
         var pnlFooter = BuildFooterPanel();

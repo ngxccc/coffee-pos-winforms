@@ -11,6 +11,11 @@ public class UC_Sidebar : UserControl
 
     public UC_Sidebar()
     {
+        InitializeUI();
+    }
+
+    private void InitializeUI()
+    {
         Width = 80;
         Dock = DockStyle.Left;
         BackColor = Color.FromArgb(30, 30, 30);
