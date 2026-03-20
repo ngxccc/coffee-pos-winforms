@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using CoffeePOS.Models;
+using QuestPDF.Drawing;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -12,6 +13,17 @@ public static class InvoiceGenerator
     public static void Initialize()
     {
         QuestPDF.Settings.License = LicenseType.Community;
+
+        string resourceName = "CoffeePOS.Resources.Fonts.Roboto-Regular.ttf";
+        if (resourceName != null)
+        {
+            FontManager.RegisterFontFromEmbeddedResource(resourceName);
+            Console.WriteLine("[System]: Đã nạp thành công Font Roboto từ Embedded Resource!");
+        }
+        else
+        {
+            Console.WriteLine("[Cảnh Báo]: Đéo tìm thấy Font trong Resource! Vui lòng kiểm tra lại tên file.");
+        }
     }
 
     public static async Task GenerateAndOpenPdfAsync(IPdfPayload payload)
@@ -185,6 +197,6 @@ public static class InvoiceGenerator
         page.ContinuousSize(80, Unit.Millimetre);
         page.Margin(2, Unit.Millimetre);
         page.PageColor(Colors.White);
-        page.DefaultTextStyle(x => x.FontSize(fontSize).FontFamily(Fonts.Arial));
+        page.DefaultTextStyle(x => x.FontSize(fontSize).FontFamily("Roboto"));
     }
 }
