@@ -1,13 +1,15 @@
 using CoffeePOS.Data.Repositories.Contracts;
 using CoffeePOS.Models;
 using CoffeePOS.Services.Contracts.Commands;
+using CoffeePOS.Shared.Dtos;
 
 namespace CoffeePOS.Services;
 
 public class CategoryService(ICategoryRepository categoryRepo) : ICategoryService
 {
-    public async Task AddCategoryAsync(Category category)
+    public async Task AddCategoryAsync(UpsertCategoryDto command)
     {
+        var category = MapToCategory(command);
         if (string.IsNullOrWhiteSpace(category.Name)) throw new ArgumentException("Tên danh mục không được để trống!");
 
         var all = await categoryRepo.GetAllCategoriesAsync();
@@ -18,8 +20,9 @@ public class CategoryService(ICategoryRepository categoryRepo) : ICategoryServic
         await categoryRepo.AddCategoryAsync(category);
     }
 
-    public async Task UpdateCategoryAsync(Category category)
+    public async Task UpdateCategoryAsync(UpsertCategoryDto command)
     {
+        var category = MapToCategory(command);
         if (string.IsNullOrWhiteSpace(category.Name)) throw new ArgumentException("Tên danh mục không được để trống!");
 
         var all = await categoryRepo.GetAllCategoriesAsync();
@@ -49,5 +52,14 @@ public class CategoryService(ICategoryRepository categoryRepo) : ICategoryServic
             throw new InvalidOperationException($"Tên danh mục '{category.Name}' đã được sử dụng bởi một danh mục đang hoạt động!");
 
         await categoryRepo.RestoreCategoryAsync(categoryId);
+    }
+
+    private static Category MapToCategory(UpsertCategoryDto command)
+    {
+        return new Category
+        {
+            Id = command.Id,
+            Name = command.Name
+        };
     }
 }

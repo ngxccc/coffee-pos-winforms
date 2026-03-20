@@ -1,4 +1,4 @@
-using CoffeePOS.Models;
+using CoffeePOS.Shared.Dtos;
 
 namespace CoffeePOS.Core;
 
@@ -9,7 +9,7 @@ public class BillPrintPayload : IPdfPayload
     public int BillId { get; set; }
     public int BuzzerNumber { get; set; }
     public decimal TotalAmount { get; set; }
-    public List<BillDetail> Details { get; set; } = [];
+    public List<BillDetailDto> Details { get; set; } = [];
     public bool IsReprint { get; set; }
 }
 

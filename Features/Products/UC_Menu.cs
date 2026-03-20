@@ -1,5 +1,5 @@
-using CoffeePOS.Models;
 using CoffeePOS.Services.Contracts.Queries;
+using CoffeePOS.Shared.Dtos;
 
 namespace CoffeePOS.Features.Products;
 
@@ -8,7 +8,7 @@ public class UC_Menu : UserControl
     // UI Components
     private FlowLayoutPanel _flowProducts = null!;
     private FlowLayoutPanel _flowCategories = null!;
-    private List<Product> _currentFilteredList = [];
+    private List<ProductDetailDto> _currentFilteredList = [];
     private int _currentPage = 0;
     private const int PAGE_SIZE = 20;
     private bool _isLoading = false;
@@ -17,8 +17,8 @@ public class UC_Menu : UserControl
     private readonly ICategoryQueryService _categoryQueryService;
 
     // Data Cache
-    private List<Product> _allProducts = [];
-    private List<Category> _allCategories = [];
+    private List<ProductDetailDto> _allProducts = [];
+    private List<CategoryOptionDto> _allCategories = [];
 
     // Events
     public event Action<int, string, decimal>? OnProductSelected;

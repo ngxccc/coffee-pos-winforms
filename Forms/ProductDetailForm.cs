@@ -1,6 +1,6 @@
-using CoffeePOS.Models;
 using CoffeePOS.Services.Contracts.Commands;
 using CoffeePOS.Services.Contracts.Queries;
+using CoffeePOS.Shared.Dtos;
 using Serilog;
 
 namespace CoffeePOS.Forms;
@@ -31,7 +31,7 @@ public partial class ProductDetailForm : Form
         InitializeUI();
     }
 
-    public void LoadProductDetails(Product product)
+    public void LoadProductDetails(ProductDetailDto product)
     {
         _productId = product.Id;
         txtName.Text = product.Name;
@@ -227,23 +227,21 @@ public partial class ProductDetailForm : Form
                 File.Copy(_selectedImagePath, destinationPath, true);
             }
 
-            var product = new Product
-            {
-                Id = _productId,
-                Name = txtName.Text.Trim(),
-                Price = nudPrice.Value,
-                CategoryId = (int)cboCategory.SelectedValue!,
-                ImageUrl = finalFileName
-            };
+            var command = new UpsertProductDto(
+                _productId,
+                txtName.Text.Trim(),
+                nudPrice.Value,
+                (int)cboCategory.SelectedValue!,
+                finalFileName);
 
             if (_productId == 0)
             {
-                await _productService.AddProductAsync(product);
+                await _productService.AddProductAsync(command);
                 MessageBox.Show("Thêm món mới thành công!");
             }
             else
             {
-                await _productService.UpdateProductAsync(product);
+                await _productService.UpdateProductAsync(command);
                 MessageBox.Show("Cập nhật món thành công!");
 
                 if (!string.IsNullOrEmpty(_selectedImagePath) && !string.IsNullOrEmpty(_currentSavedImage))

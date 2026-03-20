@@ -1,5 +1,5 @@
-using CoffeePOS.Models;
 using CoffeePOS.Services.Contracts.Commands;
+using CoffeePOS.Shared.Dtos;
 
 namespace CoffeePOS.Forms;
 
@@ -16,7 +16,7 @@ public partial class CategoryDetailForm : Form
         InitializeUI();
     }
 
-    public void LoadCategory(Category category)
+    public void LoadCategory(CategoryDetailDto category)
     {
         _categoryId = category.Id;
         txtName.Text = category.Name;
@@ -80,14 +80,12 @@ public partial class CategoryDetailForm : Form
         btnSave.Enabled = false;
         try
         {
-            var cat = new Category
-            {
-                Id = _categoryId,
-                Name = txtName.Text.Trim()
-            };
+            var command = new UpsertCategoryDto(
+                _categoryId,
+                txtName.Text.Trim());
 
-            if (_categoryId == 0) await _categoryService.AddCategoryAsync(cat);
-            else await _categoryService.UpdateCategoryAsync(cat);
+            if (_categoryId == 0) await _categoryService.AddCategoryAsync(command);
+            else await _categoryService.UpdateCategoryAsync(command);
 
             DialogResult = DialogResult.OK;
             Close();

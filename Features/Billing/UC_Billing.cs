@@ -1,4 +1,4 @@
-using CoffeePOS.Models;
+using CoffeePOS.Shared.Dtos;
 using Microsoft.VisualBasic;
 using ReaLTaiizor.Controls;
 using Panel = System.Windows.Forms.Panel;
@@ -244,19 +244,17 @@ public class UC_Billing : UserControl
             _lblTotalPrice.Text = $"{_grandTotal:N0} đ";
     }
 
-    public List<BillDetail> GetCartItems()
+    public List<CreateBillItemDto> GetCartItems()
     {
-        var list = new List<BillDetail>();
+        var list = new List<CreateBillItemDto>();
         foreach (var item in _billItemsDict.Values)
         {
-            list.Add(new BillDetail
-            {
-                ProductId = item.ProductId,
-                ProductName = item.ItemName,
-                Quantity = item.Quantity,
-                Price = item.TotalValue / item.Quantity,
-                Note = item.Note
-            });
+            list.Add(new CreateBillItemDto(
+                item.ProductId,
+                item.ItemName,
+                item.Quantity,
+                item.TotalValue / item.Quantity,
+                item.Note));
         }
         return list;
     }

@@ -1,5 +1,4 @@
 using CoffeePOS.Data.Repositories.Contracts;
-using CoffeePOS.Models;
 using CoffeePOS.Services.Contracts.Queries;
 using CoffeePOS.Shared.Dtos;
 
@@ -17,9 +16,16 @@ public class BillQueryService(IBillRepository billRepo) : IBillQueryService
             b.CreatedAt))];
     }
 
-    public Task<List<BillDetail>> GetBillDetailsAsync(int billId)
+    public async Task<List<BillDetailDto>> GetBillDetailsAsync(int billId)
     {
         if (billId <= 0) throw new ArgumentException("ID hóa đơn không hợp lệ!");
-        return billRepo.GetBillDetailsAsync(billId);
+
+        var details = await billRepo.GetBillDetailsAsync(billId);
+        return [.. details.Select(d => new BillDetailDto(
+            d.ProductId,
+            d.ProductName,
+            d.Quantity,
+            d.Price,
+            d.Note))];
     }
 }

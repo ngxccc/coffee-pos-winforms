@@ -1,13 +1,15 @@
 using CoffeePOS.Data.Repositories.Contracts;
 using CoffeePOS.Models;
 using CoffeePOS.Services.Contracts.Commands;
+using CoffeePOS.Shared.Dtos;
 
 namespace CoffeePOS.Services;
 
 public class ProductService(IProductRepository productRepo, ICategoryRepository categoryRepo) : IProductService
 {
-    public async Task AddProductAsync(Product product)
+    public async Task AddProductAsync(UpsertProductDto command)
     {
+        var product = MapToProduct(command);
         ValidateCommonRules(product);
 
         var existingProducts = await productRepo.GetAllProductsAsync();
@@ -18,8 +20,9 @@ public class ProductService(IProductRepository productRepo, ICategoryRepository 
         await productRepo.AddProductAsync(product);
     }
 
-    public async Task UpdateProductAsync(Product product)
+    public async Task UpdateProductAsync(UpsertProductDto command)
     {
+        var product = MapToProduct(command);
         ValidateCommonRules(product);
 
         var existingProducts = await productRepo.GetAllProductsAsync();
@@ -56,5 +59,17 @@ public class ProductService(IProductRepository productRepo, ICategoryRepository 
             throw new InvalidOperationException($"Tên món '{product.Name}' đã được sử dụng bởi một món đang bán!");
 
         await productRepo.RestoreProductAsync(productId);
+    }
+
+    private static Product MapToProduct(UpsertProductDto command)
+    {
+        return new Product
+        {
+            Id = command.Id,
+            Name = command.Name,
+            Price = command.Price,
+            CategoryId = command.CategoryId,
+            ImageUrl = command.ImageUrl
+        };
     }
 }

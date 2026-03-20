@@ -1,5 +1,4 @@
 using CoffeePOS.Data.Repositories.Contracts;
-using CoffeePOS.Models;
 using CoffeePOS.Services.Contracts.Queries;
 using CoffeePOS.Shared.Dtos;
 
@@ -7,12 +6,30 @@ namespace CoffeePOS.Services;
 
 public class ProductQueryService(IProductRepository productRepo, ICategoryRepository categoryRepo) : IProductQueryService
 {
-    public Task<List<Product>> GetAllProductsAsync() => productRepo.GetAllProductsAsync();
+    public async Task<List<ProductDetailDto>> GetAllProductsAsync()
+    {
+        var products = await productRepo.GetAllProductsAsync();
+        return [.. products.Select(p => new ProductDetailDto(
+            p.Id,
+            p.Name,
+            p.Price,
+            p.CategoryId,
+            p.ImageUrl))];
+    }
 
-    public Task<Product?> GetProductByIdAsync(int productId)
+    public async Task<ProductDetailDto?> GetProductByIdAsync(int productId)
     {
         if (productId <= 0) throw new ArgumentException("Sản phẩm không hợp lệ!");
-        return productRepo.GetProductByIdAsync(productId);
+
+        var product = await productRepo.GetProductByIdAsync(productId);
+        return product is null
+            ? null
+            : new ProductDetailDto(
+                product.Id,
+                product.Name,
+                product.Price,
+                product.CategoryId,
+                product.ImageUrl);
     }
 
     public async Task<List<ProductGridDto>> GetProductGridAsync(bool isDeleted = false)

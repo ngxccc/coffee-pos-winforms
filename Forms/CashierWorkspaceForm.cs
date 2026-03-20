@@ -171,7 +171,7 @@ public partial class CashierWorkspaceForm : Form
                         BillId = bill.Id,
                         BuzzerNumber = bill.BuzzerNumber,
                         TotalAmount = bill.TotalAmount,
-                        Details = billItems,
+                        Details = [.. billItems],
                         IsReprint = true
                     });
                 }
@@ -223,12 +223,7 @@ public partial class CashierWorkspaceForm : Form
                 buzzerNumber,
                 _session.CurrentUser!.Id,
                 finalAmount,
-                [.. cartItems.Select(i => new CreateBillItemDto(
-                    i.ProductId,
-                    i.ProductName,
-                    i.Quantity,
-                    i.Price,
-                    i.Note))]);
+                [.. cartItems]);
 
             int billId = await _billService.ProcessFullOrderAsync(command);
 
@@ -237,7 +232,12 @@ public partial class CashierWorkspaceForm : Form
                 BillId = billId,
                 BuzzerNumber = buzzerNumber,
                 TotalAmount = finalAmount,
-                Details = cartItems
+                Details = [.. cartItems.Select(i => new BillDetailDto(
+                    i.ProductId,
+                    i.ProductName,
+                    i.Quantity,
+                    i.Price,
+                    i.Note))]
             });
 
             _ucBilling.ClearOrder();

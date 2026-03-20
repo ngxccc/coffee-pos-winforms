@@ -1,5 +1,4 @@
 using CoffeePOS.Data.Repositories.Contracts;
-using CoffeePOS.Models;
 using CoffeePOS.Services.Contracts.Queries;
 using CoffeePOS.Shared.Dtos;
 
@@ -7,11 +6,19 @@ namespace CoffeePOS.Services;
 
 public class CategoryQueryService(ICategoryRepository categoryRepo) : ICategoryQueryService
 {
-    public Task<List<Category>> GetAllCategoriesAsync() => categoryRepo.GetAllCategoriesAsync();
+    public async Task<List<CategoryOptionDto>> GetAllCategoriesAsync()
+    {
+        var categories = await categoryRepo.GetAllCategoriesAsync();
+        return [.. categories.Select(c => new CategoryOptionDto(c.Id, c.Name))];
+    }
 
-    public Task<List<Category>> GetSelectableCategoriesAsync() => categoryRepo.GetAllCategoriesAsync();
+    public Task<List<CategoryOptionDto>> GetSelectableCategoriesAsync() => GetAllCategoriesAsync();
 
-    public Task<Category?> GetCategoryByIdAsync(int id) => categoryRepo.GetCategoryByIdAsync(id);
+    public async Task<CategoryDetailDto?> GetCategoryByIdAsync(int id)
+    {
+        var category = await categoryRepo.GetCategoryByIdAsync(id);
+        return category is null ? null : new CategoryDetailDto(category.Id, category.Name);
+    }
 
     public async Task<List<CategoryGridDto>> GetCategoryGridAsync(bool isDeleted = false)
     {

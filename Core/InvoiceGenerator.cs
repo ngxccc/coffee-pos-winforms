@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using CoffeePOS.Models;
+using CoffeePOS.Shared.Dtos;
 using QuestPDF.Drawing;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
@@ -62,7 +62,7 @@ public static class InvoiceGenerator
         });
     }
 
-    private static void ComposeContent(IContainer container, List<BillDetail> details)
+    private static void ComposeContent(IContainer container, List<BillDetailDto> details)
     {
         container.PaddingVertical(1, Unit.Centimetre).Column(column =>
         {
