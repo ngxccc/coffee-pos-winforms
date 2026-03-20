@@ -67,7 +67,7 @@ public partial class UC_ManageProducts : UserControl
             Location = new Point(250, 22),
             PlaceholderText = "Nhập tên món để tìm..."
         };
-        txtSearch.TextChanged += (s, e) => ApplyFilterAndSort();
+        txtSearch.OnDebouncedTextChanged(300, ApplyFilterAndSort);
 
         chkTrashMode = new CheckBox
         {

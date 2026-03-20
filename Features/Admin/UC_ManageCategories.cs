@@ -62,7 +62,7 @@ public class UC_ManageCategories : UserControl
             Location = new Point(250, 22),
             PlaceholderText = "Nhập tên danh mục để tìm..."
         };
-        txtSearch.TextChanged += (s, e) => ApplyFilterAndSort();
+        txtSearch.OnDebouncedTextChanged(300, ApplyFilterAndSort);
 
         chkTrashMode = new CheckBox
         {
@@ -83,7 +83,7 @@ public class UC_ManageCategories : UserControl
             Padding = new Padding(0, 10, 0, 0)
         };
 
-        btnDelete = UIHelper.CreateActionButton("Xóa", IconChar.Trash, Color.FromArgb(231, 76, 60), async (s, e) => await DeleteCategoryAsync());
+        btnDelete = UIHelper.CreateActionButton("Xóa", IconChar.Trash, Color.FromArgb(231, 76, 60), DeleteCategoryAsync);
         btnEdit = UIHelper.CreateActionButton("Sửa", IconChar.Pen, Color.FromArgb(243, 156, 18), EditCategoryAsync);
         btnAdd = UIHelper.CreateActionButton("Thêm Mới", IconChar.Plus, Color.FromArgb(46, 204, 113), AddCategoryAsync);
 
@@ -160,7 +160,7 @@ public class UC_ManageCategories : UserControl
         if (form.ShowDialog() == DialogResult.OK) await LoadDataAsync();
     }
 
-    private async Task DeleteCategoryAsync()
+    private async void DeleteCategoryAsync(object? s, EventArgs e)
     {
         if (dgvCategories.SelectedRows.Count == 0) return;
         string name = dgvCategories.SelectedRows[0].Cells["Name"].Value.ToString()!;
