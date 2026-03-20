@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Npgsql;
+using Serilog;
 
 namespace CoffeePOS;
 
@@ -13,16 +14,22 @@ static class Program
     {
         ApplicationConfiguration.Initialize();
 
-        var host = CreateHostBuilder().Build();
+        var host = CreateHostBuilder().UseSerilog().Build();
 
         var config = host.Services.GetRequiredService<IConfiguration>();
         string connStr = config.GetConnectionString("DefaultConnection")
                          ?? throw new Exception("Chưa cấu hình ConnectionString!");
 
+        Log.Logger = new LoggerConfiguration()
+        .ReadFrom.Configuration(config)
+        .CreateLogger();
+
         // Thay vì: Application.Run(new MainForm(...));
         // Bây giờ Container sẽ tự lo việc new MainForm và bơm Repo vào nó.
         try
         {
+            Log.Information("=== KHỞI ĐỘNG PHẦN MỀM COFFEE POS ===");
+
             DbInitializer.Initialize(connStr);
             Core.TimeKeeper.Initialize(connStr);
             Core.InvoiceGenerator.Initialize();
@@ -35,12 +42,15 @@ static class Program
         }
         catch (Exception ex)
         {
+            Log.Fatal(ex, "Phần mềm sập toàn tập lúc khởi động!");
             MessageBox.Show($"Lỗi khởi động: {ex.Message}\nKiểm tra lại appsettings.json!", "Critical Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
         finally
         {
             host.StopAsync().GetAwaiter().GetResult();
             host.Dispose();
+            Log.Information("=== TẮT PHẦN MỀM ===");
+            Log.CloseAndFlush();
         }
     }
 

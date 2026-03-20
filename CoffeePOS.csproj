@@ -25,6 +25,10 @@
     <PackageReference Include="QuestPDF" Version="2026.2.3" />
     <PackageReference Include="ReaLTaiizor" Version="3.8.1.5" />
     <PackageReference Include="Scrutor" Version="7.0.0" />
+    <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
+    <PackageReference Include="Serilog.Settings.Configuration" Version="10.0.0" />
+    <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Hosting;
 using Npgsql;
+using Serilog;
 
 namespace CoffeePOS.Core;
 
@@ -22,12 +23,12 @@ public class TrashCleanupWorker(NpgsqlDataSource dataSource) : BackgroundService
 
                 if (rowsDeleted > 0)
                 {
-                    Console.WriteLine($"[Lao Công Dọn Rác]: Đã dọn vĩnh viễn {rowsDeleted} bản ghi hết hạn!");
+                    Log.Information($"[Lao Công Dọn Rác]: Đã dọn vĩnh viễn {rowsDeleted} bản ghi hết hạn!");
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Lỗi Lao Công]: {ex.Message}");
+                Log.Error($"[Lỗi Lao Công]: {ex.Message}");
             }
 
             await Task.Delay(TimeSpan.FromHours(24), stoppingToken);

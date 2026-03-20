@@ -4,6 +4,7 @@ using QuestPDF.Drawing;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
+using Serilog;
 
 namespace CoffeePOS.Core;
 
@@ -18,11 +19,11 @@ public static class InvoiceGenerator
         if (resourceName != null)
         {
             FontManager.RegisterFontFromEmbeddedResource(resourceName);
-            Console.WriteLine("[System]: Đã nạp thành công Font Roboto từ Embedded Resource!");
+            Log.Information("[System]: Đã nạp thành công Font Roboto từ Embedded Resource!");
         }
         else
         {
-            Console.WriteLine("[Cảnh Báo]: Đéo tìm thấy Font trong Resource! Vui lòng kiểm tra lại tên file.");
+            Log.Error("[Cảnh Báo]: Đéo tìm thấy Font trong Resource! Vui lòng kiểm tra lại tên file.");
         }
     }
 

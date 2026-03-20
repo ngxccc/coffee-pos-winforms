@@ -5,6 +5,7 @@ using CoffeePOS.Features.Sidebar;
 using CoffeePOS.Models;
 using CoffeePOS.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Serilog;
 using Panel = System.Windows.Forms.Panel;
 
 namespace CoffeePOS.Forms;
@@ -293,7 +294,7 @@ public partial class CashierWorkspaceForm : Form
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Clock Error: {ex.Message}");
+            Log.Error($"Clock Error: {ex.Message}");
         }
     }
 }

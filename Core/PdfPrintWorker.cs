@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Hosting;
+using Serilog;
 
 namespace CoffeePOS.Core;
 
@@ -19,13 +20,13 @@ public class PdfPrintWorker(PdfPrintQueue printQueue) : BackgroundService
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[Lỗi in PDF Background - Bỏ qua Bill này]: {ex.Message}");
+                    Log.Error($"[Lỗi in PDF Background - Bỏ qua Bill này]: {ex.Message}");
                 }
             }
         }
         catch (OperationCanceledException)
         {
-            Console.WriteLine("[Thợ in PDF]: Đang dọn dẹp và tắt máy...");
+            Log.Information("[Thợ in PDF]: Đang dọn dẹp và tắt máy...");
         }
     }
 }

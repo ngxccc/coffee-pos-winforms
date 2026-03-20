@@ -1,5 +1,6 @@
 using CoffeePOS.Models;
 using CoffeePOS.Services;
+using Serilog;
 
 namespace CoffeePOS.Forms;
 
@@ -256,7 +257,7 @@ public partial class ProductDetailForm : Form
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"[Cảnh báo Dọn Rác]: Không thể xóa ảnh cũ '{_currentSavedImage}'. Chi tiết: {ex.Message}");
+                        Log.Warning($"[Cảnh báo Dọn Rác]: Không thể xóa ảnh cũ '{_currentSavedImage}'. Chi tiết: {ex.Message}");
                     }
                 }
             }
@@ -275,6 +276,7 @@ public partial class ProductDetailForm : Form
         catch (Exception ex)
         {
             MessageBox.Show($"Lỗi lưu dữ liệu: {ex.Message}");
+            Log.Error($"Lỗi lưu dữ liệu: {ex}");
         }
         finally
         {
