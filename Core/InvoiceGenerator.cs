@@ -16,34 +16,21 @@ public static class InvoiceGenerator
 
     public static async Task GenerateAndOpenPdfAsync(IPdfPayload payload)
     {
-        Document document;
-        string fileNamePrefix;
-
-        switch (payload)
+        var (document, fileNamePrefix) = payload switch
         {
-            case BillPrintPayload bill:
-                document = CreateBillDocument(bill);
-                fileNamePrefix = $"Bill_{bill.BillId}_{(bill.IsReprint ? "reprint_" : "")}";
-                break;
-
-            case ShiftReportPrintPayload report:
-                document = CreateShiftReportDocument(report);
-                fileNamePrefix = $"ZReport_{report.CashierName}_";
-                break;
-
-            default:
-                throw new NotSupportedException("Loại tài liệu in không được hỗ trợ!");
-        }
+            BillPrintPayload bill => (CreateBillDocument(bill), $"Bill_{bill.BillId}_{(bill.IsReprint ? "reprint_" : "")}"),
+            ShiftReportPrintPayload report => (CreateShiftReportDocument(report), $"ZReport_{report.CashierName}_"),
+            _ => throw new NotSupportedException("Loại tài liệu in không được hỗ trợ!")
+        };
 
         string directory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Invoices");
         if (!Directory.Exists(directory)) Directory.CreateDirectory(directory);
 
-        string filePath = Path.Combine(directory, $"{fileNamePrefix}{DateTime.Now:yyyyMMdd_HHmmss}.pdf");
-
-        document.GeneratePdf(filePath);
+        string filePath = Path.Combine(directory, $"{fileNamePrefix}{DateTime.Now:yyyyMMdd_HHmmss_fff}.pdf");
 
         await Task.Run(() =>
         {
+            document.GeneratePdf(filePath);
             Process.Start(new ProcessStartInfo(filePath) { UseShellExecute = true });
         });
     }
@@ -108,10 +95,7 @@ public static class InvoiceGenerator
         {
             container.Page(page =>
             {
-                page.ContinuousSize(80, Unit.Millimetre);
-                page.Margin(2, Unit.Millimetre);
-                page.PageColor(Colors.White);
-                page.DefaultTextStyle(x => x.FontSize(10).FontFamily(Fonts.Arial));
+                ApplyStandardPageSettings(page, 10);
 
                 page.Header().Element(x => ComposeHeader(x, payload.BillId, payload.BuzzerNumber));
                 page.Content().Element(x => ComposeContent(x, payload.Details));
@@ -145,10 +129,7 @@ public static class InvoiceGenerator
         {
             container.Page(page =>
             {
-                page.ContinuousSize(80, Unit.Millimetre);
-                page.Margin(2, Unit.Millimetre);
-                page.PageColor(Colors.White);
-                page.DefaultTextStyle(x => x.FontSize(11).FontFamily(Fonts.Arial));
+                ApplyStandardPageSettings(page, 11);
 
                 page.Content().Column(col =>
                 {
@@ -197,5 +178,13 @@ public static class InvoiceGenerator
                 });
             });
         });
+    }
+
+    private static void ApplyStandardPageSettings(PageDescriptor page, float fontSize = 10)
+    {
+        page.ContinuousSize(80, Unit.Millimetre);
+        page.Margin(2, Unit.Millimetre);
+        page.PageColor(Colors.White);
+        page.DefaultTextStyle(x => x.FontSize(fontSize).FontFamily(Fonts.Arial));
     }
 }
