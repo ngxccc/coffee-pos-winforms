@@ -10,7 +10,6 @@ namespace CoffeePOS.Features.Admin;
 
 public class UC_Dashboard : UserControl
 {
-    private readonly IDashboardService _dashboardService;
     private readonly IDashboardQueryService _dashboardQueryService;
 
     // UI Controls
@@ -20,9 +19,8 @@ public class UC_Dashboard : UserControl
     private CartesianChart chartRevenue = null!;
     private PieChart chartTopProducts = null!;
 
-    public UC_Dashboard(IDashboardService dashboardService, IDashboardQueryService dashboardQueryService)
+    public UC_Dashboard(IDashboardQueryService dashboardQueryService)
     {
-        _dashboardService = dashboardService;
         _dashboardQueryService = dashboardQueryService;
         InitializeUI();
         _ = LoadDashboardDataAsync();
@@ -114,18 +112,18 @@ public class UC_Dashboard : UserControl
         try
         {
             // Fetch all data in parallel
-            var taskKpis = _dashboardQueryService.GetTodayKpisAsync();
-            var taskRev = _dashboardQueryService.Get7DaysRevenueChartAsync();
-            var taskTop = _dashboardQueryService.GetTop5ProductsAsync();
+            var taskSummary = _dashboardQueryService.GetTodaySummaryAsync();
+            var taskRev = _dashboardQueryService.GetRevenueChartAsync();
+            var taskTop = _dashboardQueryService.GetTopProductsAsync();
 
-            await Task.WhenAll(taskKpis, taskRev, taskTop);
+            await Task.WhenAll(taskSummary, taskRev, taskTop);
 
-            var kpis = taskKpis.Result;
+            var summary = taskSummary.Result;
             lblTodayRevenue.Text =
-                $"DOANH THU HÔM NAY\n{kpis.TodayRevenue.ToString("N0", CultureInfo.GetCultureInfo("vi-VN"))} đ";
-            lblTodayOrders.Text = $"SỐ ĐƠN\n{kpis.TodayOrderCount:N0}";
+                $"DOANH THU HÔM NAY\n{summary.Revenue.ToString("N0", CultureInfo.GetCultureInfo("vi-VN"))} đ";
+            lblTodayOrders.Text = $"SỐ ĐƠN\n{summary.OrderCount:N0}";
             lblTodayAverageOrder.Text =
-                $"TB ĐƠN\n{kpis.TodayAverageOrder.ToString("N0", CultureInfo.GetCultureInfo("vi-VN"))} đ";
+                $"TB ĐƠN\n{summary.AverageOrder.ToString("N0", CultureInfo.GetCultureInfo("vi-VN"))} đ";
 
             var revData = taskRev.Result;
             chartRevenue.Series =

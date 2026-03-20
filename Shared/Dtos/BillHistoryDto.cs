@@ -1,9 +1,10 @@
+using System.ComponentModel;
+
 namespace CoffeePOS.Shared.Dtos;
 
-public class BillHistoryDto
-{
-    public int Id { get; set; }
-    public int BuzzerNumber { get; set; }
-    public decimal TotalAmount { get; set; }
-    public DateTime CreatedAt { get; set; }
-}
+public record BillHistoryDto(
+    [property: DisplayName("Mã Đơn")] int Id,
+    [property: DisplayName("Thẻ Rung")] int BuzzerNumber,
+    [property: DisplayName("Tổng Tiền (đ)")] decimal TotalAmount,
+    [property: DisplayName("Thời Gian")] DateTime CreatedAt
+);

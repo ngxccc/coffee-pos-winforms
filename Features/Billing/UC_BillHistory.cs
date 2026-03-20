@@ -1,5 +1,5 @@
-using CoffeePOS.Models;
-using Npgsql;
+using CoffeePOS.Shared.Dtos;
+using CoffeePOS.Shared.Helpers;
 
 namespace CoffeePOS.Features.Billing;
 
@@ -7,7 +7,7 @@ public class UC_BillHistory : UserControl
 {
     private DataGridView _dgvBills = null!;
 
-    public event EventHandler<Bill>? OnReprintClicked;
+    public event EventHandler<BillHistoryDto>? OnReprintClicked;
 
     public UC_BillHistory()
     {
@@ -32,49 +32,24 @@ public class UC_BillHistory : UserControl
 
         _dgvBills = new DataGridView
         {
-            Dock = DockStyle.Fill,
-            AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
-            AllowUserToAddRows = false,
-            AllowUserToDeleteRows = false,
-            ReadOnly = true,
-            SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-            BackgroundColor = Color.WhiteSmoke,
-            RowTemplate = { Height = 40 },
-            Font = new Font("Segoe UI", 11),
-            RowHeadersVisible = false,
-            ColumnHeadersHeight = 40
+            Dock = DockStyle.Fill
         };
-
+        _dgvBills.ApplyStandardAdminStyle();
         _dgvBills.CellClick += DgvBills_CellClick;
 
         Controls.Add(_dgvBills);
         Controls.Add(lblTitle);
     }
 
-    public void BindData(List<Bill> bills)
+    public void BindData(List<BillHistoryDto> bills)
     {
         _dgvBills.DataSource = null;
         _dgvBills.Columns.Clear();
 
         _dgvBills.DataSource = bills;
 
-        _dgvBills.Columns["Id"].HeaderText = "Mã Đơn";
-        _dgvBills.Columns["BuzzerNumber"].HeaderText = "Thẻ Rung";
-        _dgvBills.Columns["TotalAmount"].HeaderText = "Tổng Tiền (đ)";
-        _dgvBills.Columns["TotalAmount"].DefaultCellStyle.Format = "N0";
-        _dgvBills.Columns["CreatedAt"].HeaderText = "Thời Gian";
-        _dgvBills.Columns["CreatedAt"].DefaultCellStyle.Format = "HH:mm:ss";
-
-        string[] nonVisibleColumns = [
-            "UserId",
-            "Status",
-            "IsDeleted",
-            "UpdatedAt",
-            "OrderType",
-            nameof(Bill.DeletedAt)
-        ];
-        foreach (var col in nonVisibleColumns)
-            if (_dgvBills.Columns[col] != null) _dgvBills.Columns[col].Visible = false;
+        _dgvBills.Columns[nameof(BillHistoryDto.TotalAmount)].DefaultCellStyle.Format = "N0";
+        _dgvBills.Columns[nameof(BillHistoryDto.CreatedAt)].DefaultCellStyle.Format = "HH:mm:ss";
 
         DataGridViewButtonColumn btnReprint = new()
         {
@@ -93,7 +68,7 @@ public class UC_BillHistory : UserControl
         {
             if (_dgvBills.Columns[e.ColumnIndex].Name == "ReprintCol")
             {
-                var selectedBill = (Bill)_dgvBills.Rows[e.RowIndex].DataBoundItem;
+                var selectedBill = (BillHistoryDto)_dgvBills.Rows[e.RowIndex].DataBoundItem;
                 OnReprintClicked?.Invoke(this, selectedBill);
             }
         }

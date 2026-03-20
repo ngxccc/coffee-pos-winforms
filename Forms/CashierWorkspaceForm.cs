@@ -109,14 +109,7 @@ public partial class CashierWorkspaceForm : Form
 
         _ucSidebar.OnBillHistoryClicked += async (s, e) =>
         {
-            var billDtos = await _billQueryService.GetTodayBillsByUserAsync(_session.CurrentUser!.Id);
-            var todayBills = billDtos.Select(b => new Bill
-            {
-                Id = b.Id,
-                BuzzerNumber = b.BuzzerNumber,
-                TotalAmount = b.TotalAmount,
-                CreatedAt = b.CreatedAt
-            }).ToList();
+            var todayBills = await _billQueryService.GetTodayBillsByUserAsync(_session.CurrentUser!.Id);
             _ucBillHistory.BindData(todayBills);
 
             _ucMenu.Visible = false;

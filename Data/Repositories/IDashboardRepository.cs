@@ -1,13 +1,10 @@
-using CoffeePOS.Models;
+using CoffeePOS.Shared.Dtos;
 
 namespace CoffeePOS.Data.Repositories;
 
 public interface IDashboardRepository
 {
-    Task<decimal> GetTodayRevenueAsync();
-    Task<int> GetTodayOrderCountAsync();
-    Task<decimal> GetTodayAverageOrderAsync();
-    Task<List<DailyRevenue>> Get7DaysRevenueAsync();
-    // GetRevenueByDateRangeAsync(DateTime fromDate, DateTime toDate);
-    Task<List<TopProduct>> GetTop5ProductsAsync();
+    Task<TodaySummaryDto> GetTodaySummaryAsync();
+    Task<List<DashboardChartDataDto>> GetRevenueChartAsync(int days = 7);
+    Task<List<TopProductDto>> GetTopProductsAsync(int limit = 5);
 }
