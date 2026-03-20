@@ -154,7 +154,7 @@ public class UC_ManageCategories : UserControl
     {
         if (_dgvCategories.SelectedRows.Count == 0) return;
         int id = (int)_dgvCategories.SelectedRows[0].Cells["Id"].Value;
-        var cat = await _categoryService.GetCategoryByIdAsync(id);
+        var cat = await _categoryQueryService.GetCategoryByIdAsync(id);
         if (cat == null) return;
 
         var form = _serviceProvider.GetRequiredService<CategoryDetailForm>();

@@ -1,4 +1,5 @@
 using CoffeePOS.Data.Repositories;
+using CoffeePOS.Models;
 using CoffeePOS.Shared.Dtos;
 
 namespace CoffeePOS.Services;
@@ -13,5 +14,11 @@ public class BillQueryService(IBillRepository billRepo) : IBillQueryService
             b.BuzzerNumber,
             b.TotalAmount,
             b.CreatedAt))];
+    }
+
+    public Task<List<BillDetail>> GetBillDetailsAsync(int billId)
+    {
+        if (billId <= 0) throw new ArgumentException("ID hóa đơn không hợp lệ!");
+        return billRepo.GetBillDetailsAsync(billId);
     }
 }

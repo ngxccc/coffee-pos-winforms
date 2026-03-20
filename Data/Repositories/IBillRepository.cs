@@ -1,10 +1,11 @@
 using CoffeePOS.Models;
+using CoffeePOS.Shared.Dtos;
 
 namespace CoffeePOS.Data.Repositories;
 
 public interface IBillRepository
 {
-    Task<int> ProcessFullOrderAsync(int buzzerNumber, decimal totalAmount, List<BillDetail> items);
+    Task<int> ProcessFullOrderAsync(CreateBillDto command);
     Task<List<BillDetail>> GetBillDetailsAsync(int billId);
     Task CancelBillAsync(int billId);
     Task<List<Bill>> GetTodayBillsByUserAsync(int userId);

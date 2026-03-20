@@ -5,13 +5,6 @@ namespace CoffeePOS.Services;
 
 public class CategoryService(ICategoryRepository categoryRepo) : ICategoryService
 {
-    public Task<List<Category>> GetAllCategoriesAsync() => categoryRepo.GetAllCategoriesAsync();
-
-    public Task<List<Category>> GetSelectableCategoriesAsync()
-    => categoryRepo.GetAllCategoriesAsync();
-
-    public Task<Category?> GetCategoryByIdAsync(int id) => categoryRepo.GetCategoryByIdAsync(id);
-
     public async Task AddCategoryAsync(Category category)
     {
         if (string.IsNullOrWhiteSpace(category.Name)) throw new ArgumentException("Tên danh mục không được để trống!");

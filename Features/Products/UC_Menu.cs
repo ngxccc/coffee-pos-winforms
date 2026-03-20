@@ -13,8 +13,8 @@ public class UC_Menu : UserControl
     private const int PAGE_SIZE = 20;
     private bool _isLoading = false;
 
-    private readonly IProductService _productService;
-    private readonly ICategoryService _categoryService;
+    private readonly IProductQueryService _productQueryService;
+    private readonly ICategoryQueryService _categoryQueryService;
 
     // Data Cache
     private List<Product> _allProducts = [];
@@ -24,10 +24,10 @@ public class UC_Menu : UserControl
     public event Action<int, string, decimal>? OnProductSelected;
     public event EventHandler? OnBackClicked;
 
-    public UC_Menu(IProductService productService, ICategoryService categoryService)
+    public UC_Menu(IProductQueryService productQueryService, ICategoryQueryService categoryQueryService)
     {
-        _productService = productService;
-        _categoryService = categoryService;
+        _productQueryService = productQueryService;
+        _categoryQueryService = categoryQueryService;
 
         InitializeUI();
     }
@@ -103,8 +103,8 @@ public class UC_Menu : UserControl
     {
         try
         {
-            _allCategories = await _categoryService.GetAllCategoriesAsync();
-            _allProducts = await _productService.GetAllProductsAsync();
+            _allCategories = await _categoryQueryService.GetAllCategoriesAsync();
+            _allProducts = await _productQueryService.GetAllProductsAsync();
 
             RenderCategories();
             FilterProducts(0);

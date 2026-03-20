@@ -2,8 +2,8 @@ using CoffeePOS.Core;
 using CoffeePOS.Features.Billing;
 using CoffeePOS.Features.Products;
 using CoffeePOS.Features.Sidebar;
-using CoffeePOS.Models;
 using CoffeePOS.Services;
+using CoffeePOS.Shared.Dtos;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using Panel = System.Windows.Forms.Panel;
@@ -163,7 +163,7 @@ public partial class CashierWorkspaceForm : Form
                 {
                     Cursor.Current = Cursors.WaitCursor;
 
-                    var billItems = await _billService.GetBillDetailsAsync(bill.Id);
+                    var billItems = await _billQueryService.GetBillDetailsAsync(bill.Id);
 
                     await _pdfQueue.EnqueueJobAsync(new BillPrintPayload
                     {
@@ -218,7 +218,18 @@ public partial class CashierWorkspaceForm : Form
         {
             _isProcessingPayment = true;
 
-            int billId = await _billService.ProcessFullOrderAsync(buzzerNumber, finalAmount, cartItems);
+            var command = new CreateBillDto(
+                buzzerNumber,
+                _session.CurrentUser!.Id,
+                finalAmount,
+                [.. cartItems.Select(i => new CreateBillItemDto(
+                    i.ProductId,
+                    i.ProductName,
+                    i.Quantity,
+                    i.Price,
+                    i.Note))]);
+
+            int billId = await _billService.ProcessFullOrderAsync(command);
 
             await _pdfQueue.EnqueueJobAsync(new BillPrintPayload
             {

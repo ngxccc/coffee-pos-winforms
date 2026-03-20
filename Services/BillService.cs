@@ -1,22 +1,24 @@
+using CoffeePOS.Core;
 using CoffeePOS.Data.Repositories;
-using CoffeePOS.Models;
+using CoffeePOS.Shared.Dtos;
 
 namespace CoffeePOS.Services;
 
-public class BillService(IBillRepository billRepo) : IBillService
+public class BillService(IBillRepository billRepo, IUserSession session) : IBillService
 {
-    public Task<int> ProcessFullOrderAsync(int buzzerNumber, decimal totalAmount, List<BillDetail> items)
+    public Task<int> ProcessFullOrderAsync(CreateBillDto command)
     {
-        if (buzzerNumber <= 0) throw new ArgumentException("Số thẻ rung phải lớn hơn 0!");
-        if (items.Count == 0) throw new ArgumentException("Không thể tạo hóa đơn trống!");
-        if (totalAmount <= 0) throw new ArgumentException("Tổng tiền hóa đơn không hợp lệ!");
+        if (!session.IsLoggedIn || session.CurrentUser is null)
+            throw new UnauthorizedAccessException("Chưa đăng nhập không thể tạo bill!");
 
-        return billRepo.ProcessFullOrderAsync(buzzerNumber, totalAmount, items);
+        if (command.BuzzerNumber <= 0) throw new ArgumentException("Số thẻ rung phải lớn hơn 0!");
+        if (command.Items.Count == 0) throw new ArgumentException("Không thể tạo hóa đơn trống!");
+        if (command.TotalAmount <= 0) throw new ArgumentException("Tổng tiền hóa đơn không hợp lệ!");
+        if (command.CreatedByUserId != session.CurrentUser.Id)
+            throw new UnauthorizedAccessException("Người dùng tạo hóa đơn không hợp lệ!");
+
+        return billRepo.ProcessFullOrderAsync(command);
     }
-
-    public Task<List<BillDetail>> GetBillDetailsAsync(int billId) => billRepo.GetBillDetailsAsync(billId);
-
-    public Task<List<Bill>> GetTodayBillsByUserAsync(int userId) => billRepo.GetTodayBillsByUserAsync(userId);
 
     public Task CancelBillAsync(int billId) => billRepo.CancelBillAsync(billId);
 }

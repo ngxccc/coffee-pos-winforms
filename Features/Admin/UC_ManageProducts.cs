@@ -197,7 +197,7 @@ public partial class UC_ManageProducts : UserControl
 
         try
         {
-            var product = await _productService.GetProductByIdAsync(productId);
+            var product = await _productQueryService.GetProductByIdAsync(productId);
             if (product == null)
             {
                 MessageBox.Show("Không tìm thấy sản phẩm!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);

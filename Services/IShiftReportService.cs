@@ -1,9 +1,8 @@
-using CoffeePOS.Models;
+using CoffeePOS.Shared.Dtos;
 
 namespace CoffeePOS.Services;
 
 public interface IShiftReportService
 {
-    Task<(int TotalBills, decimal ExpectedCash)> GetShiftSummaryAsync(int userId, DateTime startTime, DateTime endTime);
-    Task SaveReportAsync(ShiftReport report);
+    Task SaveReportAsync(SaveShiftReportDto command);
 }

@@ -1,11 +1,11 @@
 namespace CoffeePOS.Data.Repositories;
 
-using CoffeePOS.Core;
 using CoffeePOS.Models;
+using CoffeePOS.Shared.Dtos;
 using CoffeePOS.Shared.Helpers;
 using Npgsql;
 
-public class BillRepository(NpgsqlDataSource dataSource, IUserSession session) : IBillRepository
+public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
 {
     private static readonly string SqlInsertBill = SqlFileLoader.Load(SqlKeys.Bill.InsertBill);
     private static readonly string SqlInsertBillDetail = SqlFileLoader.Load(SqlKeys.Bill.InsertBillDetail);
@@ -13,26 +13,24 @@ public class BillRepository(NpgsqlDataSource dataSource, IUserSession session) :
     private static readonly string SqlCancelBill = SqlFileLoader.Load(SqlKeys.Bill.CancelBill);
     private static readonly string SqlGetTodayBillsByUser = SqlFileLoader.Load(SqlKeys.Bill.GetTodayBillsByUser);
 
-    public async Task<int> ProcessFullOrderAsync(int buzzerNumber, decimal totalAmount, List<BillDetail> items)
+    public async Task<int> ProcessFullOrderAsync(CreateBillDto command)
     {
-        if (!session.IsLoggedIn) throw new UnauthorizedAccessException("Chưa đăng nhập không thể tạo bill!");
-
         using var conn = await dataSource.OpenConnectionAsync();
         using var tx = await conn.BeginTransactionAsync();
 
         try
         {
             using var cmdBill = new NpgsqlCommand(SqlInsertBill, conn, tx);
-            cmdBill.Parameters.AddWithValue("b", buzzerNumber);
-            cmdBill.Parameters.AddWithValue("u", session.CurrentUser!.Id);
-            cmdBill.Parameters.AddWithValue("total", totalAmount);
+            cmdBill.Parameters.AddWithValue("b", command.BuzzerNumber);
+            cmdBill.Parameters.AddWithValue("u", command.CreatedByUserId);
+            cmdBill.Parameters.AddWithValue("total", command.TotalAmount);
 
             int billId = (await cmdBill.ExecuteScalarAsync())
                 .GetRequiredIntFromScalar("BillRepository.ProcessFullOrderAsync bill id");
 
             await using var batch = new NpgsqlBatch(conn, tx);
 
-            foreach (var item in items)
+            foreach (var item in command.Items)
             {
                 var batchCommand = new NpgsqlBatchCommand(SqlInsertBillDetail);
 

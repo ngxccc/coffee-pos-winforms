@@ -1,12 +1,13 @@
 using CoffeePOS.Core;
-using CoffeePOS.Models;
 using CoffeePOS.Services;
+using CoffeePOS.Shared.Dtos;
 
 namespace CoffeePOS.Forms;
 
 public partial class ShiftReportForm : Form
 {
     private readonly IUserSession _session;
+    private readonly IShiftReportQueryService _shiftReportQueryService;
     private readonly IShiftReportService _shiftReportService;
     private readonly PdfPrintQueue _pdfQueue;
 
@@ -23,10 +24,11 @@ public partial class ShiftReportForm : Form
     private decimal _expectedCash = 0;
     private readonly DateTime _endTime;
 
-    public ShiftReportForm(IUserSession session, IShiftReportService shiftReportService, PdfPrintQueue pdfQueue)
+    public ShiftReportForm(IUserSession session, IShiftReportService shiftReportService, IShiftReportQueryService shiftReportQueryService, PdfPrintQueue pdfQueue)
     {
         _session = session;
         _shiftReportService = shiftReportService;
+        _shiftReportQueryService = shiftReportQueryService;
         _endTime = DateTime.Now;
         _pdfQueue = pdfQueue;
 
@@ -140,7 +142,7 @@ public partial class ShiftReportForm : Form
         try
         {
             btnConfirm.Enabled = false;
-            var (TotalBills, ExpectedCash) = await _shiftReportService.GetShiftSummaryAsync(_session.CurrentUser!.Id, _session.LoginTime!.Value, _endTime);
+            var (TotalBills, ExpectedCash) = await _shiftReportQueryService.GetShiftSummaryAsync(_session.CurrentUser!.Id, _session.LoginTime!.Value, _endTime);
             _totalBills = TotalBills;
             _expectedCash = ExpectedCash;
 
@@ -185,19 +187,17 @@ public partial class ShiftReportForm : Form
         btnConfirm.Enabled = false;
         try
         {
-            var report = new ShiftReport
-            {
-                UserId = _session.CurrentUser!.Id,
-                StartTime = _session.LoginTime!.Value,
-                EndTime = _endTime,
-                TotalBills = _totalBills,
-                ExpectedCash = _expectedCash,
-                ActualCash = actualCash,
-                Variance = actualCash - _expectedCash,
-                Note = txtNote.Text
-            };
+            var command = new SaveShiftReportDto(
+                _session.CurrentUser!.Id,
+                _session.LoginTime!.Value,
+                _endTime,
+                _totalBills,
+                _expectedCash,
+                actualCash,
+                actualCash - _expectedCash,
+                txtNote.Text);
 
-            await _shiftReportService.SaveReportAsync(report);
+            await _shiftReportService.SaveReportAsync(command);
 
             await _pdfQueue.EnqueueJobAsync(new ShiftReportPrintPayload
             {

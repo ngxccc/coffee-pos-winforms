@@ -1,18 +1,17 @@
 using CoffeePOS.Data.Repositories;
-using CoffeePOS.Models;
+using CoffeePOS.Shared.Dtos;
 
 namespace CoffeePOS.Services;
 
 public class ShiftReportService(IShiftReportRepository shiftReportRepo) : IShiftReportService
 {
-    public Task<(int TotalBills, decimal ExpectedCash)> GetShiftSummaryAsync(int userId, DateTime startTime, DateTime endTime)
-        => shiftReportRepo.GetShiftSummaryAsync(userId, startTime, endTime);
-
-    public Task SaveReportAsync(ShiftReport report)
+    public Task SaveReportAsync(SaveShiftReportDto command)
     {
-        if (report.UserId <= 0) throw new ArgumentException("Người dùng không hợp lệ!");
-        if (report.EndTime < report.StartTime) throw new ArgumentException("Thời gian chốt ca không hợp lệ!");
+        if (command.UserId <= 0) throw new ArgumentException("Người dùng không hợp lệ!");
+        if (command.EndTime < command.StartTime) throw new ArgumentException("Thời gian chốt ca không hợp lệ!");
+        if (command.TotalBills < 0) throw new ArgumentException("Số hóa đơn không hợp lệ!");
+        if (command.ExpectedCash < 0 || command.ActualCash < 0) throw new ArgumentException("Số tiền không hợp lệ!");
 
-        return shiftReportRepo.SaveReportAsync(report);
+        return shiftReportRepo.SaveReportAsync(command);
     }
 }

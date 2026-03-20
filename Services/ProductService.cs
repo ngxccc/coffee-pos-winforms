@@ -5,14 +5,6 @@ namespace CoffeePOS.Services;
 
 public class ProductService(IProductRepository productRepo, ICategoryRepository categoryRepo) : IProductService
 {
-    public Task<List<Product>> GetAllProductsAsync() => productRepo.GetAllProductsAsync();
-
-    public Task<Product?> GetProductByIdAsync(int productId)
-    {
-        if (productId <= 0) throw new ArgumentException("Sản phẩm không hợp lệ!");
-        return productRepo.GetProductByIdAsync(productId);
-    }
-
     public async Task AddProductAsync(Product product)
     {
         ValidateCommonRules(product);
