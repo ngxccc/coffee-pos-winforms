@@ -1,22 +1,21 @@
 using CoffeePOS.Core;
 using CoffeePOS.Services.Contracts.Commands;
+using CoffeePOS.Shared.Helpers;
 
 namespace CoffeePOS.Forms;
 
 public partial class LoginForm : Form
 {
     private readonly IUserService _userService;
-    private readonly IServiceProvider _serviceProvider;
     private readonly IUserSession _session;
 
     private TextBox txtUsername = null!;
     private TextBox txtPassword = null!;
     private Button btnLogin = null!;
 
-    public LoginForm(IUserService userService, IServiceProvider serviceProvider, IUserSession session)
+    public LoginForm(IUserService userService, IUserSession session)
     {
         _userService = userService;
-        _serviceProvider = serviceProvider;
         _session = session;
 
         InitializeUI();
@@ -126,7 +125,7 @@ public partial class LoginForm : Form
 
         if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
         {
-            MessageBox.Show("Vui lòng nhập đủ Username và Password!");
+            MessageBoxHelper.Warning("Vui lòng nhập đủ Username và Password!", owner: this);
             return;
         }
 
@@ -145,12 +144,12 @@ public partial class LoginForm : Form
             }
             else
             {
-                MessageBox.Show("Sai tài khoản hoặc mật khẩu!");
+                MessageBoxHelper.Warning("Sai tài khoản hoặc mật khẩu!", owner: this);
             }
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Lỗi kết nối CSDL: {ex.Message}");
+            MessageBoxHelper.Error($"Lỗi kết nối CSDL: {ex.Message}", owner: this);
         }
         finally
         {

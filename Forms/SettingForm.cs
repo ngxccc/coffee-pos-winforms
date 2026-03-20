@@ -1,5 +1,6 @@
 using CoffeePOS.Core;
 using CoffeePOS.Services.Contracts.Commands;
+using CoffeePOS.Shared.Helpers;
 
 namespace CoffeePOS.Forms;
 
@@ -193,21 +194,21 @@ public partial class SettingForm : Form
                 newPass,
                 confirmPass);
 
-            MessageBox.Show("Đổi mật khẩu thành công!", "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBoxHelper.Info("Đổi mật khẩu thành công!", "Thành công", this);
             DialogResult = DialogResult.OK;
             Close();
         }
         catch (ArgumentException ex)
         {
-            MessageBox.Show(ex.Message, "Lỗi nhập liệu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBoxHelper.Warning(ex.Message, "Lỗi nhập liệu", this);
         }
         catch (InvalidOperationException ex)
         {
-            MessageBox.Show(ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBoxHelper.Error(ex.Message, "Lỗi", this);
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Lỗi hệ thống: {ex.Message}");
+            MessageBoxHelper.Error($"Lỗi hệ thống: {ex.Message}", owner: this);
         }
         finally
         {

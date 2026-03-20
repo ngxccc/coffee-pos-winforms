@@ -120,7 +120,7 @@ public class UC_ManageCategories : UserControl
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Lỗi tải dữ liệu: {ex.Message}");
+            MessageBoxHelper.Error($"Lỗi tải dữ liệu: {ex.Message}", owner: this);
         }
     }
 
@@ -171,7 +171,7 @@ public class UC_ManageCategories : UserControl
 
         if (_chkTrashMode.Checked)
         {
-            if (MessageBox.Show($"Khôi phục danh mục '{name}'?", "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+            if (MessageBoxHelper.ConfirmWarning($"Khôi phục danh mục '{name}'?", "Xác nhận", this))
             {
                 try
                 {
@@ -180,13 +180,13 @@ public class UC_ManageCategories : UserControl
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(ex.Message, "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBoxHelper.Warning(ex.Message, "Cảnh báo", this);
                 }
             }
         }
         else
         {
-            if (MessageBox.Show($"Bạn có chắc chắn muốn xóa danh mục '{name}'?", "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+            if (MessageBoxHelper.ConfirmWarning($"Bạn có chắc chắn muốn xóa danh mục '{name}'?", "Xác nhận", this))
             {
                 try
                 {
@@ -195,7 +195,7 @@ public class UC_ManageCategories : UserControl
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(ex.Message);
+                    MessageBoxHelper.Error(ex.Message, owner: this);
                 }
             }
         }

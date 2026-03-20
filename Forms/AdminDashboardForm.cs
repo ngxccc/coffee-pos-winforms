@@ -1,5 +1,6 @@
 using CoffeePOS.Core;
 using CoffeePOS.Features.Admin;
+using CoffeePOS.Shared.Helpers;
 using FontAwesome.Sharp;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -155,7 +156,7 @@ public partial class AdminDashboardForm : Form
 
     private void BtnLogout_Click(object? sender, EventArgs e)
     {
-        if (MessageBox.Show("Sếp muốn đăng xuất khỏi hệ thống?", "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+        if (MessageBoxHelper.ConfirmYesNo("Sếp muốn đăng xuất khỏi hệ thống?", "Xác nhận", this))
         {
             _session.Logout();
             DialogResult = DialogResult.Abort;

@@ -1,5 +1,6 @@
 using System.Globalization;
 using CoffeePOS.Services.Contracts.Queries;
+using CoffeePOS.Shared.Helpers;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
@@ -152,11 +153,11 @@ public class UC_Dashboard : UserControl
                     DataLabelsFormatter = point => $"{point.Coordinate.PrimaryValue} ly"
                 });
             }
-            _chartTopProducts.Series = pieSeries.ToArray();
+            _chartTopProducts.Series = [.. pieSeries];
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Lỗi load Dashboard: {ex.Message}");
+            MessageBoxHelper.Error($"Lỗi load Dashboard: {ex.Message}", owner: this);
         }
     }
 }

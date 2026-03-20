@@ -1,6 +1,7 @@
 using CoffeePOS.Services.Contracts.Commands;
 using CoffeePOS.Services.Contracts.Queries;
 using CoffeePOS.Shared.Dtos;
+using CoffeePOS.Shared.Helpers;
 using Serilog;
 
 namespace CoffeePOS.Forms;
@@ -69,7 +70,7 @@ public partial class ProductDetailForm : Form
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Lỗi tải danh mục: {ex.Message}");
+            MessageBoxHelper.Error($"Lỗi tải danh mục: {ex.Message}", owner: this);
         }
     }
 
@@ -237,12 +238,12 @@ public partial class ProductDetailForm : Form
             if (_productId == 0)
             {
                 await _productService.AddProductAsync(command);
-                MessageBox.Show("Thêm món mới thành công!");
+                MessageBoxHelper.Info("Thêm món mới thành công!", owner: this);
             }
             else
             {
                 await _productService.UpdateProductAsync(command);
-                MessageBox.Show("Cập nhật món thành công!");
+                MessageBoxHelper.Info("Cập nhật món thành công!", owner: this);
 
                 if (!string.IsNullOrEmpty(_selectedImagePath) && !string.IsNullOrEmpty(_currentSavedImage))
                 {
@@ -266,15 +267,15 @@ public partial class ProductDetailForm : Form
         }
         catch (ArgumentException ex)
         {
-            MessageBox.Show(ex.Message, "Lỗi nhập liệu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBoxHelper.Warning(ex.Message, "Lỗi nhập liệu", this);
         }
         catch (InvalidOperationException ex)
         {
-            MessageBox.Show(ex.Message, "Cảnh báo trùng lặp", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBoxHelper.Warning(ex.Message, "Cảnh báo trùng lặp", this);
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Lỗi lưu dữ liệu: {ex.Message}");
+            MessageBoxHelper.Error($"Lỗi lưu dữ liệu: {ex.Message}", owner: this);
             Log.Error($"Lỗi lưu dữ liệu: {ex}");
         }
         finally

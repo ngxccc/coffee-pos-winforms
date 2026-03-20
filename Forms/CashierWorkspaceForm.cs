@@ -5,6 +5,7 @@ using CoffeePOS.Features.Sidebar;
 using CoffeePOS.Services.Contracts.Commands;
 using CoffeePOS.Services.Contracts.Queries;
 using CoffeePOS.Shared.Dtos;
+using CoffeePOS.Shared.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using Panel = System.Windows.Forms.Panel;
@@ -134,8 +135,7 @@ public partial class CashierWorkspaceForm : Form
         {
             if (_ucBilling.HasUnpaidItems)
             {
-                MessageBox.Show("Giỏ hàng đang có món chưa thanh toán!\nVui lòng hoàn tất hoặc xóa giỏ hàng trước khi đăng xuất.",
-                    "CẢNH BÁO", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBoxHelper.Warning("Giỏ hàng đang có món chưa thanh toán!\nVui lòng hoàn tất hoặc xóa giỏ hàng trước khi đăng xuất.", "CẢNH BÁO", this);
                 return;
             }
 
@@ -159,7 +159,7 @@ public partial class CashierWorkspaceForm : Form
     {
         _ucBillHistory.OnReprintClicked += async (s, bill) =>
         {
-            if (MessageBox.Show($"Bạn muốn in lại hóa đơn #{bill.Id}?", "In lại", MessageBoxButtons.YesNo) == DialogResult.Yes)
+            if (MessageBoxHelper.ConfirmYesNo($"Bạn muốn in lại hóa đơn #{bill.Id}?", "In lại", this))
             {
                 try
                 {
@@ -178,7 +178,7 @@ public partial class CashierWorkspaceForm : Form
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Lỗi khi in lại hóa đơn: {ex.Message}", "LỖI HỆ THỐNG", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBoxHelper.Error($"Lỗi khi in lại hóa đơn: {ex.Message}", "LỖI HỆ THỐNG", this);
                 }
                 finally
                 {
@@ -205,7 +205,7 @@ public partial class CashierWorkspaceForm : Form
         var cartItems = _ucBilling.GetCartItems();
         if (cartItems.Count == 0)
         {
-            MessageBox.Show("Chưa có món nào trong giỏ!");
+            MessageBoxHelper.Warning("Chưa có món nào trong giỏ!", owner: this);
             return;
         }
 
@@ -213,7 +213,7 @@ public partial class CashierWorkspaceForm : Form
         if (!int.TryParse(input, out int buzzerNumber)) return;
 
         decimal finalAmount = _ucBilling.GrandTotal;
-        if (MessageBox.Show($"Thu của khách {finalAmount:N0} đ?", "Xác nhận", MessageBoxButtons.YesNo) == DialogResult.No)
+        if (!MessageBoxHelper.ConfirmYesNo($"Thu của khách {finalAmount:N0} đ?", "Xác nhận", this))
             return;
 
         try
@@ -245,7 +245,7 @@ public partial class CashierWorkspaceForm : Form
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Lỗi thanh toán: {ex.Message}");
+            MessageBoxHelper.Error($"Lỗi thanh toán: {ex.Message}", owner: this);
         }
         finally
         {
@@ -257,8 +257,7 @@ public partial class CashierWorkspaceForm : Form
     {
         if (e.CloseReason == CloseReason.UserClosing && !_isLoggingOut)
         {
-            MessageBox.Show("Vui lòng thoát bằng nút 'Đăng xuất' để hệ thống Chốt ca làm việc!",
-                    "CẢNH BÁO", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBoxHelper.Error("Vui lòng thoát bằng nút 'Đăng xuất' để hệ thống Chốt ca làm việc!", "CẢNH BÁO", this);
             e.Cancel = true;
             return;
         }

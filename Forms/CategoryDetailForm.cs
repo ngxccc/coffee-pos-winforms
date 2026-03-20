@@ -1,5 +1,6 @@
 using CoffeePOS.Services.Contracts.Commands;
 using CoffeePOS.Shared.Dtos;
+using CoffeePOS.Shared.Helpers;
 
 namespace CoffeePOS.Forms;
 
@@ -92,15 +93,15 @@ public partial class CategoryDetailForm : Form
         }
         catch (ArgumentException ex)
         {
-            MessageBox.Show(ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBoxHelper.Warning(ex.Message, "Lỗi", this);
         }
         catch (InvalidOperationException ex)
         {
-            MessageBox.Show(ex.Message, "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBoxHelper.Warning(ex.Message, "Cảnh báo", this);
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message);
+            MessageBoxHelper.Error(ex.Message, owner: this);
         }
         finally
         {

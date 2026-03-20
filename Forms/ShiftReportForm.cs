@@ -2,6 +2,7 @@ using CoffeePOS.Core;
 using CoffeePOS.Services.Contracts.Commands;
 using CoffeePOS.Services.Contracts.Queries;
 using CoffeePOS.Shared.Dtos;
+using CoffeePOS.Shared.Helpers;
 
 namespace CoffeePOS.Forms;
 
@@ -153,7 +154,7 @@ public partial class ShiftReportForm : Form
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Lỗi tải dữ liệu chốt ca: {ex.Message}");
+            MessageBoxHelper.Error($"Lỗi tải dữ liệu chốt ca: {ex.Message}", owner: this);
             Close();
         }
     }
@@ -181,14 +182,14 @@ public partial class ShiftReportForm : Form
     {
         if (!decimal.TryParse(txtActualCash.Text, out decimal actualCash))
         {
-            MessageBox.Show("Vui lòng nhập số tiền thực tế hợp lệ!");
+            MessageBoxHelper.Warning("Vui lòng nhập số tiền thực tế hợp lệ!", owner: this);
             return;
         }
 
         decimal variance = actualCash - _expectedCash;
         if (variance != 0 && string.IsNullOrWhiteSpace(txtNote.Text))
         {
-            MessageBox.Show("Ca có lệch tiền nên bắt buộc nhập ghi chú lý do!");
+            MessageBoxHelper.Warning("Ca có lệch tiền nên bắt buộc nhập ghi chú lý do!", owner: this);
             txtNote.Focus();
             return;
         }
@@ -226,7 +227,7 @@ public partial class ShiftReportForm : Form
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Lỗi lưu báo cáo: {ex.Message}");
+            MessageBoxHelper.Error($"Lỗi lưu báo cáo: {ex.Message}", owner: this);
             btnConfirm.Enabled = true;
         }
     }

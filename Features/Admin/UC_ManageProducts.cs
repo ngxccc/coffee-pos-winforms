@@ -125,7 +125,7 @@ public partial class UC_ManageProducts : UserControl
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Lỗi tải dữ liệu: {ex.Message}");
+            MessageBoxHelper.Error($"Lỗi tải dữ liệu: {ex.Message}", owner: this);
         }
     }
 
@@ -161,16 +161,16 @@ public partial class UC_ManageProducts : UserControl
         {
             if (_chkTrashMode.Checked)
             {
-                if (MessageBox.Show($"Khôi phục '{productName}' trở lại Menu bán hàng?",
-            "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+                if (MessageBoxHelper.ConfirmWarning($"Khôi phục '{productName}' trở lại Menu bán hàng?",
+            "Xác nhận", this))
                 {
                     await _productService.RestoreProductAsync(productId);
                 }
             }
             else
             {
-                if (MessageBox.Show($"Xóa món '{productName}' khỏi Menu bán hàng?\n(Dữ liệu báo cáo cũ vẫn được giữ nguyên)",
-            "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+                if (MessageBoxHelper.ConfirmWarning($"Xóa món '{productName}' khỏi Menu bán hàng?\n(Dữ liệu báo cáo cũ vẫn được giữ nguyên)",
+            "Xác nhận", this))
                 {
                     await _productService.DeleteProductAsync(productId);
                 }
@@ -179,7 +179,7 @@ public partial class UC_ManageProducts : UserControl
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBoxHelper.Warning(ex.Message, "Cảnh báo", this);
         }
 
 
@@ -201,7 +201,7 @@ public partial class UC_ManageProducts : UserControl
             var product = await _productQueryService.GetProductByIdAsync(productId);
             if (product == null)
             {
-                MessageBox.Show("Không tìm thấy sản phẩm!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBoxHelper.Error("Không tìm thấy sản phẩm!", "Lỗi", this);
                 return;
             }
 
@@ -211,7 +211,7 @@ public partial class UC_ManageProducts : UserControl
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Lỗi tải dữ liệu sản phẩm: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBoxHelper.Error($"Lỗi tải dữ liệu sản phẩm: {ex.Message}", "Lỗi", this);
         }
     }
 

@@ -50,7 +50,7 @@ static class Program
         catch (Exception ex)
         {
             Log.Fatal(ex, "Phần mềm sập toàn tập lúc khởi động!");
-            MessageBox.Show($"Lỗi khởi động: {ex.Message}", "Critical Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBoxHelper.Error($"Lỗi khởi động: {ex.Message}", "Critical Error");
         }
         finally
         {

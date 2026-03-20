@@ -1,5 +1,6 @@
 using CoffeePOS.Services.Contracts.Queries;
 using CoffeePOS.Shared.Dtos;
+using CoffeePOS.Shared.Helpers;
 
 namespace CoffeePOS.Features.Products;
 
@@ -111,7 +112,7 @@ public class UC_Menu : UserControl
         }
         catch (Exception ex)
         {
-            MessageBox.Show("Lỗi kết nối CSDL: " + ex.Message);
+            MessageBoxHelper.Error("Lỗi kết nối CSDL: " + ex.Message, owner: this);
             _allCategories = [];
             _allProducts = [];
         }
