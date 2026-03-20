@@ -131,12 +131,12 @@ public class CategoryRepository(NpgsqlDataSource dataSource) : ICategoryReposito
     {
         return new Category
         {
-            Id = Convert.ToInt32(reader["id"]),
-            Name = Convert.ToString(reader["name"]) ?? string.Empty,
-            IsDeleted = Convert.ToBoolean(reader["is_deleted"]),
-            CreatedAt = Convert.ToDateTime(reader["created_at"]),
-            UpdatedAt = Convert.ToDateTime(reader["updated_at"]),
-            DeletedAt = reader["deleted_at"] is DBNull ? DateTime.MinValue : Convert.ToDateTime(reader["deleted_at"])
+            Id = reader.GetRequiredInt("id"),
+            Name = reader.GetRequiredString("name"),
+            IsDeleted = reader.GetRequiredBool("is_deleted"),
+            CreatedAt = reader.GetDateOnlyAsDateTime("created_at"),
+            UpdatedAt = reader.GetDateOnlyAsDateTime("updated_at"),
+            DeletedAt = reader.GetNullableDateTime("deleted_at") ?? DateTime.MinValue
         };
     }
 }

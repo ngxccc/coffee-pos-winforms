@@ -21,7 +21,10 @@ public class ShiftReportRepository(NpgsqlDataSource dataSource) : IShiftReportRe
         using var reader = await cmd.ExecuteReaderAsync();
         if (await reader.ReadAsync())
         {
-            return (reader.GetInt32(0), reader.GetDecimal(1));
+            return (
+                reader.GetRequiredInt("total_bills"),
+                reader.GetRequiredDecimal("expected_cash")
+            );
         }
         return (0, 0);
     }

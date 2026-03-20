@@ -20,7 +20,7 @@ public class UserRepository(NpgsqlDataSource dataSource) : IUserRepository
         using var reader = await cmd.ExecuteReaderAsync();
         if (await reader.ReadAsync())
         {
-            string dbHash = reader.GetString(2);
+            string dbHash = reader.GetRequiredString("password_hash");
 
             bool isValid = BCrypt.Net.BCrypt.Verify(password, dbHash);
 
@@ -28,10 +28,10 @@ public class UserRepository(NpgsqlDataSource dataSource) : IUserRepository
             {
                 return new User
                 {
-                    Id = reader.GetInt32(0),
-                    Username = reader.GetString(1),
-                    FullName = reader.GetString(3),
-                    Role = reader.GetInt32(4)
+                    Id = reader.GetRequiredInt("id"),
+                    Username = reader.GetRequiredString("username"),
+                    FullName = reader.GetRequiredString("full_name"),
+                    Role = reader.GetRequiredInt("role")
                 };
             }
         }

@@ -27,7 +27,8 @@ public class BillRepository(NpgsqlDataSource dataSource, IUserSession session) :
             cmdBill.Parameters.AddWithValue("u", session.CurrentUser!.Id);
             cmdBill.Parameters.AddWithValue("total", totalAmount);
 
-            int billId = Convert.ToInt32(await cmdBill.ExecuteScalarAsync());
+            int billId = (await cmdBill.ExecuteScalarAsync())
+                .GetRequiredIntFromScalar("BillRepository.ProcessFullOrderAsync bill id");
 
             await using var batch = new NpgsqlBatch(conn, tx);
 
@@ -71,11 +72,11 @@ public class BillRepository(NpgsqlDataSource dataSource, IUserSession session) :
         {
             list.Add(new BillDetail
             {
-                ProductId = reader.GetInt32(0),
-                ProductName = reader.GetString(1),
-                Quantity = reader.GetInt32(2),
-                Price = reader.GetDecimal(3),
-                Note = reader.IsDBNull(4) ? "" : reader.GetString(4)
+                ProductId = reader.GetRequiredInt("product_id"),
+                ProductName = reader.GetRequiredString("product_name"),
+                Quantity = reader.GetRequiredInt("quantity"),
+                Price = reader.GetRequiredDecimal("price"),
+                Note = reader.GetNullableString("note") ?? string.Empty
             });
         }
 
@@ -103,10 +104,10 @@ public class BillRepository(NpgsqlDataSource dataSource, IUserSession session) :
         {
             list.Add(new Bill
             {
-                Id = reader.GetInt32(0),
-                BuzzerNumber = reader.GetInt32(1),
-                TotalAmount = reader.GetDecimal(2),
-                CreatedAt = reader.GetDateTime(3)
+                Id = reader.GetRequiredInt("id"),
+                BuzzerNumber = reader.GetRequiredInt("buzzer_number"),
+                TotalAmount = reader.GetRequiredDecimal("total_amount"),
+                CreatedAt = reader.GetDateOnlyAsDateTime("created_at")
             });
         }
         return list;

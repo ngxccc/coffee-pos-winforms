@@ -120,17 +120,17 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
     {
         return new Product
         {
-            Id = Convert.ToInt32(reader["id"]),
-            Name = Convert.ToString(reader["name"]) ?? string.Empty,
-            Price = Convert.ToDecimal(reader["price"]),
+            Id = reader.GetRequiredInt("id"),
+            Name = reader.GetRequiredString("name"),
+            Price = reader.GetRequiredDecimal("price"),
 
-            CategoryId = reader["category_id"] is DBNull ? 0 : Convert.ToInt32(reader["category_id"]),
-            ImageUrl = reader["image_url"] is DBNull ? string.Empty : Convert.ToString(reader["image_url"]) ?? string.Empty,
+            CategoryId = reader["category_id"] is DBNull ? 0 : reader.GetRequiredInt("category_id"),
+            ImageUrl = reader["image_url"] is DBNull ? string.Empty : reader.GetRequiredString("image_url"),
 
-            IsDeleted = Convert.ToBoolean(reader["is_deleted"]),
-            CreatedAt = Convert.ToDateTime(reader["created_at"]),
-            UpdatedAt = Convert.ToDateTime(reader["updated_at"]),
-            DeletedAt = reader["deleted_at"] is DBNull ? DateTime.MinValue : Convert.ToDateTime(reader["deleted_at"])
+            IsDeleted = reader.GetRequiredBool("is_deleted"),
+            CreatedAt = reader.GetDateOnlyAsDateTime("created_at"),
+            UpdatedAt = reader.GetDateOnlyAsDateTime("updated_at"),
+            DeletedAt = reader.GetNullableDateTime("deleted_at") ?? DateTime.MinValue
         };
     }
 }
