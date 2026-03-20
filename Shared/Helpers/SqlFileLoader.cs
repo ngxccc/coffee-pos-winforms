@@ -21,4 +21,34 @@ public static class SqlFileLoader
             return reader.ReadToEnd();
         });
     }
+
+    public static void ValidateAllSqlKeys()
+    {
+        foreach (string sqlKey in EnumerateSqlKeys())
+        {
+            _ = Load(sqlKey);
+        }
+    }
+
+    private static IEnumerable<string> EnumerateSqlKeys()
+    {
+        var nestedTypes = typeof(SqlKeys).GetNestedTypes(BindingFlags.Public);
+
+        foreach (var nestedType in nestedTypes)
+        {
+            var fields = nestedType.GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy);
+
+            foreach (var field in fields)
+            {
+                if (field.FieldType == typeof(string) && field.IsLiteral && !field.IsInitOnly)
+                {
+                    var value = field.GetRawConstantValue() as string;
+                    if (!string.IsNullOrWhiteSpace(value))
+                    {
+                        yield return value;
+                    }
+                }
+            }
+        }
+    }
 }

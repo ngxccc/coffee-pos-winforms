@@ -1,4 +1,5 @@
 using CoffeePOS.Data;
+using CoffeePOS.Shared.Helpers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -29,6 +30,8 @@ static class Program
         {
             Log.Information("=== KHỞI ĐỘNG PHẦN MỀM COFFEE POS ===");
 
+            SqlFileLoader.ValidateAllSqlKeys();
+
             string connStr = bootstrapConfig.GetConnectionString("DefaultConnection")
                              ?? throw new Exception("Chưa cấu hình ConnectionString!");
 
@@ -47,7 +50,7 @@ static class Program
         catch (Exception ex)
         {
             Log.Fatal(ex, "Phần mềm sập toàn tập lúc khởi động!");
-            MessageBox.Show($"Lỗi khởi động: {ex.Message}\nKiểm tra lại appsettings.json!", "Critical Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show($"Lỗi khởi động: {ex.Message}", "Critical Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
         finally
         {
