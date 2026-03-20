@@ -14,21 +14,25 @@ static class Program
     {
         ApplicationConfiguration.Initialize();
 
-        var host = CreateHostBuilder().UseSerilog().Build();
-
-        var config = host.Services.GetRequiredService<IConfiguration>();
-        string connStr = config.GetConnectionString("DefaultConnection")
-                         ?? throw new Exception("Chưa cấu hình ConnectionString!");
+        var bootstrapConfig = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .Build();
 
         Log.Logger = new LoggerConfiguration()
-        .ReadFrom.Configuration(config)
-        .CreateLogger();
+            .ReadFrom.Configuration(bootstrapConfig)
+            .CreateLogger();
 
-        // Thay vì: Application.Run(new MainForm(...));
-        // Bây giờ Container sẽ tự lo việc new MainForm và bơm Repo vào nó.
+        IHost? host = null;
+
         try
         {
             Log.Information("=== KHỞI ĐỘNG PHẦN MỀM COFFEE POS ===");
+
+            string connStr = bootstrapConfig.GetConnectionString("DefaultConnection")
+                             ?? throw new Exception("Chưa cấu hình ConnectionString!");
+
+            host = CreateHostBuilder(connStr).UseSerilog().Build();
 
             DbInitializer.Initialize(connStr);
             Core.TimeKeeper.Initialize(connStr);
@@ -47,25 +51,20 @@ static class Program
         }
         finally
         {
-            host.StopAsync().GetAwaiter().GetResult();
-            host.Dispose();
+            if (host != null)
+            {
+                host.StopAsync().GetAwaiter().GetResult();
+                host.Dispose();
+            }
             Log.Information("=== TẮT PHẦN MỀM ===");
             Log.CloseAndFlush();
         }
     }
 
-    static IHostBuilder CreateHostBuilder() =>
+    static IHostBuilder CreateHostBuilder(string connStr) =>
         Host.CreateDefaultBuilder()
-            .ConfigureAppConfiguration((context, config) =>
-            {
-                config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
-            })
             .ConfigureServices((context, services) =>
             {
-                // context.Configuration chính là file json đã nạp ở trên
-                string connStr = context.Configuration.GetConnectionString("DefaultConnection")
-                                 ?? throw new InvalidOperationException("Chuỗi kết nối 'DefaultConnection' không tìm thấy!");
-
                 var dataSource = NpgsqlDataSource.Create(connStr);
 
                 services.AddSingleton(dataSource);
