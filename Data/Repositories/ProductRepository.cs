@@ -1,6 +1,6 @@
 using System.Data.Common;
 using CoffeePOS.Data.Repositories.Contracts;
-using CoffeePOS.Models;
+using CoffeePOS.Shared.Dtos;
 using CoffeePOS.Shared.Helpers;
 using Npgsql;
 
@@ -17,9 +17,9 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
     private static readonly string SqlGetDeletedById = SqlFileLoader.Load(SqlKeys.Product.GetDeletedById);
     private static readonly string SqlRestore = SqlFileLoader.Load(SqlKeys.Product.Restore);
 
-    public async Task<List<Product>> GetAllProductsAsync()
+    public async Task<List<ProductDetailDto>> GetAllProductsAsync()
     {
-        var list = new List<Product>();
+        var list = new List<ProductDetailDto>();
         using var conn = await dataSource.OpenConnectionAsync();
 
         using var cmd = new NpgsqlCommand(SqlGetAll, conn);
@@ -32,7 +32,7 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
         return list;
     }
 
-    public async Task<Product?> GetProductByIdAsync(int productId)
+    public async Task<ProductDetailDto?> GetProductByIdAsync(int productId)
     {
         using var conn = await dataSource.OpenConnectionAsync();
 
@@ -43,29 +43,29 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
         return await reader.ReadAsync() ? MapProductFromReader(reader) : null;
     }
 
-    public async Task AddProductAsync(Product product)
+    public async Task AddProductAsync(UpsertProductDto command)
     {
         using var conn = await dataSource.OpenConnectionAsync();
 
         using var cmd = new NpgsqlCommand(SqlInsert, conn);
-        cmd.Parameters.AddWithValue("name", product.Name);
-        cmd.Parameters.AddWithValue("price", product.Price);
-        cmd.Parameters.AddWithValue("categoryId", product.CategoryId > 0 ? product.CategoryId : DBNull.Value);
-        cmd.Parameters.AddWithValue("imageUrl", (object?)product.ImageUrl ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("name", command.Name);
+        cmd.Parameters.AddWithValue("price", command.Price);
+        cmd.Parameters.AddWithValue("categoryId", command.CategoryId > 0 ? command.CategoryId : DBNull.Value);
+        cmd.Parameters.AddWithValue("imageUrl", (object?)command.ImageUrl ?? DBNull.Value);
 
         await cmd.ExecuteNonQueryAsync();
     }
 
-    public async Task UpdateProductAsync(Product product)
+    public async Task UpdateProductAsync(UpsertProductDto command)
     {
         using var conn = await dataSource.OpenConnectionAsync();
 
         using var cmd = new NpgsqlCommand(SqlUpdate, conn);
-        cmd.Parameters.AddWithValue("id", product.Id);
-        cmd.Parameters.AddWithValue("name", product.Name);
-        cmd.Parameters.AddWithValue("price", product.Price);
-        cmd.Parameters.AddWithValue("categoryId", product.CategoryId > 0 ? product.CategoryId : DBNull.Value);
-        cmd.Parameters.AddWithValue("imageUrl", (object?)product.ImageUrl ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("id", command.Id);
+        cmd.Parameters.AddWithValue("name", command.Name);
+        cmd.Parameters.AddWithValue("price", command.Price);
+        cmd.Parameters.AddWithValue("categoryId", command.CategoryId > 0 ? command.CategoryId : DBNull.Value);
+        cmd.Parameters.AddWithValue("imageUrl", (object?)command.ImageUrl ?? DBNull.Value);
 
         await cmd.ExecuteNonQueryAsync();
     }
@@ -81,9 +81,9 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
         return rowsAffected > 0;
     }
 
-    public async Task<List<Product>> GetDeletedProductsAsync()
+    public async Task<List<ProductDetailDto>> GetDeletedProductsAsync()
     {
-        var list = new List<Product>();
+        var list = new List<ProductDetailDto>();
         using var conn = await dataSource.OpenConnectionAsync();
 
         using var cmd = new NpgsqlCommand(SqlGetDeleted, conn);
@@ -96,7 +96,7 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
         return list;
     }
 
-    public async Task<Product?> GetDeletedProductByIdAsync(int productId)
+    public async Task<ProductDetailDto?> GetDeletedProductByIdAsync(int productId)
     {
         using var conn = await dataSource.OpenConnectionAsync();
 
@@ -117,21 +117,13 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
-    private static Product MapProductFromReader(DbDataReader reader)
+    private static ProductDetailDto MapProductFromReader(DbDataReader reader)
     {
-        return new Product
-        {
-            Id = reader.GetRequiredInt("id"),
-            Name = reader.GetRequiredString("name"),
-            Price = reader.GetRequiredDecimal("price"),
-
-            CategoryId = reader["category_id"] is DBNull ? 0 : reader.GetRequiredInt("category_id"),
-            ImageUrl = reader["image_url"] is DBNull ? string.Empty : reader.GetRequiredString("image_url"),
-
-            IsDeleted = reader.GetRequiredBool("is_deleted"),
-            CreatedAt = reader.GetDateOnlyAsDateTime("created_at"),
-            UpdatedAt = reader.GetDateOnlyAsDateTime("updated_at"),
-            DeletedAt = reader.GetNullableDateTime("deleted_at") ?? DateTime.MinValue
-        };
+        return new ProductDetailDto(
+            reader.GetRequiredInt("id"),
+            reader.GetRequiredString("name"),
+            reader.GetRequiredDecimal("price"),
+            reader["category_id"] is DBNull ? 0 : reader.GetRequiredInt("category_id"),
+            reader["image_url"] is DBNull ? string.Empty : reader.GetRequiredString("image_url"));
     }
 }

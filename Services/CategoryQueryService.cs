@@ -7,18 +7,12 @@ namespace CoffeePOS.Services;
 public class CategoryQueryService(ICategoryRepository categoryRepo) : ICategoryQueryService
 {
     public async Task<List<CategoryOptionDto>> GetAllCategoriesAsync()
-    {
-        var categories = await categoryRepo.GetAllCategoriesAsync();
-        return [.. categories.Select(c => new CategoryOptionDto(c.Id, c.Name))];
-    }
+        => [.. (await categoryRepo.GetAllCategoriesAsync()).Select(c => new CategoryOptionDto(c.Id, c.Name))];
 
     public Task<List<CategoryOptionDto>> GetSelectableCategoriesAsync() => GetAllCategoriesAsync();
 
-    public async Task<CategoryDetailDto?> GetCategoryByIdAsync(int id)
-    {
-        var category = await categoryRepo.GetCategoryByIdAsync(id);
-        return category is null ? null : new CategoryDetailDto(category.Id, category.Name);
-    }
+    public Task<CategoryDetailDto?> GetCategoryByIdAsync(int id)
+        => categoryRepo.GetCategoryByIdAsync(id);
 
     public async Task<List<CategoryGridDto>> GetCategoryGridAsync(bool isDeleted = false)
     {

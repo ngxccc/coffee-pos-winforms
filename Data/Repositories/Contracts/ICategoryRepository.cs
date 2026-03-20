@@ -1,15 +1,15 @@
-using CoffeePOS.Models;
+using CoffeePOS.Shared.Dtos;
 
 namespace CoffeePOS.Data.Repositories.Contracts;
 
 public interface ICategoryRepository
 {
-    Task<List<Category>> GetAllCategoriesAsync();
-    Task<Category?> GetCategoryByIdAsync(int id);
-    Task AddCategoryAsync(Category category);
-    Task UpdateCategoryAsync(Category category);
+    Task<List<CategoryDetailDto>> GetAllCategoriesAsync();
+    Task<CategoryDetailDto?> GetCategoryByIdAsync(int id);
+    Task AddCategoryAsync(UpsertCategoryDto command);
+    Task UpdateCategoryAsync(UpsertCategoryDto command);
     Task<bool> DeleteCategoryAsync(int id);
-    Task<List<Category>> GetDeletedCategoriesAsync();
-    Task<Category?> GetDeletedCategoryByIdAsync(int categoryId);
+    Task<List<CategoryDetailDto>> GetDeletedCategoriesAsync();
+    Task<CategoryDetailDto?> GetDeletedCategoryByIdAsync(int categoryId);
     Task<bool> RestoreCategoryAsync(int categoryId);
 }

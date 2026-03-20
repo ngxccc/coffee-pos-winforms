@@ -1,5 +1,4 @@
 using CoffeePOS.Data.Repositories.Contracts;
-using CoffeePOS.Models;
 using CoffeePOS.Services.Contracts.Commands;
 using CoffeePOS.Shared.Dtos;
 
@@ -9,28 +8,26 @@ public class ProductService(IProductRepository productRepo, ICategoryRepository 
 {
     public async Task AddProductAsync(UpsertProductDto command)
     {
-        var product = MapToProduct(command);
-        ValidateCommonRules(product);
+        ValidateCommonRules(command);
 
         var existingProducts = await productRepo.GetAllProductsAsync();
-        if (existingProducts.Any(p => p.Name.Equals(product.Name, StringComparison.CurrentCultureIgnoreCase)))
-            throw new InvalidOperationException($"Món '{product.Name}' đã tồn tại trong Menu!");
+        if (existingProducts.Any(p => p.Name.Equals(command.Name, StringComparison.CurrentCultureIgnoreCase)))
+            throw new InvalidOperationException($"Món '{command.Name}' đã tồn tại trong Menu!");
 
-        product.Name = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(product.Name.ToLower());
-        await productRepo.AddProductAsync(product);
+        string normalizedName = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(command.Name.ToLower());
+        await productRepo.AddProductAsync(command with { Name = normalizedName });
     }
 
     public async Task UpdateProductAsync(UpsertProductDto command)
     {
-        var product = MapToProduct(command);
-        ValidateCommonRules(product);
+        ValidateCommonRules(command);
 
         var existingProducts = await productRepo.GetAllProductsAsync();
-        if (existingProducts.Any(p => p.Id != product.Id && p.Name.Equals(product.Name, StringComparison.CurrentCultureIgnoreCase)))
-            throw new InvalidOperationException($"Không thể đổi tên. Món '{product.Name}' đã bị trùng với một món khác!");
+        if (existingProducts.Any(p => p.Id != command.Id && p.Name.Equals(command.Name, StringComparison.CurrentCultureIgnoreCase)))
+            throw new InvalidOperationException($"Không thể đổi tên. Món '{command.Name}' đã bị trùng với một món khác!");
 
-        product.Name = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(product.Name.ToLower());
-        await productRepo.UpdateProductAsync(product);
+        string normalizedName = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(command.Name.ToLower());
+        await productRepo.UpdateProductAsync(command with { Name = normalizedName });
     }
 
     public Task<bool> DeleteProductAsync(int productId)
@@ -39,11 +36,11 @@ public class ProductService(IProductRepository productRepo, ICategoryRepository 
         return productRepo.DeleteProductAsync(productId);
     }
 
-    private static void ValidateCommonRules(Product product)
+    private static void ValidateCommonRules(UpsertProductDto command)
     {
-        if (string.IsNullOrWhiteSpace(product.Name)) throw new ArgumentException("Tên sản phẩm không được để trống!");
-        if (product.CategoryId <= 0) throw new ArgumentException("Vui lòng chọn danh mục hợp lệ!");
-        if (product.Price <= 0) throw new ArgumentException("Bán hàng từ thiện à? Giá phải lớn hơn 0!");
+        if (string.IsNullOrWhiteSpace(command.Name)) throw new ArgumentException("Tên sản phẩm không được để trống!");
+        if (command.CategoryId <= 0) throw new ArgumentException("Vui lòng chọn danh mục hợp lệ!");
+        if (command.Price <= 0) throw new ArgumentException("Bán hàng từ thiện à? Giá phải lớn hơn 0!");
     }
 
     public async Task RestoreProductAsync(int productId)
@@ -61,15 +58,4 @@ public class ProductService(IProductRepository productRepo, ICategoryRepository 
         await productRepo.RestoreProductAsync(productId);
     }
 
-    private static Product MapToProduct(UpsertProductDto command)
-    {
-        return new Product
-        {
-            Id = command.Id,
-            Name = command.Name,
-            Price = command.Price,
-            CategoryId = command.CategoryId,
-            ImageUrl = command.ImageUrl
-        };
-    }
 }

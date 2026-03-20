@@ -1,5 +1,5 @@
 using CoffeePOS.Data.Repositories.Contracts;
-using CoffeePOS.Models;
+using CoffeePOS.Shared.Dtos;
 using CoffeePOS.Shared.Helpers;
 using Npgsql;
 
@@ -11,7 +11,7 @@ public class UserRepository(NpgsqlDataSource dataSource) : IUserRepository
     private static readonly string SqlDeactivateUser = SqlFileLoader.Load(SqlKeys.User.DeactivateUser);
     private static readonly string SqlUpdatePassword = SqlFileLoader.Load(SqlKeys.User.UpdatePassword);
 
-    public async Task<User?> AuthenticateAsync(string username, string password)
+    public async Task<AuthUserDto?> AuthenticateAsync(string username, string password)
     {
         using var conn = await dataSource.OpenConnectionAsync();
 
@@ -27,13 +27,11 @@ public class UserRepository(NpgsqlDataSource dataSource) : IUserRepository
 
             if (isValid)
             {
-                return new User
-                {
-                    Id = reader.GetRequiredInt("id"),
-                    Username = reader.GetRequiredString("username"),
-                    FullName = reader.GetRequiredString("full_name"),
-                    Role = reader.GetRequiredInt("role")
-                };
+                return new AuthUserDto(
+                    reader.GetRequiredInt("id"),
+                    reader.GetRequiredString("username"),
+                    reader.GetRequiredString("full_name"),
+                    reader.GetRequiredInt("role"));
             }
         }
 

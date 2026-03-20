@@ -1,7 +1,6 @@
 namespace CoffeePOS.Data.Repositories;
 
 using CoffeePOS.Data.Repositories.Contracts;
-using CoffeePOS.Models;
 using CoffeePOS.Shared.Dtos;
 using CoffeePOS.Shared.Helpers;
 using Npgsql;
@@ -57,9 +56,9 @@ public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
         }
     }
 
-    public async Task<List<BillDetail>> GetBillDetailsAsync(int billId)
+    public async Task<List<BillDetailDto>> GetBillDetailsAsync(int billId)
     {
-        var list = new List<BillDetail>();
+        var list = new List<BillDetailDto>();
 
         using var conn = await dataSource.OpenConnectionAsync();
 
@@ -69,14 +68,12 @@ public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
         using var reader = await cmd.ExecuteReaderAsync();
         while (await reader.ReadAsync())
         {
-            list.Add(new BillDetail
-            {
-                ProductId = reader.GetRequiredInt("product_id"),
-                ProductName = reader.GetRequiredString("product_name"),
-                Quantity = reader.GetRequiredInt("quantity"),
-                Price = reader.GetRequiredDecimal("price"),
-                Note = reader.GetNullableString("note") ?? string.Empty
-            });
+            list.Add(new BillDetailDto(
+                reader.GetRequiredInt("product_id"),
+                reader.GetRequiredString("product_name"),
+                reader.GetRequiredInt("quantity"),
+                reader.GetRequiredDecimal("price"),
+                reader.GetNullableString("note") ?? string.Empty));
         }
 
         return list;
@@ -90,9 +87,9 @@ public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
         await cmd.ExecuteNonQueryAsync();
     }
 
-    public async Task<List<Bill>> GetTodayBillsByUserAsync(int userId)
+    public async Task<List<BillHistoryDto>> GetTodayBillsByUserAsync(int userId)
     {
-        var list = new List<Bill>();
+        var list = new List<BillHistoryDto>();
         using var conn = await dataSource.OpenConnectionAsync();
 
         using var cmd = new NpgsqlCommand(SqlGetTodayBillsByUser, conn);
@@ -101,13 +98,11 @@ public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
         using var reader = await cmd.ExecuteReaderAsync();
         while (await reader.ReadAsync())
         {
-            list.Add(new Bill
-            {
-                Id = reader.GetRequiredInt("id"),
-                BuzzerNumber = reader.GetRequiredInt("buzzer_number"),
-                TotalAmount = reader.GetRequiredDecimal("total_amount"),
-                CreatedAt = reader.GetDateOnlyAsDateTime("created_at")
-            });
+            list.Add(new BillHistoryDto(
+                reader.GetRequiredInt("id"),
+                reader.GetRequiredInt("buzzer_number"),
+                reader.GetRequiredDecimal("total_amount"),
+                reader.GetDateOnlyAsDateTime("created_at")));
         }
         return list;
     }

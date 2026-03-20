@@ -1,6 +1,6 @@
 using System.Data.Common;
 using CoffeePOS.Data.Repositories.Contracts;
-using CoffeePOS.Models;
+using CoffeePOS.Shared.Dtos;
 using CoffeePOS.Shared.Helpers;
 using Npgsql;
 
@@ -18,9 +18,9 @@ public class CategoryRepository(NpgsqlDataSource dataSource) : ICategoryReposito
     private static readonly string SqlGetDeletedById = SqlFileLoader.Load(SqlKeys.Category.GetDeletedById);
     private static readonly string SqlRestore = SqlFileLoader.Load(SqlKeys.Category.Restore);
 
-    public async Task<List<Category>> GetAllCategoriesAsync()
+    public async Task<List<CategoryDetailDto>> GetAllCategoriesAsync()
     {
-        var list = new List<Category>();
+        var list = new List<CategoryDetailDto>();
         using var conn = await dataSource.OpenConnectionAsync();
 
         using var cmd = new NpgsqlCommand(SqlGetAll, conn);
@@ -33,7 +33,7 @@ public class CategoryRepository(NpgsqlDataSource dataSource) : ICategoryReposito
         return list;
     }
 
-    public async Task<Category?> GetCategoryByIdAsync(int id)
+    public async Task<CategoryDetailDto?> GetCategoryByIdAsync(int id)
     {
         using var conn = await dataSource.OpenConnectionAsync();
 
@@ -44,23 +44,23 @@ public class CategoryRepository(NpgsqlDataSource dataSource) : ICategoryReposito
         return await reader.ReadAsync() ? MapCategoryFromReader(reader) : null;
     }
 
-    public async Task AddCategoryAsync(Category category)
+    public async Task AddCategoryAsync(UpsertCategoryDto command)
     {
         using var conn = await dataSource.OpenConnectionAsync();
 
         using var cmd = new NpgsqlCommand(SqlInsert, conn);
-        cmd.Parameters.AddWithValue("name", category.Name);
+        cmd.Parameters.AddWithValue("name", command.Name);
 
         await cmd.ExecuteNonQueryAsync();
     }
 
-    public async Task UpdateCategoryAsync(Category category)
+    public async Task UpdateCategoryAsync(UpsertCategoryDto command)
     {
         using var conn = await dataSource.OpenConnectionAsync();
 
         using var cmd = new NpgsqlCommand(SqlUpdate, conn);
-        cmd.Parameters.AddWithValue("id", category.Id);
-        cmd.Parameters.AddWithValue("name", category.Name);
+        cmd.Parameters.AddWithValue("id", command.Id);
+        cmd.Parameters.AddWithValue("name", command.Name);
 
         await cmd.ExecuteNonQueryAsync();
     }
@@ -92,9 +92,9 @@ public class CategoryRepository(NpgsqlDataSource dataSource) : ICategoryReposito
         }
     }
 
-    public async Task<List<Category>> GetDeletedCategoriesAsync()
+    public async Task<List<CategoryDetailDto>> GetDeletedCategoriesAsync()
     {
-        var list = new List<Category>();
+        var list = new List<CategoryDetailDto>();
         using var conn = await dataSource.OpenConnectionAsync();
 
         using var cmd = new NpgsqlCommand(SqlGetDeleted, conn);
@@ -107,7 +107,7 @@ public class CategoryRepository(NpgsqlDataSource dataSource) : ICategoryReposito
         return list;
     }
 
-    public async Task<Category?> GetDeletedCategoryByIdAsync(int id)
+    public async Task<CategoryDetailDto?> GetDeletedCategoryByIdAsync(int id)
     {
         using var conn = await dataSource.OpenConnectionAsync();
 
@@ -128,16 +128,10 @@ public class CategoryRepository(NpgsqlDataSource dataSource) : ICategoryReposito
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
-    private static Category MapCategoryFromReader(DbDataReader reader)
+    private static CategoryDetailDto MapCategoryFromReader(DbDataReader reader)
     {
-        return new Category
-        {
-            Id = reader.GetRequiredInt("id"),
-            Name = reader.GetRequiredString("name"),
-            IsDeleted = reader.GetRequiredBool("is_deleted"),
-            CreatedAt = reader.GetDateOnlyAsDateTime("created_at"),
-            UpdatedAt = reader.GetDateOnlyAsDateTime("updated_at"),
-            DeletedAt = reader.GetNullableDateTime("deleted_at") ?? DateTime.MinValue
-        };
+        return new CategoryDetailDto(
+            reader.GetRequiredInt("id"),
+            reader.GetRequiredString("name"));
     }
 }

@@ -1,12 +1,12 @@
 using CoffeePOS.Data.Repositories.Contracts;
-using CoffeePOS.Models;
 using CoffeePOS.Services.Contracts.Commands;
+using CoffeePOS.Shared.Dtos;
 
 namespace CoffeePOS.Services;
 
 public class UserService(IUserRepository userRepo) : IUserService
 {
-    public async Task<User?> AuthenticateAsync(string username, string password)
+    public async Task<AuthUserDto?> AuthenticateAsync(string username, string password)
     {
         if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
             throw new ArgumentException("Vui lòng nhập đủ Username và Password!");

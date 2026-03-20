@@ -1,5 +1,4 @@
 using CoffeePOS.Data.Repositories.Contracts;
-using CoffeePOS.Models;
 using CoffeePOS.Services.Contracts.Commands;
 using CoffeePOS.Shared.Dtos;
 
@@ -9,29 +8,27 @@ public class CategoryService(ICategoryRepository categoryRepo) : ICategoryServic
 {
     public async Task AddCategoryAsync(UpsertCategoryDto command)
     {
-        var category = MapToCategory(command);
-        if (string.IsNullOrWhiteSpace(category.Name)) throw new ArgumentException("Tên danh mục không được để trống!");
+        if (string.IsNullOrWhiteSpace(command.Name)) throw new ArgumentException("Tên danh mục không được để trống!");
 
         var all = await categoryRepo.GetAllCategoriesAsync();
-        if (all.Any(c => c.Name.Equals(category.Name, StringComparison.OrdinalIgnoreCase)))
+        if (all.Any(c => c.Name.Equals(command.Name, StringComparison.OrdinalIgnoreCase)))
             throw new InvalidOperationException("Danh mục này đã tồn tại!");
 
-        category.Name = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(category.Name.ToLower());
-        await categoryRepo.AddCategoryAsync(category);
+        string normalizedName = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(command.Name.ToLower());
+        await categoryRepo.AddCategoryAsync(command with { Name = normalizedName });
     }
 
     public async Task UpdateCategoryAsync(UpsertCategoryDto command)
     {
-        var category = MapToCategory(command);
-        if (string.IsNullOrWhiteSpace(category.Name)) throw new ArgumentException("Tên danh mục không được để trống!");
+        if (string.IsNullOrWhiteSpace(command.Name)) throw new ArgumentException("Tên danh mục không được để trống!");
 
         var all = await categoryRepo.GetAllCategoriesAsync();
         // Khác ID nhưng trùng tên
-        if (all.Any(c => c.Id != category.Id && c.Name.Equals(category.Name, StringComparison.OrdinalIgnoreCase)))
+        if (all.Any(c => c.Id != command.Id && c.Name.Equals(command.Name, StringComparison.OrdinalIgnoreCase)))
             throw new InvalidOperationException("Tên danh mục đã bị trùng với danh mục khác!");
 
-        category.Name = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(category.Name.ToLower());
-        await categoryRepo.UpdateCategoryAsync(category);
+        string normalizedName = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(command.Name.ToLower());
+        await categoryRepo.UpdateCategoryAsync(command with { Name = normalizedName });
     }
 
     public async Task DeleteCategoryAsync(int id)
@@ -52,14 +49,5 @@ public class CategoryService(ICategoryRepository categoryRepo) : ICategoryServic
             throw new InvalidOperationException($"Tên danh mục '{category.Name}' đã được sử dụng bởi một danh mục đang hoạt động!");
 
         await categoryRepo.RestoreCategoryAsync(categoryId);
-    }
-
-    private static Category MapToCategory(UpsertCategoryDto command)
-    {
-        return new Category
-        {
-            Id = command.Id,
-            Name = command.Name
-        };
     }
 }

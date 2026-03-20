@@ -1,28 +1,28 @@
-using CoffeePOS.Models;
+using CoffeePOS.Shared.Dtos;
 
 namespace CoffeePOS.Core;
 
 public interface IUserSession
 {
-    User? CurrentUser { get; }
+    AuthUserDto? CurrentUser { get; }
     bool IsLoggedIn { get; }
     DateTime? LoginTime { get; }
 
     event Action? OnUserUpdated;
 
-    void Login(User user);
+    void Login(AuthUserDto user);
     void Logout();
 }
 
 public class UserSession : IUserSession
 {
-    public User? CurrentUser { get; private set; }
+    public AuthUserDto? CurrentUser { get; private set; }
     public DateTime? LoginTime { get; private set; }
     public bool IsLoggedIn => CurrentUser != null;
     public event Action? OnUserUpdated;
 
 
-    public void Login(User user)
+    public void Login(AuthUserDto user)
     {
         CurrentUser = user ?? throw new ArgumentNullException(nameof(user));
         LoginTime = DateTime.Now;
@@ -34,7 +34,7 @@ public class UserSession : IUserSession
         LoginTime = null;
     }
 
-    public void UpdateProfile(User updatedUser)
+    public void UpdateProfile(AuthUserDto updatedUser)
     {
         CurrentUser = updatedUser;
 
