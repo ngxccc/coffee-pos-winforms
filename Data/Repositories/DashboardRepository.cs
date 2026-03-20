@@ -6,9 +6,9 @@ namespace CoffeePOS.Data.Repositories;
 
 public class DashboardRepository(NpgsqlDataSource dataSource) : IDashboardRepository
 {
-    private static readonly string SqlGetTodaySummary = SqlFileLoader.Load("Dashboard.get_today_summary.sql");
-    private static readonly string SqlGetRevenueChart = SqlFileLoader.Load("Dashboard.get_revenue_chart.sql");
-    private static readonly string SqlGetTopProducts = SqlFileLoader.Load("Dashboard.get_top_products.sql");
+    private static readonly string SqlGetTodaySummary = SqlFileLoader.Load(SqlKeys.Dashboard.GetTodaySummary);
+    private static readonly string SqlGetRevenueChart = SqlFileLoader.Load(SqlKeys.Dashboard.GetRevenueChart);
+    private static readonly string SqlGetTopProducts = SqlFileLoader.Load(SqlKeys.Dashboard.GetTopProducts);
 
     public async Task<TodaySummaryDto> GetTodaySummaryAsync()
     {

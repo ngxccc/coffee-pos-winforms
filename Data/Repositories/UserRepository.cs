@@ -6,9 +6,9 @@ namespace CoffeePOS.Data.Repositories;
 
 public class UserRepository(NpgsqlDataSource dataSource) : IUserRepository
 {
-    private static readonly string SqlAuthenticate = SqlFileLoader.Load("User.authenticate.sql");
-    private static readonly string SqlDeactivateUser = SqlFileLoader.Load("User.deactivate_user.sql");
-    private static readonly string SqlUpdatePassword = SqlFileLoader.Load("User.update_password.sql");
+    private static readonly string SqlAuthenticate = SqlFileLoader.Load(SqlKeys.User.Authenticate);
+    private static readonly string SqlDeactivateUser = SqlFileLoader.Load(SqlKeys.User.DeactivateUser);
+    private static readonly string SqlUpdatePassword = SqlFileLoader.Load(SqlKeys.User.UpdatePassword);
 
     public async Task<User?> AuthenticateAsync(string username, string password)
     {

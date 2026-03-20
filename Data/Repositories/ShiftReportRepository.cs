@@ -6,8 +6,8 @@ namespace CoffeePOS.Data.Repositories;
 
 public class ShiftReportRepository(NpgsqlDataSource dataSource) : IShiftReportRepository
 {
-    private static readonly string SqlGetShiftSummary = SqlFileLoader.Load("ShiftReport.get_shift_summary.sql");
-    private static readonly string SqlInsertShiftReport = SqlFileLoader.Load("ShiftReport.insert_shift_report.sql");
+    private static readonly string SqlGetShiftSummary = SqlFileLoader.Load(SqlKeys.ShiftReport.GetShiftSummary);
+    private static readonly string SqlInsertShiftReport = SqlFileLoader.Load(SqlKeys.ShiftReport.InsertShiftReport);
 
     public async Task<(int TotalBills, decimal ExpectedCash)> GetShiftSummaryAsync(int userId, DateTime startTime, DateTime endTime)
     {

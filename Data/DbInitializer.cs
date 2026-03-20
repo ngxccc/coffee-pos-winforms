@@ -5,17 +5,17 @@ namespace CoffeePOS.Data;
 
 public static class DbInitializer
 {
-    private static readonly string SqlCreateUsersTable = SqlFileLoader.Load("DbInitializer.create_users_table.sql");
-    private static readonly string SqlCreateCategoriesTable = SqlFileLoader.Load("DbInitializer.create_categories_table.sql");
-    private static readonly string SqlCreateProductsTable = SqlFileLoader.Load("DbInitializer.create_products_table.sql");
-    private static readonly string SqlCreateProductsIndexes = SqlFileLoader.Load("DbInitializer.create_products_indexes.sql");
-    private static readonly string SqlCreateBillsTable = SqlFileLoader.Load("DbInitializer.create_bills_table.sql");
-    private static readonly string SqlCreateBillsIndexes = SqlFileLoader.Load("DbInitializer.create_bills_indexes.sql");
-    private static readonly string SqlCreateBillDetailsTable = SqlFileLoader.Load("DbInitializer.create_bill_details_table.sql");
-    private static readonly string SqlCreateShiftReportsTable = SqlFileLoader.Load("DbInitializer.create_shift_reports_table.sql");
-    private static readonly string SqlCreateShiftReportsIndexes = SqlFileLoader.Load("DbInitializer.create_shift_reports_indexes.sql");
-    private static readonly string SqlCountUserByUsername = SqlFileLoader.Load("DbInitializer.count_user_by_username.sql");
-    private static readonly string SqlInsertSeedUser = SqlFileLoader.Load("DbInitializer.insert_seed_user.sql");
+    private static readonly string SqlCreateUsersTable = SqlFileLoader.Load(SqlKeys.DbInitializer.CreateUsersTable);
+    private static readonly string SqlCreateCategoriesTable = SqlFileLoader.Load(SqlKeys.DbInitializer.CreateCategoriesTable);
+    private static readonly string SqlCreateProductsTable = SqlFileLoader.Load(SqlKeys.DbInitializer.CreateProductsTable);
+    private static readonly string SqlCreateProductsIndexes = SqlFileLoader.Load(SqlKeys.DbInitializer.CreateProductsIndexes);
+    private static readonly string SqlCreateBillsTable = SqlFileLoader.Load(SqlKeys.DbInitializer.CreateBillsTable);
+    private static readonly string SqlCreateBillsIndexes = SqlFileLoader.Load(SqlKeys.DbInitializer.CreateBillsIndexes);
+    private static readonly string SqlCreateBillDetailsTable = SqlFileLoader.Load(SqlKeys.DbInitializer.CreateBillDetailsTable);
+    private static readonly string SqlCreateShiftReportsTable = SqlFileLoader.Load(SqlKeys.DbInitializer.CreateShiftReportsTable);
+    private static readonly string SqlCreateShiftReportsIndexes = SqlFileLoader.Load(SqlKeys.DbInitializer.CreateShiftReportsIndexes);
+    private static readonly string SqlCountUserByUsername = SqlFileLoader.Load(SqlKeys.DbInitializer.CountUserByUsername);
+    private static readonly string SqlInsertSeedUser = SqlFileLoader.Load(SqlKeys.DbInitializer.InsertSeedUser);
 
     public static void Initialize(string connStr)
     {

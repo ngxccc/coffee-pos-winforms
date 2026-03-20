@@ -7,11 +7,11 @@ using Npgsql;
 
 public class BillRepository(NpgsqlDataSource dataSource, IUserSession session) : IBillRepository
 {
-    private static readonly string SqlInsertBill = SqlFileLoader.Load("Bill.insert_bill.sql");
-    private static readonly string SqlInsertBillDetail = SqlFileLoader.Load("Bill.insert_bill_detail.sql");
-    private static readonly string SqlGetBillDetails = SqlFileLoader.Load("Bill.get_bill_details.sql");
-    private static readonly string SqlCancelBill = SqlFileLoader.Load("Bill.cancel_bill.sql");
-    private static readonly string SqlGetTodayBillsByUser = SqlFileLoader.Load("Bill.get_today_bills_by_user.sql");
+    private static readonly string SqlInsertBill = SqlFileLoader.Load(SqlKeys.Bill.InsertBill);
+    private static readonly string SqlInsertBillDetail = SqlFileLoader.Load(SqlKeys.Bill.InsertBillDetail);
+    private static readonly string SqlGetBillDetails = SqlFileLoader.Load(SqlKeys.Bill.GetBillDetails);
+    private static readonly string SqlCancelBill = SqlFileLoader.Load(SqlKeys.Bill.CancelBill);
+    private static readonly string SqlGetTodayBillsByUser = SqlFileLoader.Load(SqlKeys.Bill.GetTodayBillsByUser);
 
     public async Task<int> ProcessFullOrderAsync(int buzzerNumber, decimal totalAmount, List<BillDetail> items)
     {

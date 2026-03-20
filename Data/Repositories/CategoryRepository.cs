@@ -7,15 +7,15 @@ namespace CoffeePOS.Data.Repositories;
 
 public class CategoryRepository(NpgsqlDataSource dataSource) : ICategoryRepository
 {
-    private static readonly string SqlGetAll = SqlFileLoader.Load("Category.get_all.sql");
-    private static readonly string SqlGetById = SqlFileLoader.Load("Category.get_by_id.sql");
-    private static readonly string SqlInsert = SqlFileLoader.Load("Category.insert.sql");
-    private static readonly string SqlUpdate = SqlFileLoader.Load("Category.update.sql");
-    private static readonly string SqlSoftDelete = SqlFileLoader.Load("Category.soft_delete.sql");
-    private static readonly string SqlSoftDeleteProductsByCategory = SqlFileLoader.Load("Category.soft_delete_products_by_category.sql");
-    private static readonly string SqlGetDeleted = SqlFileLoader.Load("Category.get_deleted.sql");
-    private static readonly string SqlGetDeletedById = SqlFileLoader.Load("Category.get_deleted_by_id.sql");
-    private static readonly string SqlRestore = SqlFileLoader.Load("Category.restore.sql");
+    private static readonly string SqlGetAll = SqlFileLoader.Load(SqlKeys.Category.GetAll);
+    private static readonly string SqlGetById = SqlFileLoader.Load(SqlKeys.Category.GetById);
+    private static readonly string SqlInsert = SqlFileLoader.Load(SqlKeys.Category.Insert);
+    private static readonly string SqlUpdate = SqlFileLoader.Load(SqlKeys.Category.Update);
+    private static readonly string SqlSoftDelete = SqlFileLoader.Load(SqlKeys.Category.SoftDelete);
+    private static readonly string SqlSoftDeleteProductsByCategory = SqlFileLoader.Load(SqlKeys.Category.SoftDeleteProductsByCategory);
+    private static readonly string SqlGetDeleted = SqlFileLoader.Load(SqlKeys.Category.GetDeleted);
+    private static readonly string SqlGetDeletedById = SqlFileLoader.Load(SqlKeys.Category.GetDeletedById);
+    private static readonly string SqlRestore = SqlFileLoader.Load(SqlKeys.Category.Restore);
 
     public async Task<List<Category>> GetAllCategoriesAsync()
     {

@@ -7,14 +7,14 @@ namespace CoffeePOS.Data.Repositories;
 
 public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
 {
-    private static readonly string SqlGetAll = SqlFileLoader.Load("Product.get_all.sql");
-    private static readonly string SqlGetById = SqlFileLoader.Load("Product.get_by_id.sql");
-    private static readonly string SqlInsert = SqlFileLoader.Load("Product.insert.sql");
-    private static readonly string SqlUpdate = SqlFileLoader.Load("Product.update.sql");
-    private static readonly string SqlSoftDelete = SqlFileLoader.Load("Product.soft_delete.sql");
-    private static readonly string SqlGetDeleted = SqlFileLoader.Load("Product.get_deleted.sql");
-    private static readonly string SqlGetDeletedById = SqlFileLoader.Load("Product.get_deleted_by_id.sql");
-    private static readonly string SqlRestore = SqlFileLoader.Load("Product.restore.sql");
+    private static readonly string SqlGetAll = SqlFileLoader.Load(SqlKeys.Product.GetAll);
+    private static readonly string SqlGetById = SqlFileLoader.Load(SqlKeys.Product.GetById);
+    private static readonly string SqlInsert = SqlFileLoader.Load(SqlKeys.Product.Insert);
+    private static readonly string SqlUpdate = SqlFileLoader.Load(SqlKeys.Product.Update);
+    private static readonly string SqlSoftDelete = SqlFileLoader.Load(SqlKeys.Product.SoftDelete);
+    private static readonly string SqlGetDeleted = SqlFileLoader.Load(SqlKeys.Product.GetDeleted);
+    private static readonly string SqlGetDeletedById = SqlFileLoader.Load(SqlKeys.Product.GetDeletedById);
+    private static readonly string SqlRestore = SqlFileLoader.Load(SqlKeys.Product.Restore);
 
     public async Task<List<Product>> GetAllProductsAsync()
     {
