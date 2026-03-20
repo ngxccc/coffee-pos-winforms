@@ -1,6 +1,6 @@
 using CoffeePOS.Shared.Dtos;
 
-namespace CoffeePOS.Services;
+namespace CoffeePOS.Services.Contracts.Commands;
 
 public interface IBillService
 {

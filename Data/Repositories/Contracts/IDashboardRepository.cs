@@ -1,6 +1,6 @@
 using CoffeePOS.Shared.Dtos;
 
-namespace CoffeePOS.Data.Repositories;
+namespace CoffeePOS.Data.Repositories.Contracts;
 
 public interface IDashboardRepository
 {

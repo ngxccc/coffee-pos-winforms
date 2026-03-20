@@ -1,6 +1,6 @@
 using CoffeePOS.Models;
 
-namespace CoffeePOS.Services;
+namespace CoffeePOS.Services.Contracts.Commands;
 
 public interface IProductService
 {

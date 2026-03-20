@@ -1,6 +1,6 @@
 using CoffeePOS.Models;
 
-namespace CoffeePOS.Data.Repositories;
+namespace CoffeePOS.Data.Repositories.Contracts;
 
 public interface ICategoryRepository
 {

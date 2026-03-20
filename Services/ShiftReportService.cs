@@ -1,4 +1,5 @@
-using CoffeePOS.Data.Repositories;
+using CoffeePOS.Data.Repositories.Contracts;
+using CoffeePOS.Services.Contracts.Commands;
 using CoffeePOS.Shared.Dtos;
 
 namespace CoffeePOS.Services;

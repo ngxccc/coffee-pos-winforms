@@ -1,4 +1,5 @@
 using System.Data.Common;
+using CoffeePOS.Data.Repositories.Contracts;
 using CoffeePOS.Models;
 using CoffeePOS.Shared.Helpers;
 using Npgsql;

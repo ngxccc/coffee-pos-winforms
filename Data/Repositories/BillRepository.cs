@@ -1,5 +1,6 @@
 namespace CoffeePOS.Data.Repositories;
 
+using CoffeePOS.Data.Repositories.Contracts;
 using CoffeePOS.Models;
 using CoffeePOS.Shared.Dtos;
 using CoffeePOS.Shared.Helpers;

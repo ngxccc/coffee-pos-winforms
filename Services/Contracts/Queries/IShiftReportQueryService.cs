@@ -1,4 +1,4 @@
-namespace CoffeePOS.Services;
+namespace CoffeePOS.Services.Contracts.Queries;
 
 public interface IShiftReportQueryService
 {
