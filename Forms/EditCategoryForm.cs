@@ -4,14 +4,14 @@ using CoffeePOS.Shared.Helpers;
 
 namespace CoffeePOS.Forms;
 
-public partial class CategoryDetailForm : Form
+public class EditCategoryForm : Form
 {
     private readonly ICategoryService _categoryService;
     private int _categoryId = 0;
     private TextBox txtName = null!;
     private Button btnSave = null!;
 
-    public CategoryDetailForm(ICategoryService categoryService)
+    public EditCategoryForm(ICategoryService categoryService)
     {
         _categoryService = categoryService;
         InitializeUI();
@@ -21,13 +21,12 @@ public partial class CategoryDetailForm : Form
     {
         _categoryId = category.Id;
         txtName.Text = category.Name;
-        Text = "SỬA DANH MỤC";
-        btnSave.Text = "CẬP NHẬT";
+        Text = $"SỬA DANH MỤC: {category.Name}";
     }
 
     private void InitializeUI()
     {
-        Text = "THÊM DANH MỤC MỚI";
+        Text = "SỬA DANH MỤC";
         Size = new Size(400, 250);
         StartPosition = FormStartPosition.CenterParent;
         FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -50,7 +49,7 @@ public partial class CategoryDetailForm : Form
 
         btnSave = new Button
         {
-            Text = "LƯU",
+            Text = "CẬP NHẬT",
             Location = new Point(140, 120),
             Size = new Size(100, 40),
             BackColor = Color.FromArgb(46, 204, 113),
@@ -85,9 +84,7 @@ public partial class CategoryDetailForm : Form
                 _categoryId,
                 txtName.Text.Trim());
 
-            if (_categoryId == 0) await _categoryService.AddCategoryAsync(command);
-            else await _categoryService.UpdateCategoryAsync(command);
-
+            await _categoryService.UpdateCategoryAsync(command);
             DialogResult = DialogResult.OK;
             Close();
         }

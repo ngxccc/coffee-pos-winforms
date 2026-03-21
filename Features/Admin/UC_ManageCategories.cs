@@ -1,9 +1,9 @@
+using CoffeePOS.Features.Admin.Controls;
 using CoffeePOS.Forms;
 using CoffeePOS.Services.Contracts.Commands;
 using CoffeePOS.Services.Contracts.Queries;
 using CoffeePOS.Shared.Dtos;
 using CoffeePOS.Shared.Helpers;
-using FontAwesome.Sharp;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CoffeePOS.Features.Admin;
@@ -14,13 +14,9 @@ public class UC_ManageCategories : UserControl
     private readonly ICategoryQueryService _categoryQueryService;
     private readonly IServiceProvider _serviceProvider;
 
+    private UC_CategoriesHeaderToolbar _toolbar = null!;
     private DataGridView _dgvCategories = null!;
     private StatefulSortableGrid<CategoryGridDto> _categoriesGrid = null!;
-    private TextBox _txtSearch = null!;
-    private IconButton _btnDelete = null!;
-    private IconButton _btnEdit = null!;
-    private IconButton _btnAdd = null!;
-    private CheckBox _chkTrashMode = null!;
 
     private List<CategoryGridDto> _allCategories = [];
     private List<CategoryGridDto> _filteredCategories = [];
@@ -39,55 +35,12 @@ public class UC_ManageCategories : UserControl
         Dock = DockStyle.Fill;
         BackColor = Color.White;
 
-        Panel pnlTop = new()
-        {
-            Dock = DockStyle.Top,
-            Height = 80,
-            Padding = new Padding(0, 10, 0, 10)
-        };
-        Label lblTitle = new()
-        {
-            Text = "QUẢN LÝ DANH MỤC",
-            Font = new Font("Segoe UI", 16, FontStyle.Bold),
-            ForeColor = Color.FromArgb(0, 122, 204),
-            AutoSize = true,
-            Location = new Point(0, 20)
-        };
-
-        _txtSearch = new TextBox
-        {
-            Width = 300,
-            Font = new Font("Segoe UI", 12),
-            Location = new Point(250, 22),
-            PlaceholderText = "Nhập tên danh mục để tìm..."
-        };
-        _txtSearch.OnDebouncedTextChanged(300, ApplyFilterAndSort);
-
-        _chkTrashMode = new CheckBox
-        {
-            Text = "Xem Thùng Rác",
-            Font = new Font("Segoe UI", 12, FontStyle.Bold),
-            ForeColor = Color.Red,
-            AutoSize = true,
-            Location = new Point(570, 25),
-            Cursor = Cursors.Hand
-        };
-        _chkTrashMode.CheckedChanged += ChkTrashMode_CheckedChanged;
-
-        FlowLayoutPanel flpBtns = new()
-        {
-            Dock = DockStyle.Right,
-            Width = 400,
-            FlowDirection = FlowDirection.RightToLeft,
-            Padding = new Padding(0, 10, 0, 0)
-        };
-
-        _btnDelete = UIHelper.CreateActionButton("Xóa", IconChar.Trash, Color.FromArgb(231, 76, 60), DeleteCategoryAsync);
-        _btnEdit = UIHelper.CreateActionButton("Sửa", IconChar.Pen, Color.FromArgb(243, 156, 18), EditCategoryAsync);
-        _btnAdd = UIHelper.CreateActionButton("Thêm Mới", IconChar.Plus, Color.FromArgb(46, 204, 113), AddCategoryAsync);
-
-        flpBtns.Controls.AddRange([_btnDelete, _btnEdit, _btnAdd]);
-        pnlTop.Controls.AddRange([lblTitle, flpBtns]);
+        _toolbar = new UC_CategoriesHeaderToolbar();
+        _toolbar.SearchChanged += ApplyFilterAndSort;
+        _toolbar.AddClicked += AddCategoryAsync;
+        _toolbar.EditClicked += EditCategoryAsync;
+        _toolbar.DeleteClicked += DeleteCategoryAsync;
+        _toolbar.TrashModeChanged += ChkTrashMode_CheckedChanged;
 
         _dgvCategories = new DataGridView
         {
@@ -101,9 +54,7 @@ public class UC_ManageCategories : UserControl
         _categoriesGrid.SortChanged += ApplyFilterAndSort;
 
         Controls.Add(_dgvCategories);
-        Controls.Add(pnlTop);
-        pnlTop.Controls.Add(_txtSearch);
-        pnlTop.Controls.Add(_chkTrashMode);
+        Controls.Add(_toolbar);
     }
 
     private async Task LoadDataAsync()
@@ -112,7 +63,7 @@ public class UC_ManageCategories : UserControl
         {
             _categoriesGrid.CapturePosition();
 
-            _allCategories = await _categoryQueryService.GetCategoryGridAsync(_chkTrashMode.Checked);
+            _allCategories = await _categoryQueryService.GetCategoryGridAsync(_toolbar.IsTrashMode);
             ApplyFilterAndSort();
 
             _categoriesGrid.RestorePosition();
@@ -125,21 +76,14 @@ public class UC_ManageCategories : UserControl
 
     private async void ChkTrashMode_CheckedChanged(object? sender, EventArgs e)
     {
-        _dgvCategories.BackgroundColor = _chkTrashMode.Checked ? Color.MistyRose : Color.WhiteSmoke;
-
-        _btnDelete.Text = _chkTrashMode.Checked ? " Khôi phục" : " Xóa";
-        _btnDelete.IconChar = _chkTrashMode.Checked ? IconChar.TrashRestore : IconChar.Trash;
-        _btnDelete.BackColor = _chkTrashMode.Checked ? Color.FromArgb(46, 204, 113) : Color.FromArgb(231, 76, 60);
-
-        _btnAdd.Visible = !_chkTrashMode.Checked;
-        _btnEdit.Visible = !_chkTrashMode.Checked;
+        _dgvCategories.BackgroundColor = _toolbar.IsTrashMode ? Color.MistyRose : Color.WhiteSmoke;
 
         await LoadDataAsync();
     }
 
     private async void AddCategoryAsync(object? s, EventArgs e)
     {
-        var form = _serviceProvider.GetRequiredService<CategoryDetailForm>();
+        var form = _serviceProvider.GetRequiredService<AddCategoryForm>();
         if (form.ShowDialog() == DialogResult.OK) await LoadDataAsync();
     }
 
@@ -150,7 +94,7 @@ public class UC_ManageCategories : UserControl
         var cat = await _categoryQueryService.GetCategoryByIdAsync(id);
         if (cat == null) return;
 
-        var form = _serviceProvider.GetRequiredService<CategoryDetailForm>();
+        var form = _serviceProvider.GetRequiredService<EditCategoryForm>();
         form.LoadCategory(cat);
         if (form.ShowDialog() == DialogResult.OK) await LoadDataAsync();
     }
@@ -161,7 +105,7 @@ public class UC_ManageCategories : UserControl
         string name = _dgvCategories.SelectedRows[0].Cells["Name"].Value.ToString()!;
         int id = (int)_dgvCategories.SelectedRows[0].Cells["Id"].Value;
 
-        if (_chkTrashMode.Checked)
+        if (_toolbar.IsTrashMode)
         {
             if (MessageBoxHelper.ConfirmWarning($"Khôi phục danh mục '{name}'?", "Xác nhận", this))
             {
@@ -195,7 +139,7 @@ public class UC_ManageCategories : UserControl
 
     private void ApplyFilterAndSort()
     {
-        string keyword = _txtSearch.Text.Trim();
+        string keyword = _toolbar.SearchText.Trim();
 
         _filteredCategories = string.IsNullOrEmpty(keyword)
             ? [.. _allCategories]

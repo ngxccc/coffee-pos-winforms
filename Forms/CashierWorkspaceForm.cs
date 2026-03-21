@@ -12,7 +12,7 @@ using Panel = System.Windows.Forms.Panel;
 
 namespace CoffeePOS.Forms;
 
-public partial class CashierWorkspaceForm : Form
+public class CashierWorkspaceForm : Form
 {
     // DEPENDENCIES & CONTROLS
     private readonly IBillService _billService;

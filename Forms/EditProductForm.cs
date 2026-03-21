@@ -6,7 +6,7 @@ using Serilog;
 
 namespace CoffeePOS.Forms;
 
-public partial class ProductDetailForm : Form
+public class EditProductForm : Form
 {
     private readonly IProductService _productService;
     private readonly ICategoryQueryService _categoryQueryService;
@@ -25,7 +25,7 @@ public partial class ProductDetailForm : Form
     private Button btnSave = null!;
     private Button btnCancel = null!;
 
-    public ProductDetailForm(IProductService productService, ICategoryQueryService categoryQueryService)
+    public EditProductForm(IProductService productService, ICategoryQueryService categoryQueryService)
     {
         _productService = productService;
         _categoryQueryService = categoryQueryService;
@@ -40,7 +40,6 @@ public partial class ProductDetailForm : Form
         _initialCategoryId = product.CategoryId;
 
         Text = $"CẬP NHẬT SẢN PHẨM: {product.Name}";
-        btnSave.Text = "CẬP NHẬT";
 
         if (!string.IsNullOrWhiteSpace(product.ImageUrl))
         {
@@ -54,7 +53,7 @@ public partial class ProductDetailForm : Form
         }
     }
 
-    private async void ProductDetailForm_Load(object? sender, EventArgs e)
+    private async void EditProductForm_Load(object? sender, EventArgs e)
     {
         try
         {
@@ -76,7 +75,7 @@ public partial class ProductDetailForm : Form
 
     private void InitializeUI()
     {
-        Text = "THÊM SẢN PHẨM MỚI";
+        Text = "CẬP NHẬT SẢN PHẨM";
         Size = new Size(500, 550);
         StartPosition = FormStartPosition.CenterParent;
         FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -84,7 +83,7 @@ public partial class ProductDetailForm : Form
         MinimizeBox = false;
         BackColor = Color.White;
 
-        Load += ProductDetailForm_Load;
+        Load += EditProductForm_Load;
 
         Label lblName = new()
         {
@@ -159,7 +158,7 @@ public partial class ProductDetailForm : Form
 
         btnSave = new Button
         {
-            Text = "LƯU MỚI",
+            Text = "CẬP NHẬT",
             Location = new Point(240, 440),
             Size = new Size(120, 45),
             BackColor = Color.FromArgb(46, 204, 113),
@@ -235,30 +234,22 @@ public partial class ProductDetailForm : Form
                 (int)cboCategory.SelectedValue!,
                 finalFileName);
 
-            if (_productId == 0)
-            {
-                await _productService.AddProductAsync(command);
-                MessageBoxHelper.Info("Thêm món mới thành công!", owner: this);
-            }
-            else
-            {
-                await _productService.UpdateProductAsync(command);
-                MessageBoxHelper.Info("Cập nhật món thành công!", owner: this);
+            await _productService.UpdateProductAsync(command);
+            MessageBoxHelper.Info("Cập nhật món thành công!", owner: this);
 
-                if (!string.IsNullOrEmpty(_selectedImagePath) && !string.IsNullOrEmpty(_currentSavedImage))
+            if (!string.IsNullOrEmpty(_selectedImagePath) && !string.IsNullOrEmpty(_currentSavedImage))
+            {
+                try
                 {
-                    try
+                    string oldPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Images", "Products", _currentSavedImage);
+                    if (File.Exists(oldPath))
                     {
-                        string oldPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Images", "Products", _currentSavedImage);
-                        if (File.Exists(oldPath))
-                        {
-                            File.Delete(oldPath);
-                        }
+                        File.Delete(oldPath);
                     }
-                    catch (Exception ex)
-                    {
-                        Log.Warning($"[Cảnh báo Dọn Rác]: Không thể xóa ảnh cũ '{_currentSavedImage}'. Chi tiết: {ex.Message}");
-                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning($"[Cảnh báo Dọn Rác]: Không thể xóa ảnh cũ '{_currentSavedImage}'. Chi tiết: {ex.Message}");
                 }
             }
 

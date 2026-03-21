@@ -6,7 +6,7 @@ using CoffeePOS.Shared.Helpers;
 
 namespace CoffeePOS.Forms;
 
-public partial class ShiftReportForm : Form
+public class ShiftReportForm : Form
 {
     private readonly IUserSession _session;
     private readonly IShiftReportQueryService _shiftReportQueryService;

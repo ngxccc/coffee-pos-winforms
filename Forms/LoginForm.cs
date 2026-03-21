@@ -4,7 +4,7 @@ using CoffeePOS.Shared.Helpers;
 
 namespace CoffeePOS.Forms;
 
-public partial class LoginForm : Form
+public class LoginForm : Form
 {
     private readonly IUserService _userService;
     private readonly IUserSession _session;

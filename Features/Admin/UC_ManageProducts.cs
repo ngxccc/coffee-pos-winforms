@@ -1,9 +1,9 @@
+using CoffeePOS.Features.Admin.Controls;
 using CoffeePOS.Forms;
 using CoffeePOS.Services.Contracts.Commands;
 using CoffeePOS.Services.Contracts.Queries;
 using CoffeePOS.Shared.Dtos;
 using CoffeePOS.Shared.Helpers;
-using FontAwesome.Sharp;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CoffeePOS.Features.Admin;
@@ -15,13 +15,9 @@ public class UC_ManageProducts : UserControl
     private readonly IServiceProvider _serviceProvider;
 
     // UI Controls
+    private UC_ProductsHeaderToolbar _toolbar = null!;
     private DataGridView _dgvProducts = null!;
     private StatefulSortableGrid<ProductGridDto> _productsGrid = null!;
-    private TextBox _txtSearch = null!;
-    private IconButton _btnAdd = null!;
-    private IconButton _btnEdit = null!;
-    private IconButton _btnDelete = null!;
-    private CheckBox _chkTrashMode = null!;
 
     // State
     private List<ProductGridDto> _allProducts = [];
@@ -42,60 +38,12 @@ public class UC_ManageProducts : UserControl
         Dock = DockStyle.Fill;
         BackColor = Color.White;
 
-        Panel pnlTop = new()
-        {
-            Dock = DockStyle.Top,
-            Height = 80,
-            Padding = new Padding(0, 10, 0, 10)
-        };
-
-        Label lblTitle = new()
-        {
-            Text = "QUẢN LÝ SẢN PHẨM",
-            Font = new Font("Segoe UI", 16, FontStyle.Bold),
-            ForeColor = Color.FromArgb(0, 122, 204),
-            AutoSize = true,
-            Location = new Point(0, 20)
-        };
-
-        _txtSearch = new TextBox
-        {
-            Width = 300,
-            Font = new Font("Segoe UI", 12),
-            Location = new Point(250, 22),
-            PlaceholderText = "Nhập tên món để tìm..."
-        };
-        _txtSearch.OnDebouncedTextChanged(300, ApplyFilterAndSort);
-
-        _chkTrashMode = new CheckBox
-        {
-            Text = "Xem Thùng Rác",
-            Font = new Font("Segoe UI", 12, FontStyle.Bold),
-            ForeColor = Color.Red,
-            AutoSize = true,
-            Location = new Point(570, 25),
-            Cursor = Cursors.Hand
-        };
-        _chkTrashMode.CheckedChanged += ChkTrashMode_CheckedChanged;
-
-        FlowLayoutPanel flpButtons = new()
-        {
-            Dock = DockStyle.Right,
-            Width = 400,
-            FlowDirection = FlowDirection.RightToLeft,
-            Padding = new Padding(0, 10, 0, 0)
-        };
-
-        _btnDelete = UIHelper.CreateActionButton("Xóa", IconChar.Trash, Color.FromArgb(231, 76, 60), DeleteProductAsync);
-        _btnEdit = UIHelper.CreateActionButton("Sửa", IconChar.Pen, Color.FromArgb(243, 156, 18), EditProductAsync);
-        _btnAdd = UIHelper.CreateActionButton("Thêm Mới", IconChar.Plus, Color.FromArgb(46, 204, 113), AddProductAsync);
-
-        flpButtons.Controls.AddRange([_btnDelete, _btnEdit, _btnAdd]);
-
-        pnlTop.Controls.Add(lblTitle);
-        pnlTop.Controls.Add(_txtSearch);
-        pnlTop.Controls.Add(flpButtons);
-        pnlTop.Controls.Add(_chkTrashMode);
+        _toolbar = new UC_ProductsHeaderToolbar();
+        _toolbar.SearchChanged += ApplyFilterAndSort;
+        _toolbar.AddClicked += AddProductAsync;
+        _toolbar.EditClicked += EditProductAsync;
+        _toolbar.DeleteClicked += DeleteProductAsync;
+        _toolbar.TrashModeChanged += ChkTrashMode_CheckedChanged;
 
         _dgvProducts = new DataGridView
         {
@@ -109,7 +57,7 @@ public class UC_ManageProducts : UserControl
         _productsGrid.SortChanged += ApplyFilterAndSort;
 
         Controls.Add(_dgvProducts);
-        Controls.Add(pnlTop);
+        Controls.Add(_toolbar);
     }
 
     private async Task LoadDataAsync()
@@ -118,7 +66,7 @@ public class UC_ManageProducts : UserControl
         {
             _productsGrid.CapturePosition();
 
-            _allProducts = await _productQueryService.GetProductGridAsync(_chkTrashMode.Checked);
+            _allProducts = await _productQueryService.GetProductGridAsync(_toolbar.IsTrashMode);
             ApplyFilterAndSort();
 
             _productsGrid.RestorePosition();
@@ -131,14 +79,7 @@ public class UC_ManageProducts : UserControl
 
     private async void ChkTrashMode_CheckedChanged(object? sender, EventArgs e)
     {
-        _dgvProducts.BackgroundColor = _chkTrashMode.Checked ? Color.MistyRose : Color.WhiteSmoke;
-
-        _btnDelete.Text = _chkTrashMode.Checked ? " Khôi phục" : " Xóa";
-        _btnDelete.IconChar = _chkTrashMode.Checked ? IconChar.TrashRestore : IconChar.Trash;
-        _btnDelete.BackColor = _chkTrashMode.Checked ? Color.FromArgb(46, 204, 113) : Color.FromArgb(231, 76, 60);
-
-        _btnAdd.Visible = !_chkTrashMode.Checked;
-        _btnEdit.Visible = !_chkTrashMode.Checked;
+        _dgvProducts.BackgroundColor = _toolbar.IsTrashMode ? Color.MistyRose : Color.WhiteSmoke;
 
         await LoadDataAsync();
     }
@@ -153,7 +94,7 @@ public class UC_ManageProducts : UserControl
 
         try
         {
-            if (_chkTrashMode.Checked)
+            if (_toolbar.IsTrashMode)
             {
                 if (MessageBoxHelper.ConfirmWarning($"Khôi phục '{productName}' trở lại Menu bán hàng?",
             "Xác nhận", this))
@@ -181,7 +122,7 @@ public class UC_ManageProducts : UserControl
 
     private async void AddProductAsync(object? sender, EventArgs e)
     {
-        var form = _serviceProvider.GetRequiredService<ProductDetailForm>();
+        var form = _serviceProvider.GetRequiredService<AddProductForm>();
         if (form.ShowDialog() == DialogResult.OK) await LoadDataAsync();
     }
 
@@ -199,7 +140,7 @@ public class UC_ManageProducts : UserControl
                 return;
             }
 
-            var form = _serviceProvider.GetRequiredService<ProductDetailForm>();
+            var form = _serviceProvider.GetRequiredService<EditProductForm>();
             form.LoadProductDetails(product);
             if (form.ShowDialog() == DialogResult.OK) await LoadDataAsync();
         }
@@ -211,7 +152,7 @@ public class UC_ManageProducts : UserControl
 
     private void ApplyFilterAndSort()
     {
-        string keyword = _txtSearch.Text.Trim();
+        string keyword = _toolbar.SearchText.Trim();
 
         _filteredProducts = string.IsNullOrEmpty(keyword)
             ? [.. _allProducts]
