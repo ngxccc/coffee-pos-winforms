@@ -5,6 +5,7 @@ namespace CoffeePOS.Forms;
 public class EditUserForm : Form
 {
     private int _targetUserId;
+    private int _initialRoleValue;
     private readonly TextBox _txtUsername;
     private readonly TextBox _txtFullName;
     private readonly ComboBox _cboRole;
@@ -31,13 +32,13 @@ public class EditUserForm : Form
             Width = 370,
             Font = new Font("Segoe UI", 11),
             DropDownStyle = ComboBoxStyle.DropDownList,
+            DisplayMember = nameof(RoleOption.Name),
+            ValueMember = nameof(RoleOption.Value),
             DataSource = new List<RoleOption>
             {
                 new(1, "Thu ngân"),
                 new(0, "Admin")
-            },
-            DisplayMember = nameof(RoleOption.Name),
-            ValueMember = nameof(RoleOption.Value)
+            }
         };
 
         _txtNewPassword = CreatePasswordBox(new Point(20, 240));
@@ -96,11 +97,17 @@ public class EditUserForm : Form
         _targetUserId = user.Id;
         _txtUsername.Text = user.Username;
         _txtFullName.Text = user.FullName;
-        _cboRole.SelectedValue = user.Role;
+        _initialRoleValue = user.Role;
 
         Text = $"SỬA TÀI KHOẢN - {user.Username}";
         _txtNewPassword.Clear();
         _txtConfirmPassword.Clear();
+    }
+
+    protected override void OnLoad(EventArgs e)
+    {
+        base.OnLoad(e);
+        _cboRole.SelectedValue = _initialRoleValue;
     }
 
     public UpdateUserAccountDto BuildCommand()
