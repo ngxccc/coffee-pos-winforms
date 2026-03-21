@@ -15,6 +15,7 @@ public class UC_ManageCategories : UserControl
     private readonly IServiceProvider _serviceProvider;
 
     private DataGridView _dgvCategories = null!;
+    private StatefulSortableGrid<CategoryGridDto> _categoriesGrid = null!;
     private TextBox _txtSearch = null!;
     private IconButton _btnDelete = null!;
     private IconButton _btnEdit = null!;
@@ -23,11 +24,6 @@ public class UC_ManageCategories : UserControl
 
     private List<CategoryGridDto> _allCategories = [];
     private List<CategoryGridDto> _filteredCategories = [];
-    private string? _sortColumnName;
-    private bool _sortAscending = true;
-
-    private int _savedScrollPosition = -1;
-    private int _savedSelectedRowId = -1;
 
     public UC_ManageCategories(ICategoryService categoryService, ICategoryQueryService categoryQueryService, IServiceProvider serviceProvider)
     {
@@ -98,8 +94,11 @@ public class UC_ManageCategories : UserControl
             Dock = DockStyle.Fill
         };
         _dgvCategories.ApplyStandardAdminStyle();
-        _dgvCategories.ColumnHeaderMouseClick += DgvCategories_ColumnHeaderMouseClick;
         _dgvCategories.CellDoubleClick += EditCategoryAsync;
+
+        _categoriesGrid = new StatefulSortableGrid<CategoryGridDto>(_dgvCategories);
+        _categoriesGrid.AttachSortHandler();
+        _categoriesGrid.SortChanged += ApplyFilterAndSort;
 
         Controls.Add(_dgvCategories);
         Controls.Add(pnlTop);
@@ -111,24 +110,17 @@ public class UC_ManageCategories : UserControl
     {
         try
         {
-            _dgvCategories.SavePosition(ref _savedScrollPosition, ref _savedSelectedRowId);
+            _categoriesGrid.CapturePosition();
 
             _allCategories = await _categoryQueryService.GetCategoryGridAsync(_chkTrashMode.Checked);
             ApplyFilterAndSort();
 
-            _dgvCategories.RestorePosition(_savedScrollPosition, _savedSelectedRowId);
+            _categoriesGrid.RestorePosition();
         }
         catch (Exception ex)
         {
             MessageBoxHelper.Error($"Lỗi tải dữ liệu: {ex.Message}", owner: this);
         }
-    }
-
-    private void DgvCategories_ColumnHeaderMouseClick(object? sender, DataGridViewCellMouseEventArgs e)
-    {
-        _dgvCategories.ToggleSortState(e.ColumnIndex, ref _sortColumnName, ref _sortAscending);
-
-        ApplyFilterAndSort();
     }
 
     private async void ChkTrashMode_CheckedChanged(object? sender, EventArgs e)
@@ -209,12 +201,6 @@ public class UC_ManageCategories : UserControl
             ? [.. _allCategories]
             : [.. _allCategories.Where(c => c.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase))];
 
-        // Sắp xếp dữ liệu bằng hàm Extension Reflection siêu việt (Sort)
-        var finalData = _filteredCategories.DynamicSort(_sortColumnName, _sortAscending).ToList();
-
-        // Đổ vào Grid. (DataGrid sẽ tự đọc [DisplayName] và [Browsable] để tự vẽ cột!)
-        _dgvCategories.DataSource = finalData;
-
-        _dgvCategories.UpdateSortGlyphs(_sortColumnName, _sortAscending);
+        _categoriesGrid.Bind(_filteredCategories);
     }
 }

@@ -4,21 +4,26 @@ namespace CoffeePOS.Shared.Helpers;
 
 public static class UIHelper
 {
+    private static readonly Font ActionButtonFont = new("Segoe UI", 10, FontStyle.Bold);
+
     public static IconButton CreateActionButton(string text, IconChar icon, Color backColor, EventHandler clickEvent)
     {
         var btn = new IconButton
         {
-            Text = " " + text,
+            Text = text,
             IconChar = icon,
             IconSize = 24,
             IconColor = Color.White,
             ForeColor = Color.White,
             BackColor = backColor,
-            Font = new Font("Segoe UI", 10, FontStyle.Bold),
-            Size = new Size(120, 40),
+            Font = ActionButtonFont,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            MaximumSize = new Size(200, 0),
             FlatStyle = FlatStyle.Flat,
             TextImageRelation = TextImageRelation.ImageBeforeText,
             Cursor = Cursors.Hand,
+            Padding = new Padding(5, 0, 0, 0),
             Margin = new Padding(5, 0, 0, 0)
         };
         btn.FlatAppearance.BorderSize = 0;

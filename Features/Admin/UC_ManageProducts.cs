@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace CoffeePOS.Features.Admin;
 
-public partial class UC_ManageProducts : UserControl
+public class UC_ManageProducts : UserControl
 {
     private readonly IProductService _productService;
     private readonly IProductQueryService _productQueryService;
@@ -16,6 +16,7 @@ public partial class UC_ManageProducts : UserControl
 
     // UI Controls
     private DataGridView _dgvProducts = null!;
+    private StatefulSortableGrid<ProductGridDto> _productsGrid = null!;
     private TextBox _txtSearch = null!;
     private IconButton _btnAdd = null!;
     private IconButton _btnEdit = null!;
@@ -25,10 +26,6 @@ public partial class UC_ManageProducts : UserControl
     // State
     private List<ProductGridDto> _allProducts = [];
     private List<ProductGridDto> _filteredProducts = [];
-    private string? _sortColumnName;
-    private bool _sortAscending = true;
-    private int _savedScrollPosition = -1;
-    private int _savedSelectedRowId = -1;
 
     public UC_ManageProducts(IProductService productService, IProductQueryService productQueryService, IServiceProvider serviceProvider)
     {
@@ -105,8 +102,11 @@ public partial class UC_ManageProducts : UserControl
             Dock = DockStyle.Fill
         };
         _dgvProducts.ApplyStandardAdminStyle();
-        _dgvProducts.ColumnHeaderMouseClick += DgvProducts_ColumnHeaderMouseClick;
         _dgvProducts.CellDoubleClick += EditProductAsync;
+
+        _productsGrid = new StatefulSortableGrid<ProductGridDto>(_dgvProducts);
+        _productsGrid.AttachSortHandler();
+        _productsGrid.SortChanged += ApplyFilterAndSort;
 
         Controls.Add(_dgvProducts);
         Controls.Add(pnlTop);
@@ -116,12 +116,12 @@ public partial class UC_ManageProducts : UserControl
     {
         try
         {
-            _dgvProducts.SavePosition(ref _savedScrollPosition, ref _savedSelectedRowId);
+            _productsGrid.CapturePosition();
 
             _allProducts = await _productQueryService.GetProductGridAsync(_chkTrashMode.Checked);
             ApplyFilterAndSort();
 
-            _dgvProducts.RestorePosition(_savedScrollPosition, _savedSelectedRowId);
+            _productsGrid.RestorePosition();
         }
         catch (Exception ex)
         {
@@ -141,12 +141,6 @@ public partial class UC_ManageProducts : UserControl
         _btnEdit.Visible = !_chkTrashMode.Checked;
 
         await LoadDataAsync();
-    }
-
-    private void DgvProducts_ColumnHeaderMouseClick(object? sender, DataGridViewCellMouseEventArgs e)
-    {
-        _dgvProducts.ToggleSortState(e.ColumnIndex, ref _sortColumnName, ref _sortAscending);
-        ApplyFilterAndSort();
     }
 
     private async void DeleteProductAsync(object? sender, EventArgs e)
@@ -223,12 +217,6 @@ public partial class UC_ManageProducts : UserControl
             ? [.. _allProducts]
             : [.. _allProducts.Where(c => c.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase))];
 
-        // Sắp xếp dữ liệu bằng hàm Extension Reflection siêu việt (Sort)
-        var finalData = _filteredProducts.DynamicSort(_sortColumnName, _sortAscending).ToList();
-
-        // Đổ vào Grid. (DataGrid sẽ tự đọc [DisplayName] và [Browsable] để tự vẽ cột!)
-        _dgvProducts.DataSource = finalData;
-
-        _dgvProducts.UpdateSortGlyphs(_sortColumnName, _sortAscending);
+        _productsGrid.Bind(_filteredProducts);
     }
 }

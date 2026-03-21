@@ -27,6 +27,9 @@ public static class SqlKeys
     public static class User
     {
         public const string Authenticate = "User.authenticate.sql";
+        public const string GetAll = "User.get_all.sql";
+        public const string Insert = "User.insert.sql";
+        public const string SetActiveStatus = "User.set_active_status.sql";
         public const string DeactivateUser = "User.deactivate_user.sql";
         public const string UpdatePassword = "User.update_password.sql";
     }
