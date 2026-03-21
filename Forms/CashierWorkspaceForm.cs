@@ -8,7 +8,6 @@ using CoffeePOS.Shared.Dtos;
 using CoffeePOS.Shared.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
-using Panel = System.Windows.Forms.Panel;
 
 namespace CoffeePOS.Forms;
 
