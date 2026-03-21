@@ -27,7 +27,7 @@ public abstract class BaseAdminHeaderToolbar : UserControl
     protected abstract bool ShowTrashMode { get; }
 
     protected virtual (string addLabel, IconChar addIcon, string editLabel, IconChar editIcon, string deleteLabel, IconChar deleteIcon) GetButtonConfig() =>
-        ("Thêm Mới", IconChar.Plus, "Sửa", IconChar.Pen, "Xóa", IconChar.Trash);
+        ("Thêm", IconChar.Plus, "Sửa", IconChar.Pen, "Xóa", IconChar.Trash);
 
     protected BaseAdminHeaderToolbar()
     {

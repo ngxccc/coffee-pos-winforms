@@ -48,7 +48,9 @@ public class AddUserForm : Form
             Size = new Size(70, 32),
             BackColor = Color.FromArgb(46, 204, 113),
             ForeColor = Color.White,
-            FlatStyle = FlatStyle.Flat
+            FlatStyle = FlatStyle.Flat,
+            Font = new Font("Segoe UI", 10, FontStyle.Bold),
+            Cursor = Cursors.Hand
         };
         btnSave.FlatAppearance.BorderSize = 0;
         btnSave.Click += (_, _) => DialogResult = DialogResult.OK;
@@ -59,7 +61,9 @@ public class AddUserForm : Form
             Location = new Point(310, 300),
             Size = new Size(70, 32),
             BackColor = Color.Silver,
-            FlatStyle = FlatStyle.Flat
+            FlatStyle = FlatStyle.Flat,
+            Font = new Font("Segoe UI", 10, FontStyle.Bold),
+            Cursor = Cursors.Hand
         };
         btnCancel.FlatAppearance.BorderSize = 0;
         btnCancel.Click += (_, _) => DialogResult = DialogResult.Cancel;

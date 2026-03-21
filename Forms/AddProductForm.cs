@@ -47,7 +47,7 @@ public class AddProductForm : Form
     private void InitializeUI()
     {
         Text = "THÊM SẢN PHẨM MỚI";
-        Size = new Size(500, 550);
+        Size = new Size(500, 530);
         StartPosition = FormStartPosition.CenterParent;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
@@ -129,27 +129,29 @@ public class AddProductForm : Form
 
         btnSave = new Button
         {
-            Text = "LƯU MỚI",
-            Location = new Point(240, 440),
-            Size = new Size(120, 45),
+            Text = "LƯU",
+            Location = new Point(290, 440),
+            Size = new Size(70, 32),
             BackColor = Color.FromArgb(46, 204, 113),
             ForeColor = Color.White,
             Font = new Font("Segoe UI", 10, FontStyle.Bold),
             FlatStyle = FlatStyle.Flat,
             Cursor = Cursors.Hand
         };
+        btnSave.FlatAppearance.BorderSize = 0;
         btnSave.Click += async (s, e) => await SaveProductAsync();
 
         btnCancel = new Button
         {
-            Text = "HỦY BỎ",
+            Text = "HỦY",
             Location = new Point(370, 440),
-            Size = new Size(80, 45),
+            Size = new Size(70, 32),
             BackColor = Color.Silver,
             Font = new Font("Segoe UI", 10, FontStyle.Bold),
             FlatStyle = FlatStyle.Flat,
             Cursor = Cursors.Hand
         };
+        btnCancel.FlatAppearance.BorderSize = 0;
         btnCancel.Click += (s, e) => Close();
 
         Controls.AddRange([lblName, txtName, lblPrice, nudPrice, lblCategory, cboCategory, lblImage, picImage, btnChooseImage, btnSave, btnCancel]);

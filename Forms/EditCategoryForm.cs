@@ -27,7 +27,7 @@ public class EditCategoryForm : Form
     private void InitializeUI()
     {
         Text = "SỬA DANH MỤC";
-        Size = new Size(400, 250);
+        Size = new Size(400, 210);
         StartPosition = FormStartPosition.CenterParent;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false; MinimizeBox = false;
@@ -50,26 +50,28 @@ public class EditCategoryForm : Form
         btnSave = new Button
         {
             Text = "CẬP NHẬT",
-            Location = new Point(140, 120),
-            Size = new Size(100, 40),
+            Location = new Point(170, 120),
+            Size = new Size(100, 32),
             BackColor = Color.FromArgb(46, 204, 113),
             ForeColor = Color.White,
             Font = new Font("Segoe UI", 10, FontStyle.Bold),
             FlatStyle = FlatStyle.Flat,
             Cursor = Cursors.Hand
         };
+        btnSave.FlatAppearance.BorderSize = 0;
         btnSave.Click += async (s, e) => await SaveAsync();
 
         Button btnCancel = new()
         {
             Text = "HỦY",
-            Location = new Point(250, 120),
-            Size = new Size(100, 40),
+            Location = new Point(280, 120),
+            Size = new Size(70, 32),
             BackColor = Color.Silver,
             Font = new Font("Segoe UI", 10, FontStyle.Bold),
             FlatStyle = FlatStyle.Flat,
             Cursor = Cursors.Hand
         };
+        btnCancel.FlatAppearance.BorderSize = 0;
         btnCancel.Click += (s, e) => Close();
 
         Controls.AddRange([lblName, txtName, btnSave, btnCancel]);

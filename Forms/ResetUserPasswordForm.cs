@@ -41,7 +41,9 @@ public class ResetUserPasswordForm : Form
             Size = new Size(70, 32),
             BackColor = Color.FromArgb(243, 156, 18),
             ForeColor = Color.White,
-            FlatStyle = FlatStyle.Flat
+            FlatStyle = FlatStyle.Flat,
+            Font = new Font("Segoe UI", 10, FontStyle.Bold),
+            Cursor = Cursors.Hand
         };
         btnSave.FlatAppearance.BorderSize = 0;
         btnSave.Click += (_, _) => DialogResult = DialogResult.OK;
@@ -52,7 +54,9 @@ public class ResetUserPasswordForm : Form
             Location = new Point(310, 160),
             Size = new Size(70, 32),
             BackColor = Color.Silver,
-            FlatStyle = FlatStyle.Flat
+            FlatStyle = FlatStyle.Flat,
+            Font = new Font("Segoe UI", 10, FontStyle.Bold),
+            Cursor = Cursors.Hand
         };
         btnCancel.FlatAppearance.BorderSize = 0;
         btnCancel.Click += (_, _) => DialogResult = DialogResult.Cancel;
