@@ -145,9 +145,15 @@ public class UC_ManageUsers : UserControl
         if (_dgvUsers.SelectedRows.Count == 0) return;
 
         var selectedRow = _dgvUsers.SelectedRows[0];
+        if (selectedRow.DataBoundItem is not UserGridDto selectedUser)
+        {
+            MessageBoxHelper.Warning("Không thể đọc dữ liệu người dùng đã chọn.", "Lỗi", this);
+            return;
+        }
+
         int targetUserId = (int)selectedRow.Cells[nameof(UserGridDto.Id)].Value;
         string username = selectedRow.Cells[nameof(UserGridDto.Username)].Value.ToString()!;
-        bool isActive = (bool)selectedRow.Cells[nameof(UserGridDto.IsActive)].Value;
+        bool isActive = selectedUser.IsActive;
 
         bool nextState = !isActive;
         string actionText = nextState ? "mở khóa" : "khóa";
