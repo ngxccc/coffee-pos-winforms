@@ -86,7 +86,7 @@ public class UserRepository(NpgsqlDataSource dataSource) : IUserRepository
         {
             await cmd.ExecuteNonQueryAsync();
         }
-        catch (PostgresException ex) when (ex.SqlState == "23505")
+        catch (PostgresException ex) when (ex.SqlState == PostgresErrorCodes.UniqueViolation)
         {
             throw new InvalidOperationException("Tên đăng nhập đã tồn tại, vui lòng chọn tên khác!");
         }
@@ -105,7 +105,7 @@ public class UserRepository(NpgsqlDataSource dataSource) : IUserRepository
         {
             await cmd.ExecuteNonQueryAsync();
         }
-        catch (PostgresException ex) when (ex.SqlState == "23505")
+        catch (PostgresException ex) when (ex.SqlState == PostgresErrorCodes.UniqueViolation)
         {
             throw new InvalidOperationException("Tên đăng nhập đã tồn tại, vui lòng chọn tên khác!");
         }
