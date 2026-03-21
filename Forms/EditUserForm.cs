@@ -2,18 +2,19 @@ using CoffeePOS.Shared.Dtos;
 
 namespace CoffeePOS.Forms;
 
-public class AddUserForm : Form
+public class EditUserForm : Form
 {
+    private int _targetUserId;
     private readonly TextBox _txtUsername;
     private readonly TextBox _txtFullName;
     private readonly ComboBox _cboRole;
-    private readonly TextBox _txtPassword;
-    private readonly TextBox _txtConfirm;
+    private readonly TextBox _txtNewPassword;
+    private readonly TextBox _txtConfirmPassword;
 
-    public AddUserForm()
+    public EditUserForm()
     {
-        Text = "THÊM NHÂN VIÊN";
-        Size = new Size(420, 390);
+        Text = "SỬA TÀI KHOẢN";
+        Size = new Size(430, 440);
         StartPosition = FormStartPosition.CenterParent;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
@@ -21,12 +22,13 @@ public class AddUserForm : Form
         BackColor = Color.White;
 
         _txtUsername = CreateTextBox(new Point(20, 45));
-        _txtFullName = CreateTextBox(new Point(20, 100));
+
+        _txtFullName = CreateTextBox(new Point(20, 110));
 
         _cboRole = new ComboBox
         {
-            Location = new Point(20, 155),
-            Width = 360,
+            Location = new Point(20, 175),
+            Width = 370,
             Font = new Font("Segoe UI", 11),
             DropDownStyle = ComboBoxStyle.DropDownList,
             DataSource = new List<RoleOption>
@@ -38,15 +40,16 @@ public class AddUserForm : Form
             ValueMember = nameof(RoleOption.Value)
         };
 
-        _txtPassword = CreatePasswordBox(new Point(20, 210));
-        _txtConfirm = CreatePasswordBox(new Point(20, 265));
+        _txtNewPassword = CreatePasswordBox(new Point(20, 240));
+
+        _txtConfirmPassword = CreatePasswordBox(new Point(20, 305));
 
         var btnSave = new Button
         {
-            Text = "LƯU",
-            Location = new Point(230, 310),
-            Size = new Size(70, 32),
-            BackColor = Color.FromArgb(46, 204, 113),
+            Text = "CẬP NHẬT",
+            Location = new Point(210, 355),
+            Size = new Size(100, 32),
+            BackColor = Color.FromArgb(243, 156, 18),
             ForeColor = Color.White,
             FlatStyle = FlatStyle.Flat,
             Font = new Font("Segoe UI", 10, FontStyle.Bold),
@@ -58,7 +61,7 @@ public class AddUserForm : Form
         var btnCancel = new Button
         {
             Text = "HỦY",
-            Location = new Point(310, 310),
+            Location = new Point(320, 355),
             Size = new Size(70, 32),
             BackColor = Color.Silver,
             FlatStyle = FlatStyle.Flat,
@@ -72,14 +75,14 @@ public class AddUserForm : Form
         [
             CreateLabel("Tài khoản", new Point(20, 20)),
             _txtUsername,
-            CreateLabel("Họ tên", new Point(20, 75)),
+            CreateLabel("Họ tên", new Point(20, 85)),
             _txtFullName,
-            CreateLabel("Vai trò", new Point(20, 130)),
+            CreateLabel("Vai trò", new Point(20, 150)),
             _cboRole,
-            CreateLabel("Mật khẩu", new Point(20, 185)),
-            _txtPassword,
-            CreateLabel("Xác nhận mật khẩu", new Point(20, 240)),
-            _txtConfirm,
+            CreateLabel("Mật khẩu mới (để trống nếu không đổi)", new Point(20, 215)),
+            _txtNewPassword,
+            CreateLabel("Xác nhận mật khẩu", new Point(20, 280)),
+            _txtConfirmPassword,
             btnSave,
             btnCancel
         ]);
@@ -88,13 +91,26 @@ public class AddUserForm : Form
         CancelButton = btnCancel;
     }
 
-    public CreateUserDto BuildCommand()
+    public void LoadUser(UserGridDto user)
+    {
+        _targetUserId = user.Id;
+        _txtUsername.Text = user.Username;
+        _txtFullName.Text = user.FullName;
+        _cboRole.SelectedValue = user.Role;
+
+        Text = $"SỬA TÀI KHOẢN - {user.Username}";
+        _txtNewPassword.Clear();
+        _txtConfirmPassword.Clear();
+    }
+
+    public UpdateUserAccountDto BuildCommand()
         => new(
+            _targetUserId,
             _txtUsername.Text,
             _txtFullName.Text,
             _cboRole.SelectedValue is int roleValue ? roleValue : 1,
-            _txtPassword.Text,
-            _txtConfirm.Text);
+            _txtNewPassword.Text,
+            _txtConfirmPassword.Text);
 
     private static Label CreateLabel(string text, Point location)
         => new()
@@ -106,18 +122,18 @@ public class AddUserForm : Form
         };
 
     private static TextBox CreateTextBox(Point location)
-        => new()
-        {
-            Location = location,
-            Width = 360,
-            Font = new Font("Segoe UI", 11)
-        };
+    => new()
+    {
+        Location = location,
+        Width = 370,
+        Font = new Font("Segoe UI", 11)
+    };
 
     private static TextBox CreatePasswordBox(Point location)
         => new()
         {
             Location = location,
-            Width = 360,
+            Width = 370,
             Font = new Font("Segoe UI", 11),
             PasswordChar = '●'
         };

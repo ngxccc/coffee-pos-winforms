@@ -10,6 +10,7 @@ public class UserRepository(NpgsqlDataSource dataSource) : IUserRepository
     private static readonly string SqlGetAll = SqlFileLoader.Load(SqlKeys.User.GetAll);
     private static readonly string SqlAuthenticate = SqlFileLoader.Load(SqlKeys.User.Authenticate);
     private static readonly string SqlInsert = SqlFileLoader.Load(SqlKeys.User.Insert);
+    private static readonly string SqlUpdateProfile = SqlFileLoader.Load(SqlKeys.User.UpdateProfile);
     private static readonly string SqlSetActiveStatus = SqlFileLoader.Load(SqlKeys.User.SetActiveStatus);
     private static readonly string SqlUpdatePassword = SqlFileLoader.Load(SqlKeys.User.UpdatePassword);
 
@@ -78,6 +79,25 @@ public class UserRepository(NpgsqlDataSource dataSource) : IUserRepository
         using var cmd = new NpgsqlCommand(SqlInsert, conn);
         cmd.Parameters.AddWithValue("username", username);
         cmd.Parameters.AddWithValue("hash", passwordHash);
+        cmd.Parameters.AddWithValue("fullName", fullName);
+        cmd.Parameters.AddWithValue("role", role);
+
+        try
+        {
+            await cmd.ExecuteNonQueryAsync();
+        }
+        catch (PostgresException ex) when (ex.SqlState == "23505")
+        {
+            throw new InvalidOperationException("Tên đăng nhập đã tồn tại, vui lòng chọn tên khác!");
+        }
+    }
+
+    public async Task UpdateUserProfileAsync(int userId, string username, string fullName, int role)
+    {
+        using var conn = await dataSource.OpenConnectionAsync();
+        using var cmd = new NpgsqlCommand(SqlUpdateProfile, conn);
+        cmd.Parameters.AddWithValue("id", userId);
+        cmd.Parameters.AddWithValue("username", username);
         cmd.Parameters.AddWithValue("fullName", fullName);
         cmd.Parameters.AddWithValue("role", role);
 

@@ -41,7 +41,7 @@ public class UC_ManageUsers : UserControl
         _toolbar = new UC_UsersHeaderToolbar();
         _toolbar.SearchChanged += ApplyFilterAndSort;
         _toolbar.AddClicked += AddUserAsync;
-        _toolbar.ResetPasswordClicked += ResetPasswordAsync;
+        _toolbar.ResetPasswordClicked += EditUserAsync;
         _toolbar.ToggleStatusClicked += ToggleUserStatusAsync;
 
         _dgvUsers = new DataGridView
@@ -49,7 +49,7 @@ public class UC_ManageUsers : UserControl
             Dock = DockStyle.Fill
         };
         _dgvUsers.ApplyStandardAdminStyle();
-        _dgvUsers.CellDoubleClick += ResetPasswordAsync;
+        _dgvUsers.CellDoubleClick += EditUserAsync;
 
         _usersGrid = new StatefulSortableGrid<UserGridDto>(_dgvUsers);
         _usersGrid.AttachSortHandler();
@@ -104,15 +104,18 @@ public class UC_ManageUsers : UserControl
         }
     }
 
-    private async void ResetPasswordAsync(object? sender, EventArgs e)
+    private async void EditUserAsync(object? sender, EventArgs e)
     {
         if (_dgvUsers.SelectedRows.Count == 0) return;
 
-        int targetUserId = (int)_dgvUsers.SelectedRows[0].Cells[nameof(UserGridDto.Id)].Value;
-        string username = _dgvUsers.SelectedRows[0].Cells[nameof(UserGridDto.Username)].Value.ToString()!;
+        if (_dgvUsers.SelectedRows[0].DataBoundItem is not UserGridDto selectedUser)
+        {
+            MessageBoxHelper.Warning("Không thể đọc dữ liệu người dùng đã chọn.", "Lỗi", this);
+            return;
+        }
 
-        using var dialog = _formFactory.CreateForm<ResetUserPasswordForm>();
-        dialog.LoadUser(username);
+        using var dialog = _formFactory.CreateForm<EditUserForm>();
+        dialog.LoadUser(selectedUser);
         if (dialog.ShowDialog(this) != DialogResult.OK)
         {
             return;
@@ -120,11 +123,10 @@ public class UC_ManageUsers : UserControl
 
         try
         {
-            await _userService.ResetUserPasswordAsync(
-                _session.CurrentUser!.Id,
-                new ResetUserPasswordDto(targetUserId, dialog.NewPassword, dialog.ConfirmPassword));
+            await _userService.UpdateUserAccountAsync(_session.CurrentUser!.Id, dialog.BuildCommand());
 
-            MessageBoxHelper.Info($"Đã đổi mật khẩu cho tài khoản '{username}'.", owner: this);
+            MessageBoxHelper.Info($"Đã cập nhật tài khoản '{selectedUser.Username}'.", owner: this);
+            await LoadDataAsync();
         }
         catch (ArgumentException ex)
         {
@@ -136,7 +138,7 @@ public class UC_ManageUsers : UserControl
         }
         catch (Exception ex)
         {
-            MessageBoxHelper.Error($"Lỗi đổi mật khẩu: {ex.Message}", owner: this);
+            MessageBoxHelper.Error($"Lỗi cập nhật tài khoản: {ex.Message}", owner: this);
         }
     }
 

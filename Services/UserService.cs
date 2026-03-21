@@ -51,16 +51,33 @@ public class UserService(IUserRepository userRepo) : IUserService
         await userRepo.UpdatePasswordAsync(userId, newHash);
     }
 
-    public async Task ResetUserPasswordAsync(int adminId, ResetUserPasswordDto command)
+    public async Task UpdateUserAccountAsync(int adminId, UpdateUserAccountDto command)
     {
         if (command.TargetUserId <= 0)
             throw new ArgumentException("Người dùng không hợp lệ!");
 
-        if (adminId == command.TargetUserId)
-            throw new InvalidOperationException("Không thể reset mật khẩu tài khoản đang đăng nhập ở màn hình này.");
+        string username = command.Username.Trim();
+        string fullName = command.FullName.Trim();
+
+        if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(fullName))
+            throw new ArgumentException("Vui lòng nhập đầy đủ tài khoản và họ tên!");
+
+        if (command.Role is not (0 or 1))
+            throw new ArgumentException("Vai trò không hợp lệ!");
+
+        if (adminId == command.TargetUserId && command.Role != 0)
+            throw new InvalidOperationException("Không thể tự đổi vai trò của chính bạn thành Thu ngân.");
+
+        await userRepo.UpdateUserProfileAsync(command.TargetUserId, username, fullName, command.Role);
+
+        bool hasPasswordInput = !string.IsNullOrWhiteSpace(command.NewPassword) || !string.IsNullOrWhiteSpace(command.ConfirmPassword);
+        if (!hasPasswordInput)
+        {
+            return;
+        }
 
         if (string.IsNullOrWhiteSpace(command.NewPassword) || string.IsNullOrWhiteSpace(command.ConfirmPassword))
-            throw new ArgumentException("Vui lòng nhập đầy đủ mật khẩu mới và xác nhận.");
+            throw new ArgumentException("Nếu đổi mật khẩu, vui lòng nhập đầy đủ mật khẩu mới và xác nhận.");
 
         if (command.NewPassword.Length < 6)
             throw new ArgumentException("Mật khẩu mới phải có ít nhất 6 ký tự!");

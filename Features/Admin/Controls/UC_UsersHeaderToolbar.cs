@@ -1,4 +1,3 @@
-using CoffeePOS.Shared.Helpers;
 using FontAwesome.Sharp;
 
 namespace CoffeePOS.Features.Admin.Controls;
@@ -13,7 +12,7 @@ public class UC_UsersHeaderToolbar : BaseAdminHeaderToolbar
     protected override bool ShowTrashMode => false;
 
     protected override (string addLabel, IconChar addIcon, string editLabel, IconChar editIcon, string deleteLabel, IconChar deleteIcon) GetButtonConfig() =>
-        ("Thêm NV", IconChar.UserPlus, "Đổi Mật Khẩu", IconChar.Key, "Khóa/Mở TK", IconChar.Lock);
+        ("Thêm NV", IconChar.UserPlus, "Sửa TK", IconChar.UserEdit, "Khóa/Mở TK", IconChar.Lock);
 
     public UC_UsersHeaderToolbar()
     {
