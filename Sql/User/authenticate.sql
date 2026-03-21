@@ -1,4 +1,8 @@
-SELECT id, username, password_hash, full_name, role
+SELECT id,
+  username,
+  password_hash,
+  full_name,
+  role,
+  is_active
 FROM users
-WHERE username = @u
-  AND is_active = true;
+WHERE username = @u;

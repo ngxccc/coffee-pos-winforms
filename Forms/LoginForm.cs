@@ -147,6 +147,10 @@ public class LoginForm : Form
                 MessageBoxHelper.Warning("Sai tài khoản hoặc mật khẩu!", owner: this);
             }
         }
+        catch (InvalidOperationException ex)
+        {
+            MessageBoxHelper.Warning(ex.Message, "Tài khoản bị khóa", this);
+        }
         catch (Exception ex)
         {
             MessageBoxHelper.Error($"Lỗi kết nối CSDL: {ex.Message}", owner: this);

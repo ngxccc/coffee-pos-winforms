@@ -50,11 +50,17 @@ public class UserRepository(NpgsqlDataSource dataSource) : IUserRepository
         if (await reader.ReadAsync())
         {
             string dbHash = reader.GetRequiredString("password_hash");
+            bool isActive = reader.GetRequiredBool("is_active");
 
             bool isValid = BCrypt.Net.BCrypt.Verify(password, dbHash);
 
             if (isValid)
             {
+                if (!isActive)
+                {
+                    throw new InvalidOperationException("Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.");
+                }
+
                 return new AuthUserDto(
                     reader.GetRequiredInt("id"),
                     reader.GetRequiredString("username"),
