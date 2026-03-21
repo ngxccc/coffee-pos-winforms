@@ -1,3 +1,4 @@
+using CoffeePOS.Core;
 using CoffeePOS.Data;
 using CoffeePOS.Shared.Helpers;
 using Microsoft.Extensions.Configuration;
@@ -38,13 +39,13 @@ static class Program
             host = CreateHostBuilder(connStr).UseSerilog().Build();
 
             DbInitializer.Initialize(connStr);
-            Core.TimeKeeper.Initialize(connStr);
-            Core.InvoiceGenerator.Initialize();
+            TimeKeeper.Initialize(connStr);
+            InvoiceGenerator.Initialize();
 
             // Tự động gọi ExecuteAsync của tất cả các BackgroundService
             host.Start();
 
-            var appState = host.Services.GetRequiredService<Core.AppStateManager>();
+            var appState = host.Services.GetRequiredService<AppStateManager>();
             Application.Run(appState);
         }
         catch (Exception ex)
@@ -71,12 +72,13 @@ static class Program
                 var dataSource = NpgsqlDataSource.Create(connStr);
 
                 services.AddSingleton(dataSource);
-                services.AddSingleton<Core.AppStateManager>();
-                services.AddSingleton<Core.IUserSession, Core.UserSession>();
-                services.AddSingleton<Core.PdfPrintQueue>();
+                services.AddSingleton<AppStateManager>();
+                services.AddSingleton<IUserSession, UserSession>();
+                services.AddSingleton<IFormFactory, FormFactory>();
+                services.AddSingleton<PdfPrintQueue>();
 
-                services.AddHostedService<Core.PdfPrintWorker>();
-                services.AddHostedService<Core.TrashCleanupWorker>();
+                services.AddHostedService<PdfPrintWorker>();
+                services.AddHostedService<TrashCleanupWorker>();
 
                 services.Scan(scan => scan
                     .FromAssemblies(typeof(Program).Assembly) // Quét từ lõi project

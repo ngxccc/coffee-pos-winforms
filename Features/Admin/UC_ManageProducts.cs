@@ -1,10 +1,10 @@
+using CoffeePOS.Core;
 using CoffeePOS.Features.Admin.Controls;
 using CoffeePOS.Forms;
 using CoffeePOS.Services.Contracts.Commands;
 using CoffeePOS.Services.Contracts.Queries;
 using CoffeePOS.Shared.Dtos;
 using CoffeePOS.Shared.Helpers;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace CoffeePOS.Features.Admin;
 
@@ -12,7 +12,7 @@ public class UC_ManageProducts : UserControl
 {
     private readonly IProductService _productService;
     private readonly IProductQueryService _productQueryService;
-    private readonly IServiceProvider _serviceProvider;
+    private readonly IFormFactory _formFactory;
 
     // UI Controls
     private UC_ProductsHeaderToolbar _toolbar = null!;
@@ -23,11 +23,11 @@ public class UC_ManageProducts : UserControl
     private List<ProductGridDto> _allProducts = [];
     private List<ProductGridDto> _filteredProducts = [];
 
-    public UC_ManageProducts(IProductService productService, IProductQueryService productQueryService, IServiceProvider serviceProvider)
+    public UC_ManageProducts(IProductService productService, IProductQueryService productQueryService, IFormFactory formFactory)
     {
         _productService = productService;
         _productQueryService = productQueryService;
-        _serviceProvider = serviceProvider;
+        _formFactory = formFactory;
 
         InitializeUI();
         _ = LoadDataAsync();
@@ -122,8 +122,8 @@ public class UC_ManageProducts : UserControl
 
     private async void AddProductAsync(object? sender, EventArgs e)
     {
-        var form = _serviceProvider.GetRequiredService<AddProductForm>();
-        if (form.ShowDialog() == DialogResult.OK) await LoadDataAsync();
+        using var form = _formFactory.CreateForm<AddProductForm>();
+        if (form.ShowDialog(this) == DialogResult.OK) await LoadDataAsync();
     }
 
     private async void EditProductAsync(object? sender, EventArgs e)
@@ -140,9 +140,9 @@ public class UC_ManageProducts : UserControl
                 return;
             }
 
-            var form = _serviceProvider.GetRequiredService<EditProductForm>();
+            using var form = _formFactory.CreateForm<EditProductForm>();
             form.LoadProductDetails(product);
-            if (form.ShowDialog() == DialogResult.OK) await LoadDataAsync();
+            if (form.ShowDialog(this) == DialogResult.OK) await LoadDataAsync();
         }
         catch (Exception ex)
         {

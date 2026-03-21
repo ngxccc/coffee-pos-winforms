@@ -29,8 +29,6 @@ public class AddProductForm : Form
         InitializeUI();
     }
 
-
-
     private async void ProductDetailForm_Load(object? sender, EventArgs e)
     {
         try

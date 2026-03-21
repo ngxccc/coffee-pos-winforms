@@ -13,6 +13,7 @@ public class UC_ManageUsers : UserControl
     private readonly IUserService _userService;
     private readonly IUserQueryService _userQueryService;
     private readonly IUserSession _session;
+    private readonly IFormFactory _formFactory;
 
     private UC_UsersHeaderToolbar _toolbar = null!;
     private DataGridView _dgvUsers = null!;
@@ -21,11 +22,12 @@ public class UC_ManageUsers : UserControl
     private List<UserGridDto> _allUsers = [];
     private List<UserGridDto> _filteredUsers = [];
 
-    public UC_ManageUsers(IUserService userService, IUserQueryService userQueryService, IUserSession session)
+    public UC_ManageUsers(IUserService userService, IUserQueryService userQueryService, IUserSession session, IFormFactory formFactory)
     {
         _userService = userService;
         _userQueryService = userQueryService;
         _session = session;
+        _formFactory = formFactory;
 
         InitializeUI();
         _ = LoadDataAsync();
@@ -76,7 +78,7 @@ public class UC_ManageUsers : UserControl
 
     private async void AddUserAsync(object? sender, EventArgs e)
     {
-        using var dialog = new AddUserForm();
+        using var dialog = _formFactory.CreateForm<AddUserForm>();
         if (dialog.ShowDialog(this) != DialogResult.OK)
         {
             return;
@@ -109,7 +111,8 @@ public class UC_ManageUsers : UserControl
         int targetUserId = (int)_dgvUsers.SelectedRows[0].Cells[nameof(UserGridDto.Id)].Value;
         string username = _dgvUsers.SelectedRows[0].Cells[nameof(UserGridDto.Username)].Value.ToString()!;
 
-        using var dialog = new ResetUserPasswordForm(username);
+        using var dialog = _formFactory.CreateForm<ResetUserPasswordForm>();
+        dialog.LoadUser(username);
         if (dialog.ShowDialog(this) != DialogResult.OK)
         {
             return;

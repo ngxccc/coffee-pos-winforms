@@ -1,16 +1,15 @@
 using CoffeePOS.Forms;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace CoffeePOS.Core;
 
 public class AppStateManager : ApplicationContext
 {
-    private readonly IServiceProvider _serviceProvider;
+    private readonly IFormFactory _formFactory;
     private readonly IUserSession _session;
 
-    public AppStateManager(IServiceProvider serviceProvider, IUserSession session)
+    public AppStateManager(IFormFactory formFactory, IUserSession session)
     {
-        _serviceProvider = serviceProvider;
+        _formFactory = formFactory;
         _session = session;
 
         ShowLoginForm();
@@ -18,7 +17,7 @@ public class AppStateManager : ApplicationContext
 
     private void ShowLoginForm()
     {
-        var loginForm = _serviceProvider.GetRequiredService<LoginForm>();
+        var loginForm = _formFactory.CreateForm<LoginForm>();
 
         loginForm.FormClosed += OnFormClosed;
 
@@ -31,11 +30,11 @@ public class AppStateManager : ApplicationContext
         Form nextForm;
         if (_session.CurrentUser!.Role == 0)
         {
-            nextForm = _serviceProvider.GetRequiredService<AdminDashboardForm>();
+            nextForm = _formFactory.CreateForm<AdminDashboardForm>();
         }
         else
         {
-            nextForm = _serviceProvider.GetRequiredService<CashierWorkspaceForm>();
+            nextForm = _formFactory.CreateForm<CashierWorkspaceForm>();
         }
 
         nextForm.FormClosed += OnFormClosed;

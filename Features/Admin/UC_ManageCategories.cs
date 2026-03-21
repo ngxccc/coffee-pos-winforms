@@ -1,10 +1,10 @@
+using CoffeePOS.Core;
 using CoffeePOS.Features.Admin.Controls;
 using CoffeePOS.Forms;
 using CoffeePOS.Services.Contracts.Commands;
 using CoffeePOS.Services.Contracts.Queries;
 using CoffeePOS.Shared.Dtos;
 using CoffeePOS.Shared.Helpers;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace CoffeePOS.Features.Admin;
 
@@ -12,7 +12,7 @@ public class UC_ManageCategories : UserControl
 {
     private readonly ICategoryService _categoryService;
     private readonly ICategoryQueryService _categoryQueryService;
-    private readonly IServiceProvider _serviceProvider;
+    private readonly IFormFactory _formFactory;
 
     private UC_CategoriesHeaderToolbar _toolbar = null!;
     private DataGridView _dgvCategories = null!;
@@ -21,11 +21,11 @@ public class UC_ManageCategories : UserControl
     private List<CategoryGridDto> _allCategories = [];
     private List<CategoryGridDto> _filteredCategories = [];
 
-    public UC_ManageCategories(ICategoryService categoryService, ICategoryQueryService categoryQueryService, IServiceProvider serviceProvider)
+    public UC_ManageCategories(ICategoryService categoryService, ICategoryQueryService categoryQueryService, IFormFactory formFactory)
     {
         _categoryService = categoryService;
         _categoryQueryService = categoryQueryService;
-        _serviceProvider = serviceProvider;
+        _formFactory = formFactory;
         InitializeUI();
         _ = LoadDataAsync();
     }
@@ -83,8 +83,8 @@ public class UC_ManageCategories : UserControl
 
     private async void AddCategoryAsync(object? s, EventArgs e)
     {
-        var form = _serviceProvider.GetRequiredService<AddCategoryForm>();
-        if (form.ShowDialog() == DialogResult.OK) await LoadDataAsync();
+        using var form = _formFactory.CreateForm<AddCategoryForm>();
+        if (form.ShowDialog(this) == DialogResult.OK) await LoadDataAsync();
     }
 
     private async void EditCategoryAsync(object? s, EventArgs e)
@@ -94,9 +94,9 @@ public class UC_ManageCategories : UserControl
         var cat = await _categoryQueryService.GetCategoryByIdAsync(id);
         if (cat == null) return;
 
-        var form = _serviceProvider.GetRequiredService<EditCategoryForm>();
+        using var form = _formFactory.CreateForm<EditCategoryForm>();
         form.LoadCategory(cat);
-        if (form.ShowDialog() == DialogResult.OK) await LoadDataAsync();
+        if (form.ShowDialog(this) == DialogResult.OK) await LoadDataAsync();
     }
 
     private async void DeleteCategoryAsync(object? s, EventArgs e)

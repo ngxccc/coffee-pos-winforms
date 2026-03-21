@@ -8,9 +8,9 @@ public class ResetUserPasswordForm : Form
     public string NewPassword => _txtNewPassword.Text;
     public string ConfirmPassword => _txtConfirmPassword.Text;
 
-    public ResetUserPasswordForm(string username)
+    public ResetUserPasswordForm()
     {
-        Text = $"ĐỔI MẬT KHẨU - {username}";
+        Text = "ĐỔI MẬT KHẨU";
         Size = new Size(420, 240);
         StartPosition = FormStartPosition.CenterParent;
         FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -81,5 +81,12 @@ public class ResetUserPasswordForm : Form
 
         AcceptButton = btnSave;
         CancelButton = btnCancel;
+    }
+
+    public void LoadUser(string username)
+    {
+        Text = $"ĐỔI MẬT KHẨU - {username}";
+        _txtNewPassword.Clear();
+        _txtConfirmPassword.Clear();
     }
 }

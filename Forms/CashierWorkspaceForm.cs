@@ -18,6 +18,7 @@ public class CashierWorkspaceForm : Form
     private readonly IBillService _billService;
     private readonly IBillQueryService _billQueryService;
     private readonly IServiceProvider _serviceProvider;
+    private readonly IFormFactory _formFactory;
     private readonly IUserSession _session;
     private readonly PdfPrintQueue _pdfQueue;
 
@@ -35,11 +36,12 @@ public class CashierWorkspaceForm : Form
 
     // CONSTRUCTOR & INIT
     public CashierWorkspaceForm(IServiceProvider serviceProvider, IUserSession session,
-                    IBillService billService, IBillQueryService billQueryService, PdfPrintQueue pdfQueue)
+                    IBillService billService, IBillQueryService billQueryService, PdfPrintQueue pdfQueue, IFormFactory formFactory)
     {
         InitializeUI();
 
         _serviceProvider = serviceProvider;
+        _formFactory = formFactory;
         _session = session;
         _billService = billService;
         _billQueryService = billQueryService;
@@ -121,7 +123,7 @@ public class CashierWorkspaceForm : Form
 
         _ucSidebar.OnSettingsClicked += (s, e) =>
         {
-            var settingForm = _serviceProvider.GetRequiredService<SettingForm>();
+            using var settingForm = _formFactory.CreateForm<SettingForm>();
             if (settingForm.ShowDialog() == DialogResult.OK)
             {
                 _session.Logout();
@@ -139,7 +141,7 @@ public class CashierWorkspaceForm : Form
                 return;
             }
 
-            var shiftForm = _serviceProvider.GetRequiredService<ShiftReportForm>();
+            using var shiftForm = _formFactory.CreateForm<ShiftReportForm>();
             if (shiftForm.ShowDialog() == DialogResult.OK)
             {
                 _session.Logout();
