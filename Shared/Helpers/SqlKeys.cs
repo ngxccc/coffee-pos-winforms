@@ -15,7 +15,9 @@ public static class SqlKeys
         public const string InsertBillDetail = "Bill.insert_bill_detail.sql";
         public const string GetBillDetails = "Bill.get_bill_details.sql";
         public const string CancelBill = "Bill.cancel_bill.sql";
+        public const string RestoreBill = "Bill.restore_bill.sql";
         public const string GetTodayBillsByUser = "Bill.get_today_bills_by_user.sql";
+        public const string GetBillsByDateRange = "Bill.get_bills_by_date_range.sql";
     }
 
     public static class ShiftReport

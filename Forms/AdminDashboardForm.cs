@@ -97,7 +97,7 @@ public class AdminDashboardForm : Form
         };
 
         pnlSidebar.Controls.Add(CreateMenuButton("Đăng xuất", IconChar.SignOutAlt, BtnLogout_Click));
-        pnlSidebar.Controls.Add(CreateMenuButton("Hóa đơn & Báo cáo", IconChar.FileInvoiceDollar, (s, e) => ShowPlaceholder("TÍNH NĂNG: HÓA ĐƠN")));
+        pnlSidebar.Controls.Add(CreateMenuButton("Hóa đơn & Báo cáo", IconChar.FileInvoiceDollar, (s, e) => NavigateTo<UC_ManageBills>("BILLS")));
         pnlSidebar.Controls.Add(CreateMenuButton("Nhân sự", IconChar.Users, (s, e) => NavigateTo<UC_ManageUsers>("USERS")));
         pnlSidebar.Controls.Add(CreateMenuButton("Danh mục", IconChar.Tags, (s, e) => NavigateTo<UC_ManageCategories>("CATEGORIES")));
         pnlSidebar.Controls.Add(CreateMenuButton("Sản phẩm", IconChar.Coffee, (s, e) => NavigateTo<UC_ManageProducts>("PRODUCTS")));

@@ -22,4 +22,6 @@ public class BillService(IBillRepository billRepo, IUserSession session) : IBill
     }
 
     public Task CancelBillAsync(int billId) => billRepo.CancelBillAsync(billId);
+
+    public Task RestoreBillAsync(int billId) => billRepo.RestoreBillAsync(billId);
 }

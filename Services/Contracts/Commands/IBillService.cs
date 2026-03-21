@@ -6,4 +6,5 @@ public interface IBillService
 {
     Task<int> ProcessFullOrderAsync(CreateBillDto command);
     Task CancelBillAsync(int billId);
+    Task RestoreBillAsync(int billId);
 }

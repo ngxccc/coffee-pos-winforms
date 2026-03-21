@@ -14,4 +14,15 @@ public class BillQueryService(IBillRepository billRepo) : IBillQueryService
         if (billId <= 0) throw new ArgumentException("ID hóa đơn không hợp lệ!");
         return billRepo.GetBillDetailsAsync(billId);
     }
+
+    public Task<List<BillReportDto>> GetBillsByDateRangeAsync(DateOnly fromDate, DateOnly toDate)
+    {
+        if (fromDate > toDate)
+            throw new ArgumentException("Ngày bắt đầu không được lớn hơn ngày kết thúc!");
+
+        var fromDateTime = fromDate.ToDateTime(TimeOnly.MinValue);
+        var toDateExclusive = toDate.AddDays(1).ToDateTime(TimeOnly.MinValue);
+
+        return billRepo.GetBillsByDateRangeAsync(fromDateTime, toDateExclusive);
+    }
 }
