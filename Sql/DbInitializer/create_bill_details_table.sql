@@ -9,6 +9,6 @@ CREATE TABLE IF NOT EXISTS bill_details (
   created_at TIMESTAMP DEFAULT NOW (),
   CONSTRAINT fk_bill_detail_bill FOREIGN KEY (bill_id) REFERENCES bills (id) ON DELETE CASCADE,
   CONSTRAINT fk_bill_detail_product FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE
-  SET NULL,
-    INDEX (bill_id)
+  SET NULL
 );
+CREATE INDEX IF NOT EXISTS idx_bill_details_bill_id ON bill_details (bill_id);
