@@ -1,3 +1,4 @@
+using CoffeePOS.Shared.Helpers;
 using FontAwesome.Sharp;
 
 namespace CoffeePOS.Features.Billing;
@@ -9,6 +10,7 @@ public class UC_BillItem : Panel
     private Label _lblPrice = null!;
     private Label _lblNote = null!;
     private Label _lblName = null!;
+    private IconPictureBox _picFood = null!;
 
     // DATA FIELDS
     private int _quantity;
@@ -25,26 +27,28 @@ public class UC_BillItem : Panel
     public string ItemName { get; private set; }
     public string Note { get; private set; }
     public int Quantity => _quantity;
+    public string? ImageIdentifier { get; private set; }
 
-    public UC_BillItem(int id, string foodName, int count, decimal price, string note = "", Image? foodImage = null)
+    public UC_BillItem(int id, string foodName, int count, decimal price, string note = "", string? imageIdentifier = null)
     {
         ProductId = id;
         ItemName = foodName;
         _quantity = count;
         _unitPrice = price;
         Note = note;
+        ImageIdentifier = imageIdentifier;
 
-        InitializeUI(foodName, note, price, foodImage);
+        InitializeUI(foodName, note, price);
     }
 
-    private void InitializeUI(string foodName, string note, decimal price, Image? foodImage)
+    private void InitializeUI(string foodName, string note, decimal price)
     {
         Size = new Size(400, 90);
         BackColor = Color.White;
         Padding = new Padding(5);
         Margin = new Padding(0, 0, 0, 10);
 
-        var picFood = BuildImagePanel(foodImage);
+        _picFood = BuildImagePanel();
         var pnlQty = BuildQtyPanel();
         var pnlRight = BuildRightActionsPanel(price);
         var pnlInfo = BuildInfoPanel(foodName, note);
@@ -53,17 +57,21 @@ public class UC_BillItem : Panel
         Controls.Add(pnlInfo);
         Controls.Add(pnlRight);
         Controls.Add(pnlQty);
-        Controls.Add(picFood);
+        Controls.Add(_picFood);
 
         BindDoubleClickRecursive(this);
+
+        _ = ImageHelper.LoadImageAsync(_picFood, ImageIdentifier, foodName, ProductId);
     }
 
-    private static PictureBox BuildImagePanel(Image? img)
+    private static IconPictureBox BuildImagePanel()
     {
-        return new PictureBox
+        return new IconPictureBox
         {
-            Image = img,
-            SizeMode = PictureBoxSizeMode.StretchImage,
+            IconChar = IconChar.Spinner,
+            IconColor = Color.Gray,
+            IconSize = 40,
+            SizeMode = PictureBoxSizeMode.CenterImage,
             Size = new Size(90, 90),
             Dock = DockStyle.Left,
             Cursor = Cursors.Hand,
@@ -221,5 +229,18 @@ public class UC_BillItem : Panel
     {
         Note = newNote;
         if (_lblNote != null) _lblNote.Text = string.IsNullOrEmpty(newNote) ? "" : $"{newNote}";
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            // Khi BillItem bị xóa khỏi FlowLayoutPanel, phải tự tay đập nát cái ảnh bên trong
+            if (_picFood != null && _picFood.Image != null)
+            {
+                _picFood.Image.Dispose();
+            }
+        }
+        base.Dispose(disposing);
     }
 }

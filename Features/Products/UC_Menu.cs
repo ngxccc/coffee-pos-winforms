@@ -22,7 +22,7 @@ public class UC_Menu : UserControl
     private List<CategoryOptionDto> _allCategories = [];
 
     // Events
-    public event Action<int, string, decimal>? OnProductSelected;
+    public event Action<int, string, decimal, string>? OnProductSelected;
 
     public UC_Menu(IProductQueryService productQueryService, ICategoryQueryService categoryQueryService)
     {
@@ -163,7 +163,7 @@ public class UC_Menu : UserControl
         {
             var pItem = new UC_ProductItem(p.Id, p.Name, p.Price, p.ImageUrl);
             pItem.OnProductClicked += (s, e) =>
-                OnProductSelected?.Invoke(p.Id, p.Name, p.Price);
+                OnProductSelected?.Invoke(p.Id, p.Name, p.Price, p.ImageUrl);
 
             pItem.LoadImageAsync();
 

@@ -150,12 +150,14 @@ public class UC_Billing : UserControl
             _lblOrderTitle.Text = "Vui lòng chọn bàn";
     }
 
-    public void AddItemToBill(int productId, string name, int qty, decimal price, string note = "")
+    public void AddItemToBill(int productId, string name, int qty, decimal price, string note = "", string? imageIdentifier = null)
     {
         if (_flowBillItemList == null)
             return;
 
         string uniqueKey = $"{productId}_{note}";
+
+        MessageBox.Show(uniqueKey);
 
         if (_billItemsDict.TryGetValue(uniqueKey, out UC_BillItem? existingItem))
         {
@@ -164,7 +166,7 @@ public class UC_Billing : UserControl
             return;
         }
 
-        UC_BillItem billItem = CreateBillItem(productId, name, qty, price, note);
+        UC_BillItem billItem = CreateBillItem(productId, name, qty, price, note, imageIdentifier);
 
         // Add to UI & Data
         _flowBillItemList.Controls.Add(billItem);
@@ -175,17 +177,9 @@ public class UC_Billing : UserControl
 
     // HELPER LOGIC
 
-    private UC_BillItem CreateBillItem(int productId, string name, int qty, decimal price, string note)
+    private UC_BillItem CreateBillItem(int productId, string name, int qty, decimal price, string note, string? imageIdentifier)
     {
-        // Mock image (Sau này thay bằng logic lấy ảnh thật)
-        Bitmap dummyImg = new(100, 100);
-        using (Graphics g = Graphics.FromImage(dummyImg))
-        {
-            g.Clear(Color.Bisque);
-            g.DrawString(name[..1], new Font("Arial", 20), Brushes.Brown, 10, 30);
-        }
-
-        UC_BillItem billItem = new(productId, name, qty, price, note, dummyImg);
+        UC_BillItem billItem = new(productId, name, qty, price, note, imageIdentifier);
 
         // Wiring Events
         billItem.OnNoteEditRequest += BillItem_OnNoteEditRequest;
