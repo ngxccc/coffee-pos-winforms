@@ -10,7 +10,7 @@ VALUES ('Cafe Đen', 25000, 1),
 DO $$
 DECLARE i INT;
 cat_id INT;
-BEGIN FOR i IN 4..1000 LOOP cat_id := floor(random() * 3 + 1)::int;
+BEGIN FOR i IN 4..100 LOOP cat_id := floor(random() * 3 + 1)::int;
 -- Random category 1-4
 INSERT INTO products (name, price, category_id)
 VALUES (
