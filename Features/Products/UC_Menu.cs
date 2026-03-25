@@ -23,7 +23,6 @@ public class UC_Menu : UserControl
 
     // Events
     public event Action<int, string, decimal>? OnProductSelected;
-    public event EventHandler? OnBackClicked;
 
     public UC_Menu(IProductQueryService productQueryService, ICategoryQueryService categoryQueryService)
     {
@@ -72,32 +71,6 @@ public class UC_Menu : UserControl
 
         Controls.Add(_flowProducts);    // Fill
         Controls.Add(_flowCategories);  // Top 2
-        // Controls.Add(pnlHeader);        // Top 1
-    }
-
-    private Panel BuildHeaderPanel()
-    {
-        Panel pnl = new()
-        {
-            Dock = DockStyle.Top,
-            Height = 50,
-            BackColor = Color.White,
-            Padding = new Padding(10)
-        };
-
-        Button btnBack = new()
-        {
-            Text = "Quay lại",
-            Dock = DockStyle.Right,
-            Width = 100,
-            FlatStyle = FlatStyle.Flat,
-            BackColor = Color.FromArgb(230, 230, 230),
-            Cursor = Cursors.Hand
-        };
-        btnBack.Click += (s, e) => OnBackClicked?.Invoke(this, EventArgs.Empty);
-        pnl.Controls.Add(btnBack);
-
-        return pnl;
     }
 
     private async Task LoadDataFromDatabaseAsync()
@@ -108,7 +81,7 @@ public class UC_Menu : UserControl
             _allProducts = await _productQueryService.GetAllProductsAsync();
 
             RenderCategories();
-            FilterProducts(0);
+            FilterProducts(1);
         }
         catch (Exception ex)
         {
