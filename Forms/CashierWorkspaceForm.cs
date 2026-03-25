@@ -193,7 +193,7 @@ public class CashierWorkspaceForm : Form
     {
         _ucMenu.OnProductSelected += (prodId, prodName, price, imageIdentifier) =>
         {
-            _ucBilling.AddItemToBill(prodId, prodName, 1, price, imageIdentifier: imageIdentifier);
+            _ucBilling.AddItemToBill(prodId, prodName, 1, price, imageIdentifier);
         };
     }
 
