@@ -150,23 +150,21 @@ public class UC_Billing : UserControl
             _lblOrderTitle.Text = "Vui lòng chọn bàn";
     }
 
-    public void AddItemToBill(int productId, string name, int qty, decimal price, string note = "", string? imageIdentifier = null)
+    public void AddItemToBill(int productId, string name, int qty, decimal price, string? imageIdentifier = null)
     {
         if (_flowBillItemList == null)
             return;
 
-        string uniqueKey = $"{productId}_{note}";
+        string uniqueKey = $"{productId}";
 
-        MessageBox.Show(uniqueKey);
-
-        if (_billItemsDict.TryGetValue(uniqueKey, out UC_BillItem? existingItem))
+        if (_billItemsDict.TryGetValue(productId.ToString(), out UC_BillItem? existingItem))
         {
             existingItem.UpdateQty(qty);
             _flowBillItemList.ScrollControlIntoView(existingItem);
             return;
         }
 
-        UC_BillItem billItem = CreateBillItem(productId, name, qty, price, note, imageIdentifier);
+        UC_BillItem billItem = CreateBillItem(productId, name, qty, price, imageIdentifier);
 
         // Add to UI & Data
         _flowBillItemList.Controls.Add(billItem);
@@ -177,9 +175,9 @@ public class UC_Billing : UserControl
 
     // HELPER LOGIC
 
-    private UC_BillItem CreateBillItem(int productId, string name, int qty, decimal price, string note, string? imageIdentifier)
+    private UC_BillItem CreateBillItem(int productId, string name, int qty, decimal price, string? imageIdentifier)
     {
-        UC_BillItem billItem = new(productId, name, qty, price, note, imageIdentifier);
+        UC_BillItem billItem = new(productId, name, qty, price, imageIdentifier: imageIdentifier);
 
         // Wiring Events
         billItem.OnNoteEditRequest += BillItem_OnNoteEditRequest;
