@@ -187,6 +187,47 @@ public class CashierWorkspaceForm : Form
                 }
             }
         };
+
+        _ucBillHistory.OnDetailsRequested += async (s, bill) => await ShowBillHistoryDetailsAsync(bill);
+    }
+
+    private async Task ShowBillHistoryDetailsAsync(BillHistoryDto historyBill)
+    {
+        try
+        {
+            Cursor.Current = Cursors.WaitCursor;
+
+            var details = await _billQueryService.GetBillDetailsAsync(historyBill.Id);
+            if (details.Count == 0)
+            {
+                MessageBoxHelper.Warning($"Hóa đơn #{historyBill.Id} chưa có chi tiết món.", owner: this);
+                return;
+            }
+
+            var billDate = DateOnly.FromDateTime(historyBill.CreatedAt);
+            var reports = await _billQueryService.GetBillsByDateRangeAsync(billDate, billDate);
+
+            var reportBill = reports.FirstOrDefault(x => x.Id == historyBill.Id)
+                ?? new BillReportDto(
+                    historyBill.Id,
+                    historyBill.BuzzerNumber,
+                    historyBill.TotalAmount,
+                    historyBill.CreatedAt,
+                    _session.CurrentUser?.FullName ?? "N/A",
+                    false,
+                    null);
+
+            using var detailForm = new BillDetailForm(reportBill, details);
+            detailForm.ShowDialog(this);
+        }
+        catch (Exception ex)
+        {
+            MessageBoxHelper.Error($"Lỗi tải chi tiết hóa đơn: {ex.Message}", owner: this);
+        }
+        finally
+        {
+            Cursor.Current = Cursors.Default;
+        }
     }
 
     private void SetupMenu()

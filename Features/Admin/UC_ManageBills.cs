@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Text;
 using CoffeePOS.Features.Admin.Controls;
+using CoffeePOS.Forms;
 using CoffeePOS.Services.Contracts.Commands;
 using CoffeePOS.Services.Contracts.Queries;
 using CoffeePOS.Shared.Dtos;
@@ -56,6 +57,7 @@ public class UC_ManageBills : UserControl
         };
         _dgvBills.ApplyStandardAdminStyle();
         _dgvBills.SelectionChanged += (_, _) => RefreshCancelButtonState();
+        _dgvBills.CellDoubleClick += DgvBills_CellDoubleClick;
 
         _billsGrid = new StatefulSortableGrid<BillReportDto>(_dgvBills);
         _billsGrid.AttachSortHandler();
@@ -127,6 +129,49 @@ public class UC_ManageBills : UserControl
         }
 
         return _dgvBills.SelectedRows[0].DataBoundItem as BillReportDto;
+    }
+
+    private async void DgvBills_CellDoubleClick(object? sender, DataGridViewCellEventArgs e)
+    {
+        if (e.RowIndex < 0)
+        {
+            return;
+        }
+
+        if (_dgvBills.Rows[e.RowIndex].DataBoundItem is not BillReportDto selectedBill)
+        {
+            return;
+        }
+
+        await ShowBillDetailsAsync(selectedBill);
+    }
+
+    private async Task ShowBillDetailsAsync(BillReportDto selectedBill)
+    {
+        try
+        {
+            UseWaitCursor = true;
+            _dgvBills.Enabled = false;
+
+            var details = await _billQueryService.GetBillDetailsAsync(selectedBill.Id);
+            if (details.Count == 0)
+            {
+                MessageBoxHelper.Warning($"Hóa đơn #{selectedBill.Id} chưa có chi tiết món.", owner: this);
+                return;
+            }
+
+            using var detailForm = new BillDetailForm(selectedBill, details);
+            detailForm.ShowDialog(this);
+        }
+        catch (Exception ex)
+        {
+            MessageBoxHelper.Error($"Lỗi tải chi tiết hóa đơn: {ex.Message}", owner: this);
+        }
+        finally
+        {
+            _dgvBills.Enabled = true;
+            UseWaitCursor = false;
+        }
     }
 
     private async void ToggleSelectedBillStatusAsync(object? sender, EventArgs e)

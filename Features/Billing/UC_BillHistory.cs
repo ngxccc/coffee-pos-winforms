@@ -8,6 +8,7 @@ public class UC_BillHistory : UserControl
     private DataGridView _dgvBills = null!;
 
     public event EventHandler<BillHistoryDto>? OnReprintClicked;
+    public event EventHandler<BillHistoryDto>? OnDetailsRequested;
 
     public UC_BillHistory()
     {
@@ -36,6 +37,7 @@ public class UC_BillHistory : UserControl
         };
         _dgvBills.ApplyStandardAdminStyle();
         _dgvBills.CellClick += DgvBills_CellClick;
+        _dgvBills.CellDoubleClick += DgvBills_CellDoubleClick;
 
         Controls.Add(_dgvBills);
         Controls.Add(lblTitle);
@@ -71,6 +73,24 @@ public class UC_BillHistory : UserControl
                 var selectedBill = (BillHistoryDto)_dgvBills.Rows[e.RowIndex].DataBoundItem;
                 OnReprintClicked?.Invoke(this, selectedBill);
             }
+        }
+    }
+
+    private void DgvBills_CellDoubleClick(object? sender, DataGridViewCellEventArgs e)
+    {
+        if (e.RowIndex < 0)
+        {
+            return;
+        }
+
+        if (e.ColumnIndex >= 0 && _dgvBills.Columns[e.ColumnIndex].Name == "ReprintCol")
+        {
+            return;
+        }
+
+        if (_dgvBills.Rows[e.RowIndex].DataBoundItem is BillHistoryDto selectedBill)
+        {
+            OnDetailsRequested?.Invoke(this, selectedBill);
         }
     }
 }
