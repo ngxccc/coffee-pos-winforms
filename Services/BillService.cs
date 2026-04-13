@@ -21,7 +21,14 @@ public class BillService(IBillRepository billRepo, IUserSession session) : IBill
         return billRepo.ProcessFullOrderAsync(command);
     }
 
-    public Task CancelBillAsync(int billId) => billRepo.CancelBillAsync(billId);
+    public Task CancelBillAsync(int billId, string reason)
+    {
+        // WHY: Staff must provide a reason to prevent internal theft or unverified voids
+        if (string.IsNullOrWhiteSpace(reason))
+            throw new ArgumentException("Bắt buộc nhập lý do hủy hóa đơn!");
+
+        return billRepo.CancelBillAsync(billId, reason);
+    }
 
     public Task RestoreBillAsync(int billId) => billRepo.RestoreBillAsync(billId);
 }

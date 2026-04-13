@@ -1,5 +1,6 @@
 UPDATE bills
 SET is_deleted = false,
+  cancel_reason = NULL,
   deleted_at = NULL,
   updated_at = NOW()
 WHERE id = @id

@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Globalization;
 using System.Text;
+using Microsoft.VisualBasic;
 using CoffeePOS.Features.Admin.Controls;
 using CoffeePOS.Forms;
 using CoffeePOS.Services.Contracts.Commands;
@@ -204,7 +205,18 @@ public class UC_ManageBills : UserControl
             }
             else
             {
-                await _billService.CancelBillAsync(selectedBill.Id);
+                string reason = Interaction.InputBox(
+                    $"Nhập lý do hủy hóa đơn #{selectedBill.Id}:",
+                    "Lý do hủy hóa đơn",
+                    "");
+
+                if (string.IsNullOrWhiteSpace(reason))
+                {
+                    MessageBoxHelper.Warning("Bắt buộc nhập lý do hủy hóa đơn.", owner: this);
+                    return;
+                }
+
+                await _billService.CancelBillAsync(selectedBill.Id, reason.Trim());
                 MessageBoxHelper.Info($"Đã hủy hóa đơn #{selectedBill.Id}.", owner: this);
             }
 

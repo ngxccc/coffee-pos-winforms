@@ -81,10 +81,11 @@ public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
         return list;
     }
 
-    public async Task CancelBillAsync(int billId)
+    public async Task CancelBillAsync(int billId, string reason)
     {
         using var conn = await dataSource.OpenConnectionAsync();
         using var cmd = new NpgsqlCommand(SqlCancelBill, conn);
+        cmd.Parameters.AddWithValue("reason", reason);
         cmd.Parameters.AddWithValue("id", billId);
         await cmd.ExecuteNonQueryAsync();
     }
