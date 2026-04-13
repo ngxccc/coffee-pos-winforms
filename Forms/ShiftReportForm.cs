@@ -35,7 +35,12 @@ public class ShiftReportForm : Form
         _pdfQueue = pdfQueue;
 
         InitializeUI();
-        LoadDataAsync();
+    }
+
+    protected override async void OnLoad(EventArgs e)
+    {
+        base.OnLoad(e);
+        await LoadDataAsync();
     }
 
     private void InitializeUI()
@@ -139,7 +144,7 @@ public class ShiftReportForm : Form
         Margin = new Padding(0, 5, 0, 5)
     };
 
-    private async void LoadDataAsync()
+    private async Task LoadDataAsync()
     {
         try
         {
@@ -156,6 +161,10 @@ public class ShiftReportForm : Form
         {
             MessageBoxHelper.Error($"Lỗi tải dữ liệu chốt ca: {ex.Message}", owner: this);
             Close();
+        }
+        finally
+        {
+            btnConfirm.Enabled = true;
         }
     }
 
