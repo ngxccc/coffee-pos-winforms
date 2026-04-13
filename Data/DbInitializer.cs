@@ -5,6 +5,7 @@ namespace CoffeePOS.Data;
 
 public static class DbInitializer
 {
+    private static readonly string SqlCreateEnums = SqlFileLoader.Load(SqlKeys.DbInitializer.CreateEnums);
     private static readonly string SqlCreateUsersTable = SqlFileLoader.Load(SqlKeys.DbInitializer.CreateUsersTable);
     private static readonly string SqlCreateCategoriesTable = SqlFileLoader.Load(SqlKeys.DbInitializer.CreateCategoriesTable);
     private static readonly string SqlCreateProductsTable = SqlFileLoader.Load(SqlKeys.DbInitializer.CreateProductsTable);
@@ -22,6 +23,7 @@ public static class DbInitializer
         using var conn = new NpgsqlConnection(connStr);
         conn.Open();
 
+        ExecuteSql(conn, SqlCreateEnums);
         ExecuteSql(conn, SqlCreateUsersTable);
         ExecuteSql(conn, SqlCreateCategoriesTable);
         ExecuteSql(conn, SqlCreateProductsTable);
@@ -49,13 +51,13 @@ public static class DbInitializer
         if (countAdmin == 0)
         {
             string hash = BCrypt.Net.BCrypt.HashPassword("admin123", workFactor: 11);
-            InsertSeedUser(conn, "admin", hash, "Administrator", 0);
+            InsertSeedUser(conn, "admin", hash, "Administrator", "admin");
         }
 
         if (countEmployee == 0)
         {
             string hash = BCrypt.Net.BCrypt.HashPassword("123123", workFactor: 11);
-            InsertSeedUser(conn, "staff", hash, "Staff", 1);
+            InsertSeedUser(conn, "staff", hash, "Staff", "cashier");
         }
     }
 
@@ -66,7 +68,7 @@ public static class DbInitializer
         return (long)cmd.ExecuteScalar()!;
     }
 
-    private static void InsertSeedUser(NpgsqlConnection conn, string username, string hash, string fullName, int role)
+    private static void InsertSeedUser(NpgsqlConnection conn, string username, string hash, string fullName, string role)
     {
         using var cmd = new NpgsqlCommand(SqlInsertSeedUser, conn);
         cmd.Parameters.AddWithValue("username", username);

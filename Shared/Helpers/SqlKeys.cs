@@ -69,6 +69,7 @@ public static class SqlKeys
 
     public static class DbInitializer
     {
+        public const string CreateEnums = "DbInitializer.create_enums.sql";
         public const string CreateUsersTable = "DbInitializer.create_users_table.sql";
         public const string CreateCategoriesTable = "DbInitializer.create_categories_table.sql";
         public const string CreateProductsTable = "DbInitializer.create_products_table.sql";
