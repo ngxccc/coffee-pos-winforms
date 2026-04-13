@@ -154,6 +154,28 @@ public class CashierWorkspaceForm : Form
     private void SetupBilling()
     {
         _ucBilling.OnPayClicked += async (s, e) => await ProcessPaymentAsync();
+        _ucBilling.OnEditCartItem += async (s, item) => await HandleEditCartItemAsync(item);
+    }
+
+    private async Task HandleEditCartItemAsync(CartItemDto cartItem)
+    {
+        var productQueryService = _serviceProvider.GetRequiredService<IProductQueryService>();
+        var product = await productQueryService.GetProductByIdAsync(cartItem.ProductId);
+
+        if (product == null)
+        {
+            MessageBoxHelper.Error("Không tìm thấy thông tin sản phẩm!", owner: this);
+            return;
+        }
+
+        // Open ProductCustomizationForm in edit mode
+        using var customForm = new ProductCustomizationForm(cartItem, product, productQueryService);
+        if (customForm.ShowDialog(this) == DialogResult.OK)
+        {
+            var updatedItem = customForm.GetFinalCartItem();
+            // TODO: Update cart with updatedItem
+            // For now, this is a placeholder
+        }
     }
 
     private void SetupHistory()
@@ -232,9 +254,24 @@ public class CashierWorkspaceForm : Form
 
     private void SetupMenu()
     {
-        _ucMenu.OnProductSelected += (prodId, prodName, price, imageIdentifier) =>
+        _ucMenu.OnProductSelected += async (prodId, prodName, price, imageIdentifier) =>
         {
-            _ucBilling.AddItemToBill(prodId, prodName, 1, price, imageIdentifier);
+            var productQueryService = _serviceProvider.GetRequiredService<IProductQueryService>();
+            var product = await productQueryService.GetProductByIdAsync(prodId);
+
+            if (product == null)
+            {
+                MessageBoxHelper.Error("Không tìm thấy thông tin sản phẩm!", owner: this);
+                return;
+            }
+
+            // Open ProductCustomizationForm
+            using var customForm = new ProductCustomizationForm(product, productQueryService);
+            if (customForm.ShowDialog(this) == DialogResult.OK)
+            {
+                var cartItem = customForm.GetFinalCartItem();
+                _ucBilling.AddCustomizedItemToBill(cartItem);
+            }
         };
     }
 

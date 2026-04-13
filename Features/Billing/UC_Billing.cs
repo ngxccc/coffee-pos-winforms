@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using CoffeePOS.Shared.Dtos;
 using Microsoft.VisualBasic;
 using ReaLTaiizor.Controls;
@@ -16,10 +17,12 @@ public class UC_Billing : UserControl
     private decimal _grandTotal = 0;
     public decimal GrandTotal => _grandTotal;
     private readonly Dictionary<string, UC_BillItem> _billItemsDict = [];
-    public bool HasUnpaidItems => _billItemsDict.Count > 0;
+    private readonly BindingList<CartItemDto> _cartItems = [];
+    public bool HasUnpaidItems => _billItemsDict.Count > 0 || _cartItems.Count > 0;
 
     // EVENTS
     public event EventHandler? OnPayClicked;
+    public event EventHandler<CartItemDto>? OnEditCartItem;
 
     public UC_Billing()
     {
@@ -143,6 +146,7 @@ public class UC_Billing : UserControl
 
         _flowBillItemList.Controls.Clear();
         _billItemsDict.Clear();
+        _cartItems.Clear();
         _grandTotal = 0;
         if (_lblTotalPrice != null)
             _lblTotalPrice.Text = "0 đ";
@@ -171,6 +175,43 @@ public class UC_Billing : UserControl
         _billItemsDict.Add(uniqueKey, billItem);
 
         UpdateTotal(qty * price);
+    }
+
+    // PUBLIC METHODS - New (CartItemDto-based)
+
+    public void AddCustomizedItemToBill(CartItemDto cartItem)
+    {
+        if (_flowBillItemList == null)
+            return;
+
+        string uniqueKey = $"{cartItem.ProductId}_{string.Join(",", cartItem.Toppings.Select(t => t.ToppingId))}";
+
+        // Create a UC_BillItem with the customized display name
+        UC_BillItem billItem = CreateBillItem(
+            cartItem.ProductId,
+            cartItem.DisplayName,
+            cartItem.Quantity,
+            cartItem.BasePrice,
+            ""
+        );
+
+        // Link the CartItemDto to the UC_BillItem for edit mode
+        billItem.LinkedCartItem = cartItem;
+        billItem.OnEditItemRequest += async (s, item) => await HandleEditCartItemAsync(item, cartItem);
+
+        _flowBillItemList.Controls.Add(billItem);
+        _billItemsDict.Add(uniqueKey, billItem);
+
+        // Also add to CartItemDto collection for later retrieval
+        _cartItems.Add(cartItem);
+
+        UpdateTotal(cartItem.TotalLinePrice);
+    }
+
+    private async Task HandleEditCartItemAsync(CartItemDto cartItem, CartItemDto linkedItem)
+    {
+        // This will be implemented in the form integration
+        OnEditCartItem?.Invoke(this, cartItem);
     }
 
     // HELPER LOGIC

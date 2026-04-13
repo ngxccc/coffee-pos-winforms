@@ -62,6 +62,11 @@ public static class SqlKeys
         public const string Restore = "Category.restore.sql";
     }
 
+    public static class Topping
+    {
+        public const string Get = "Topping.get.sql";
+    }
+
     public static class DbInitializer
     {
         public const string CreateUsersTable = "DbInitializer.create_users_table.sql";

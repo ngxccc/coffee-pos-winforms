@@ -76,6 +76,7 @@ static class Program
                 services.AddSingleton<IUserSession, UserSession>();
                 services.AddSingleton<IFormFactory, FormFactory>();
                 services.AddSingleton<PdfPrintQueue>();
+                services.AddMemoryCache();
 
                 services.AddHostedService<PdfPrintWorker>();
                 services.AddHostedService<TrashCleanupWorker>();

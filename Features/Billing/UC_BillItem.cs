@@ -1,3 +1,4 @@
+using CoffeePOS.Shared.Dtos;
 using CoffeePOS.Shared.Helpers;
 using FontAwesome.Sharp;
 
@@ -20,6 +21,7 @@ public class UC_BillItem : Panel
     public event EventHandler<decimal>? OnAmountChanged;
     public event EventHandler<UC_BillItem>? OnDeleteRequest;
     public event EventHandler<string>? OnNoteEditRequest;
+    public event EventHandler<CartItemDto>? OnEditItemRequest;
 
     // PROPERTIES
     public decimal TotalValue => _quantity * _unitPrice;
@@ -28,6 +30,7 @@ public class UC_BillItem : Panel
     public string Note { get; private set; }
     public int Quantity => _quantity;
     public string? ImageIdentifier { get; private set; }
+    public CartItemDto? LinkedCartItem { get; set; }
 
     public UC_BillItem(int id, string foodName, int count, decimal price, string note = "", string? imageIdentifier = null)
     {
@@ -204,7 +207,19 @@ public class UC_BillItem : Panel
 
         if (control is not Button && control is not IconButton)
         {
-            control.DoubleClick += (s, e) => OnNoteEditRequest?.Invoke(this, Note);
+            control.DoubleClick += (s, e) =>
+            {
+                // If this item has a linked CartItemDto, trigger edit mode
+                if (LinkedCartItem != null)
+                {
+                    OnEditItemRequest?.Invoke(this, LinkedCartItem);
+                }
+                else
+                {
+                    // Fall back to note edit for legacy items
+                    OnNoteEditRequest?.Invoke(this, Note);
+                }
+            };
         }
 
         foreach (Control child in control.Controls)
