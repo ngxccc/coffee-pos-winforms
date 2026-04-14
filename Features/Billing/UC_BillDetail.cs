@@ -1,14 +1,15 @@
+using CoffeePOS.Forms.Core;
 using CoffeePOS.Shared.Dtos;
 using CoffeePOS.Shared.Helpers;
 
-namespace CoffeePOS.Forms;
+namespace CoffeePOS.Features.Billing;
 
-public class BillDetailForm : Form
+public class UC_BillDetail : UserControl, IValidatableComponent<bool>
 {
     private readonly BillReportDto _bill;
     private readonly IReadOnlyList<BillDetailDto> _items;
 
-    public BillDetailForm(BillReportDto bill, IReadOnlyList<BillDetailDto> items)
+    public UC_BillDetail(BillReportDto bill, IReadOnlyList<BillDetailDto> items)
     {
         _bill = bill;
         _items = items;
@@ -18,12 +19,7 @@ public class BillDetailForm : Form
 
     private void InitializeUI()
     {
-        Text = $"Chi tiết hóa đơn #{_bill.Id}";
-        Size = new Size(900, 620);
-        StartPosition = FormStartPosition.CenterParent;
-        FormBorderStyle = FormBorderStyle.FixedDialog;
-        MaximizeBox = false;
-        MinimizeBox = false;
+        Dock = DockStyle.Fill;
         BackColor = Color.White;
 
         var root = new TableLayoutPanel
@@ -37,16 +33,16 @@ public class BillDetailForm : Form
         root.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
-        var header = CreateHeaderPanel();
-        var grid = CreateItemsGrid();
-        var footer = CreateFooterPanel();
-
-        root.Controls.Add(header, 0, 0);
-        root.Controls.Add(grid, 0, 1);
-        root.Controls.Add(footer, 0, 2);
+        root.Controls.Add(CreateHeaderPanel(), 0, 0);
+        root.Controls.Add(CreateItemsGrid(), 0, 1);
+        root.Controls.Add(CreateFooterPanel(), 0, 2);
 
         Controls.Add(root);
     }
+
+    public bool ValidateInput() => true;
+
+    public bool GetPayload() => true;
 
     private Control CreateHeaderPanel()
     {
@@ -60,13 +56,13 @@ public class BillDetailForm : Form
         var title = new Label
         {
             AutoSize = true,
-            Text = $"HÓA ĐƠN #{_bill.Id}",
+            Text = $"HOÁ ĐƠN #{_bill.Id}",
             Font = new Font("Segoe UI", 16, FontStyle.Bold),
             ForeColor = Color.FromArgb(31, 30, 68),
             Location = new Point(0, 0)
         };
 
-        string status = _bill.IsCanceled ? "Đã hủy" : "Hợp lệ";
+        string status = _bill.IsCanceled ? "Đã huỷ" : "Hợp lệ";
         string canceledAt = _bill.CanceledAt.HasValue
             ? _bill.CanceledAt.Value.ToString("dd/MM/yyyy HH:mm:ss")
             : "-";
@@ -81,12 +77,11 @@ public class BillDetailForm : Form
                 $"Nhân viên tạo: {_bill.CreatedByName}\n" +
                 $"Thời gian tạo: {_bill.CreatedAt:dd/MM/yyyy HH:mm:ss}\n" +
                 $"Trạng thái: {status}\n" +
-                $"Thời gian hủy: {canceledAt}"
+                $"Thời gian huỷ: {canceledAt}"
         };
 
         panel.Controls.Add(title);
         panel.Controls.Add(details);
-
         return panel;
     }
 
@@ -100,23 +95,9 @@ public class BillDetailForm : Form
         dgv.ApplyStandardAdminStyle();
 
         dgv.Columns.Add(CreateTextColumn(nameof(BillDetailRowDto.ProductName), "Tên món", 42));
-        dgv.Columns.Add(CreateTextColumn(
-            nameof(BillDetailRowDto.Quantity),
-            "SL",
-            10,
-            alignment: DataGridViewContentAlignment.MiddleCenter));
-        dgv.Columns.Add(CreateTextColumn(
-            nameof(BillDetailRowDto.Price),
-            "Đơn giá",
-            18,
-            format: "N0",
-            alignment: DataGridViewContentAlignment.MiddleRight));
-        dgv.Columns.Add(CreateTextColumn(
-            nameof(BillDetailRowDto.LineTotal),
-            "Thành tiền",
-            20,
-            format: "N0",
-            alignment: DataGridViewContentAlignment.MiddleRight));
+        dgv.Columns.Add(CreateTextColumn(nameof(BillDetailRowDto.Quantity), "SL", 10, alignment: DataGridViewContentAlignment.MiddleCenter));
+        dgv.Columns.Add(CreateTextColumn(nameof(BillDetailRowDto.Price), "Đơn giá", 18, format: "N0", alignment: DataGridViewContentAlignment.MiddleRight));
+        dgv.Columns.Add(CreateTextColumn(nameof(BillDetailRowDto.LineTotal), "Thành tiền", 20, format: "N0", alignment: DataGridViewContentAlignment.MiddleRight));
         dgv.Columns.Add(CreateTextColumn(nameof(BillDetailRowDto.Note), "Ghi chú", 25));
 
         var rows = _items
@@ -129,16 +110,10 @@ public class BillDetailForm : Form
             .ToList();
 
         dgv.DataSource = rows;
-
         return dgv;
     }
 
-    private static DataGridViewTextBoxColumn CreateTextColumn(
-        string propertyName,
-        string headerText,
-        float fillWeight,
-        string? format = null,
-        DataGridViewContentAlignment? alignment = null)
+    private static DataGridViewTextBoxColumn CreateTextColumn(string propertyName, string headerText, float fillWeight, string? format = null, DataGridViewContentAlignment? alignment = null)
     {
         var column = new DataGridViewTextBoxColumn
         {
@@ -177,31 +152,14 @@ public class BillDetailForm : Form
         var total = new Label
         {
             AutoSize = true,
-            Text = $"Tổng tiền hóa đơn: {_bill.TotalAmount:N0} đ",
+            Text = $"Tổng tiền hoá đơn: {_bill.TotalAmount:N0} d",
             Font = new Font("Segoe UI", 12, FontStyle.Bold),
             ForeColor = Color.FromArgb(39, 174, 96),
             Dock = DockStyle.Left,
             TextAlign = ContentAlignment.MiddleLeft
         };
 
-        var btnClose = new Button
-        {
-            Text = "Đóng",
-            Width = 120,
-            Height = 36,
-            Dock = DockStyle.Right,
-            BackColor = Color.FromArgb(31, 30, 68),
-            ForeColor = Color.White,
-            Font = new Font("Segoe UI", 10, FontStyle.Bold),
-            FlatStyle = FlatStyle.Flat,
-            Cursor = Cursors.Hand
-        };
-        btnClose.FlatAppearance.BorderSize = 0;
-        btnClose.Click += (_, _) => Close();
-
-        panel.Controls.Add(btnClose);
         panel.Controls.Add(total);
-
         return panel;
     }
 }

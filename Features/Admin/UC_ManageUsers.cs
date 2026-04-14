@@ -13,7 +13,6 @@ public class UC_ManageUsers : UserControl
     private readonly IUserService _userService;
     private readonly IUserQueryService _userQueryService;
     private readonly IUserSession _session;
-    private readonly IFormFactory _formFactory;
 
     private UC_UsersHeaderToolbar _toolbar = null!;
     private DataGridView _dgvUsers = null!;
@@ -22,12 +21,11 @@ public class UC_ManageUsers : UserControl
     private List<UserGridDto> _allUsers = [];
     private List<UserGridDto> _filteredUsers = [];
 
-    public UC_ManageUsers(IUserService userService, IUserQueryService userQueryService, IUserSession session, IFormFactory formFactory)
+    public UC_ManageUsers(IUserService userService, IUserQueryService userQueryService, IUserSession session)
     {
         _userService = userService;
         _userQueryService = userQueryService;
         _session = session;
-        _formFactory = formFactory;
 
         InitializeUI();
         _ = LoadDataAsync();

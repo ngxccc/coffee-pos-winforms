@@ -1,6 +1,5 @@
-using CoffeePOS.Core;
 using CoffeePOS.Features.Admin.Controls;
-using CoffeePOS.Forms;
+using CoffeePOS.Forms.Core;
 using CoffeePOS.Services.Contracts.Commands;
 using CoffeePOS.Services.Contracts.Queries;
 using CoffeePOS.Shared.Dtos;
@@ -12,7 +11,6 @@ public class UC_ManageCategories : UserControl
 {
     private readonly ICategoryService _categoryService;
     private readonly ICategoryQueryService _categoryQueryService;
-    private readonly IFormFactory _formFactory;
 
     private UC_CategoriesHeaderToolbar _toolbar = null!;
     private DataGridView _dgvCategories = null!;
@@ -21,11 +19,10 @@ public class UC_ManageCategories : UserControl
     private List<CategoryGridDto> _allCategories = [];
     private List<CategoryGridDto> _filteredCategories = [];
 
-    public UC_ManageCategories(ICategoryService categoryService, ICategoryQueryService categoryQueryService, IFormFactory formFactory)
+    public UC_ManageCategories(ICategoryService categoryService, ICategoryQueryService categoryQueryService)
     {
         _categoryService = categoryService;
         _categoryQueryService = categoryQueryService;
-        _formFactory = formFactory;
         InitializeUI();
         _ = LoadDataAsync();
     }
@@ -83,8 +80,24 @@ public class UC_ManageCategories : UserControl
 
     private async void AddCategoryAsync(object? s, EventArgs e)
     {
-        using var form = _formFactory.CreateForm<AddCategoryForm>();
-        if (form.ShowDialog(this) == DialogResult.OK) await LoadDataAsync();
+        var uiFields = new UC_CategoryFields();
+        using var shell = new DynamicModalShell<CategoryPayload>("THÊM DANH MỤC MỚI", uiFields, new Size(420, 220));
+
+        if (shell.ShowDialog(this) != DialogResult.OK)
+        {
+            return;
+        }
+
+        try
+        {
+            var payload = shell.ExtractData();
+            await _categoryService.AddCategoryAsync(new UpsertCategoryDto(0, payload.Name));
+            await LoadDataAsync();
+        }
+        catch (Exception ex)
+        {
+            MessageBoxHelper.Error(ex.Message, owner: this);
+        }
     }
 
     private async void EditCategoryAsync(object? s, EventArgs e)
@@ -94,9 +107,24 @@ public class UC_ManageCategories : UserControl
         var cat = await _categoryQueryService.GetCategoryByIdAsync(id);
         if (cat == null) return;
 
-        using var form = _formFactory.CreateForm<EditCategoryForm>();
-        form.LoadCategory(cat);
-        if (form.ShowDialog(this) == DialogResult.OK) await LoadDataAsync();
+        var uiFields = new UC_CategoryFields(cat.Name);
+        using var shell = new DynamicModalShell<CategoryPayload>($"SỬA DANH MỤC: {cat.Name}", uiFields, new Size(420, 220));
+
+        if (shell.ShowDialog(this) != DialogResult.OK)
+        {
+            return;
+        }
+
+        try
+        {
+            var payload = shell.ExtractData();
+            await _categoryService.UpdateCategoryAsync(new UpsertCategoryDto(cat.Id, payload.Name));
+            await LoadDataAsync();
+        }
+        catch (Exception ex)
+        {
+            MessageBoxHelper.Error(ex.Message, owner: this);
+        }
     }
 
     private async void DeleteCategoryAsync(object? s, EventArgs e)

@@ -1,13 +1,14 @@
 using System.ComponentModel;
 using System.Globalization;
 using System.Text;
-using Microsoft.VisualBasic;
 using CoffeePOS.Features.Admin.Controls;
-using CoffeePOS.Forms;
+using CoffeePOS.Features.Billing;
+using CoffeePOS.Forms.Core;
 using CoffeePOS.Services.Contracts.Commands;
 using CoffeePOS.Services.Contracts.Queries;
 using CoffeePOS.Shared.Dtos;
 using CoffeePOS.Shared.Helpers;
+using Microsoft.VisualBasic;
 
 namespace CoffeePOS.Features.Admin;
 
@@ -161,8 +162,14 @@ public class UC_ManageBills : UserControl
                 return;
             }
 
-            using var detailForm = new BillDetailForm(selectedBill, details);
-            detailForm.ShowDialog(this);
+            var detailControl = new UC_BillDetail(selectedBill, details);
+            using var shell = new DynamicModalShell<bool>(
+                $"CHI TIẾT HOÁ ĐƠN #{selectedBill.Id}",
+                detailControl,
+                new Size(900, 620),
+                showSaveButton: false,
+                cancelButtonText: "ĐÓNG");
+            shell.ShowDialog(this);
         }
         catch (Exception ex)
         {

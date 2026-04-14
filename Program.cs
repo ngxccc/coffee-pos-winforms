@@ -79,7 +79,7 @@ static class Program
                 services.AddSingleton(npgsqlDataSource);
                 services.AddSingleton<AppStateManager>();
                 services.AddSingleton<IUserSession, UserSession>();
-                services.AddSingleton<IFormFactory, FormFactory>();
+                services.AddSingleton<IUiFactory, UiFactory>();
                 services.AddSingleton<PdfPrintQueue>();
                 services.AddMemoryCache();
 

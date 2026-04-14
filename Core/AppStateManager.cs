@@ -5,10 +5,10 @@ namespace CoffeePOS.Core;
 
 public class AppStateManager : ApplicationContext
 {
-    private readonly IFormFactory _formFactory;
+    private readonly IUiFactory _formFactory;
     private readonly IUserSession _session;
 
-    public AppStateManager(IFormFactory formFactory, IUserSession session)
+    public AppStateManager(IUiFactory formFactory, IUserSession session)
     {
         _formFactory = formFactory;
         _session = session;

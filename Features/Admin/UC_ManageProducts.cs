@@ -1,6 +1,5 @@
-using CoffeePOS.Core;
 using CoffeePOS.Features.Admin.Controls;
-using CoffeePOS.Forms;
+using CoffeePOS.Forms.Core;
 using CoffeePOS.Services.Contracts.Commands;
 using CoffeePOS.Services.Contracts.Queries;
 using CoffeePOS.Shared.Dtos;
@@ -12,7 +11,7 @@ public class UC_ManageProducts : UserControl
 {
     private readonly IProductService _productService;
     private readonly IProductQueryService _productQueryService;
-    private readonly IFormFactory _formFactory;
+    private readonly ICategoryQueryService _categoryQueryService;
 
     // UI Controls
     private UC_ProductsHeaderToolbar _toolbar = null!;
@@ -23,11 +22,11 @@ public class UC_ManageProducts : UserControl
     private List<ProductGridDto> _allProducts = [];
     private List<ProductGridDto> _filteredProducts = [];
 
-    public UC_ManageProducts(IProductService productService, IProductQueryService productQueryService, IFormFactory formFactory)
+    public UC_ManageProducts(IProductService productService, IProductQueryService productQueryService, ICategoryQueryService categoryQueryService)
     {
         _productService = productService;
         _productQueryService = productQueryService;
-        _formFactory = formFactory;
+        _categoryQueryService = categoryQueryService;
 
         InitializeUI();
         _ = LoadDataAsync();
@@ -122,8 +121,34 @@ public class UC_ManageProducts : UserControl
 
     private async void AddProductAsync(object? sender, EventArgs e)
     {
-        using var form = _formFactory.CreateForm<AddProductForm>();
-        if (form.ShowDialog(this) == DialogResult.OK) await LoadDataAsync();
+        try
+        {
+            var categories = await _categoryQueryService.GetSelectableCategoriesAsync();
+            var uiFields = new UC_ProductFields(categories);
+            using var shell = new DynamicModalShell<ProductPayload>("THÊM SẢN PHẨM MỚI", uiFields, new Size(500, 560));
+
+            if (shell.ShowDialog(this) != DialogResult.OK)
+            {
+                return;
+            }
+
+            var payload = shell.ExtractData();
+            string finalFileName = SaveSelectedImageAndResolveName(payload.SelectedImagePath, string.Empty);
+
+            await _productService.AddProductAsync(new UpsertProductDto(
+                0,
+                payload.Name,
+                payload.Price,
+                payload.CategoryId,
+                finalFileName));
+
+            MessageBoxHelper.Info("Thêm món mới thành công!", owner: this);
+            await LoadDataAsync();
+        }
+        catch (Exception ex)
+        {
+            MessageBoxHelper.Error($"Lỗi tạo sản phẩm: {ex.Message}", owner: this);
+        }
     }
 
     private async void EditProductAsync(object? sender, EventArgs e)
@@ -140,13 +165,77 @@ public class UC_ManageProducts : UserControl
                 return;
             }
 
-            using var form = _formFactory.CreateForm<EditProductForm>();
-            form.LoadProductDetails(product);
-            if (form.ShowDialog(this) == DialogResult.OK) await LoadDataAsync();
+            var categories = await _categoryQueryService.GetSelectableCategoriesAsync();
+            var uiFields = new UC_ProductFields(categories, product);
+            using var shell = new DynamicModalShell<ProductPayload>($"CẬP NHẬT SẢN PHẨM: {product.Name}", uiFields, new Size(500, 560));
+
+            if (shell.ShowDialog(this) != DialogResult.OK)
+            {
+                return;
+            }
+
+            var payload = shell.ExtractData();
+            string finalFileName = SaveSelectedImageAndResolveName(payload.SelectedImagePath, product.ImageUrl ?? string.Empty);
+
+            await _productService.UpdateProductAsync(new UpsertProductDto(
+                product.Id,
+                payload.Name,
+                payload.Price,
+                payload.CategoryId,
+                finalFileName));
+
+            if (!string.IsNullOrWhiteSpace(payload.SelectedImagePath))
+            {
+                TryDeletePreviousImage(product.ImageUrl);
+            }
+
+            MessageBoxHelper.Info("Cập nhật món thành công!", owner: this);
+            await LoadDataAsync();
         }
         catch (Exception ex)
         {
             MessageBoxHelper.Error($"Lỗi tải dữ liệu sản phẩm: {ex.Message}", "Lỗi", this);
+        }
+    }
+
+    private static string SaveSelectedImageAndResolveName(string selectedImagePath, string currentSavedImage)
+    {
+        if (string.IsNullOrEmpty(selectedImagePath))
+        {
+            return currentSavedImage;
+        }
+
+        var directory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Images", "Products");
+        if (!Directory.Exists(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        var extension = Path.GetExtension(selectedImagePath);
+        string finalFileName = $"prod_{DateTime.Now:yyyyMMdd_HHmmss}{extension}";
+        var destinationPath = Path.Combine(directory, finalFileName);
+
+        File.Copy(selectedImagePath, destinationPath, true);
+        return finalFileName;
+    }
+
+    private static void TryDeletePreviousImage(string? currentSavedImage)
+    {
+        if (string.IsNullOrEmpty(currentSavedImage))
+        {
+            return;
+        }
+
+        try
+        {
+            var oldPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Images", "Products", currentSavedImage);
+            if (File.Exists(oldPath))
+            {
+                File.Delete(oldPath);
+            }
+        }
+        catch
+        {
         }
     }
 

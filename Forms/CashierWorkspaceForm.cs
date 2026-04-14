@@ -2,6 +2,7 @@ using CoffeePOS.Core;
 using CoffeePOS.Features.Billing;
 using CoffeePOS.Features.Products;
 using CoffeePOS.Features.Sidebar;
+using CoffeePOS.Forms.Core;
 using CoffeePOS.Services.Contracts.Commands;
 using CoffeePOS.Services.Contracts.Queries;
 using CoffeePOS.Shared.Dtos;
@@ -16,8 +17,10 @@ public class CashierWorkspaceForm : Form
     // DEPENDENCIES & CONTROLS
     private readonly IBillService _billService;
     private readonly IBillQueryService _billQueryService;
+    private readonly IUserService _userService;
+    private readonly IShiftReportService _shiftReportService;
     private readonly IServiceProvider _serviceProvider;
-    private readonly IFormFactory _formFactory;
+    private readonly IUiFactory _formFactory;
     private readonly IUserSession _session;
     private readonly PdfPrintQueue _pdfQueue;
 
@@ -34,8 +37,15 @@ public class CashierWorkspaceForm : Form
     private bool _isLoggingOut = false;
 
     // CONSTRUCTOR & INIT
-    public CashierWorkspaceForm(IServiceProvider serviceProvider, IUserSession session,
-                    IBillService billService, IBillQueryService billQueryService, PdfPrintQueue pdfQueue, IFormFactory formFactory)
+    public CashierWorkspaceForm(
+        IServiceProvider serviceProvider,
+        IUserSession session,
+        IBillService billService,
+        IBillQueryService billQueryService,
+        IUserService userService,
+        IShiftReportService shiftReportService,
+        PdfPrintQueue pdfQueue,
+        IUiFactory formFactory)
     {
         InitializeUI();
 
@@ -44,6 +54,8 @@ public class CashierWorkspaceForm : Form
         _session = session;
         _billService = billService;
         _billQueryService = billQueryService;
+        _userService = userService;
+        _shiftReportService = shiftReportService;
         _pdfQueue = pdfQueue;
         _ucSidebar = _serviceProvider.GetRequiredService<UC_Sidebar>();
         _ucBilling = _serviceProvider.GetRequiredService<UC_Billing>();
@@ -77,7 +89,7 @@ public class CashierWorkspaceForm : Form
 
     private void InitializeUI()
     {
-        Text = "CoffeePOS - Code Chay Edition";
+        Text = "CoffeePOS";
         AutoScaleMode = AutoScaleMode.Font;
         ClientSize = new Size(1280, 800);
         StartPosition = FormStartPosition.CenterScreen;
@@ -120,19 +132,39 @@ public class CashierWorkspaceForm : Form
             _ucBillHistory.BringToFront();
         };
 
-        _ucSidebar.OnSettingsClicked += (s, e) =>
+        _ucSidebar.OnSettingsClicked += async (s, e) =>
         {
-            using var settingForm = _formFactory.CreateForm<SettingForm>();
-            if (settingForm.ShowDialog() == DialogResult.OK)
+            var settingsControl = _formFactory.CreateControl<UC_Settings>();
+            using var shell = new DynamicModalShell<ChangePasswordPayload>("CÀI ĐẶT TÀI KHOẢN", settingsControl, new Size(450, 550), saveButtonText: "CẬP NHẬT");
+
+            if (shell.ShowDialog(this) != DialogResult.OK)
             {
+                return;
+            }
+
+            try
+            {
+                var payload = shell.ExtractData();
+                await _userService.ChangePasswordAsync(
+                    _session.CurrentUser!.Id,
+                    _session.CurrentUser.Username,
+                    payload.CurrentPassword,
+                    payload.NewPassword,
+                    payload.ConfirmPassword);
+
+                MessageBoxHelper.Info("Đổi mật khẩu thành công!", "Thành công", this);
                 _session.Logout();
                 DialogResult = DialogResult.Abort;
                 _isLoggingOut = true;
                 Close();
             }
+            catch (Exception ex)
+            {
+                MessageBoxHelper.Error($"Lỗi đổi mật khẩu: {ex.Message}", owner: this);
+            }
         };
 
-        _ucSidebar.OnLogoutClicked += (s, e) =>
+        _ucSidebar.OnLogoutClicked += async (s, e) =>
         {
             if (_ucBilling.HasUnpaidItems)
             {
@@ -140,13 +172,54 @@ public class CashierWorkspaceForm : Form
                 return;
             }
 
-            using var shiftForm = _formFactory.CreateForm<ShiftReportForm>();
-            if (shiftForm.ShowDialog() == DialogResult.OK)
+            var shiftControl = _formFactory.CreateControl<UC_ShiftReportFields>();
+            using var shell = new DynamicModalShell<ShiftReportPayload>(
+                "CHỐT CA LÀM VIỆC",
+                shiftControl,
+                new Size(450, 500),
+                saveButtonText: "XÁC NHẬN CHỐT CA");
+
+            if (shell.ShowDialog(this) != DialogResult.OK)
             {
+                return;
+            }
+
+            try
+            {
+                var payload = shell.ExtractData();
+
+                var command = new SaveShiftReportDto(
+                    _session.CurrentUser!.Id,
+                    _session.LoginTime!.Value,
+                    payload.EndTime,
+                    payload.TotalBills,
+                    payload.ExpectedCash,
+                    payload.ActualCash,
+                    payload.Variance,
+                    payload.Note);
+
+                await _shiftReportService.SaveReportAsync(command);
+
+                await _pdfQueue.EnqueueJobAsync(new ShiftReportPrintPayload
+                {
+                    CashierName = _session.CurrentUser!.FullName,
+                    StartTime = _session.LoginTime!.Value,
+                    EndTime = payload.EndTime,
+                    TotalBills = payload.TotalBills,
+                    ExpectedCash = payload.ExpectedCash,
+                    ActualCash = payload.ActualCash,
+                    Variance = payload.Variance,
+                    Note = payload.Note
+                });
+
                 _session.Logout();
                 DialogResult = DialogResult.Abort;
                 _isLoggingOut = true;
                 Close();
+            }
+            catch (Exception ex)
+            {
+                MessageBoxHelper.Error($"Lỗi chốt ca: {ex.Message}", owner: this);
             }
         };
     }
@@ -168,11 +241,16 @@ public class CashierWorkspaceForm : Form
             return;
         }
 
-        // Open ProductCustomizationForm in edit mode
-        using var customForm = new ProductCustomizationForm(cartItem, product, productQueryService);
-        if (customForm.ShowDialog(this) == DialogResult.OK)
+        var customizationControl = new UC_ProductCustomization(cartItem, product, productQueryService);
+        using var shell = new DynamicModalShell<CartItemDto>(
+            $"TUỲ CHỈNH - {product.Name}",
+            customizationControl,
+            new Size(500, 750),
+            saveButtonText: "LƯU");
+
+        if (shell.ShowDialog(this) == DialogResult.OK)
         {
-            var updatedItem = customForm.GetFinalCartItem();
+            var updatedItem = shell.ExtractData();
             _ucBilling.UpdateCustomizedItem(cartItem, updatedItem);
         }
     }
@@ -238,8 +316,14 @@ public class CashierWorkspaceForm : Form
                     false,
                     null);
 
-            using var detailForm = new BillDetailForm(reportBill, details);
-            detailForm.ShowDialog(this);
+            var detailControl = new UC_BillDetail(reportBill, details);
+            using var shell = new DynamicModalShell<bool>(
+                $"CHI TIẾT HOÁ ĐƠN #{reportBill.Id}",
+                detailControl,
+                new Size(900, 620),
+                showSaveButton: false,
+                cancelButtonText: "ĐÓNG");
+            shell.ShowDialog(this);
         }
         catch (Exception ex)
         {
@@ -264,11 +348,16 @@ public class CashierWorkspaceForm : Form
                 return;
             }
 
-            // Open ProductCustomizationForm
-            using var customForm = new ProductCustomizationForm(product, productQueryService);
-            if (customForm.ShowDialog(this) == DialogResult.OK)
+            var customizationControl = new UC_ProductCustomization(product, productQueryService);
+            using var shell = new DynamicModalShell<CartItemDto>(
+                $"TUỲ CHỈNH - {product.Name}",
+                customizationControl,
+                new Size(500, 750),
+                saveButtonText: "LƯU");
+
+            if (shell.ShowDialog(this) == DialogResult.OK)
             {
-                var cartItem = customForm.GetFinalCartItem();
+                var cartItem = shell.ExtractData();
                 _ucBilling.AddCustomizedItemToBill(cartItem);
             }
         };
