@@ -5,6 +5,6 @@ CREATE TABLE IF NOT EXISTS users (
   full_name VARCHAR(100) NOT NULL,
   role user_role DEFAULT 'cashier',
   is_active BOOLEAN DEFAULT TRUE,
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );

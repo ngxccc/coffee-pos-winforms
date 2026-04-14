@@ -8,5 +8,5 @@ VALUES (
     @username,
     @hash,
     @fullName,
-    @role
+    CAST(@role AS user_role)
   );

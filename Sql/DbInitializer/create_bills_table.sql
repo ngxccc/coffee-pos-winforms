@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS bills (
   status bill_status DEFAULT 'pending' NOT NULL,
   cancel_reason VARCHAR(255) NULL,
   is_deleted BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP DEFAULT NOW (),
-  updated_at TIMESTAMP DEFAULT NOW (),
-  deleted_at TIMESTAMP NULL
+  created_at TIMESTAMPTZ DEFAULT NOW (),
+  updated_at TIMESTAMPTZ DEFAULT NOW (),
+  deleted_at TIMESTAMPTZ NULL
 );

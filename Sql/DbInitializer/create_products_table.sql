@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS products (
   price DECIMAL(18, 0) DEFAULT 0,
   image_url VARCHAR(255),
   is_deleted BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW(),
-  deleted_at TIMESTAMP NULL
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  deleted_at TIMESTAMPTZ NULL
 );

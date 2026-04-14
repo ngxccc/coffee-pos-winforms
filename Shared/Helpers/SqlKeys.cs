@@ -77,9 +77,11 @@ public static class SqlKeys
         public const string CreateBillsTable = "DbInitializer.create_bills_table.sql";
         public const string CreateBillsIndexes = "DbInitializer.create_bills_indexes.sql";
         public const string CreateBillDetailsTable = "DbInitializer.create_bill_details_table.sql";
+        public const string CreateToppingsTable = "DbInitializer.create_toppings_table.sql";
+        public const string CreateBillDetailToppingsTable = "DbInitializer.create_bill_detail_toppings_table.sql";
         public const string CreateShiftReportsTable = "DbInitializer.create_shift_reports_table.sql";
         public const string CreateShiftReportsIndexes = "DbInitializer.create_shift_reports_indexes.sql";
-        public const string CountUserByUsername = "DbInitializer.count_user_by_username.sql";
+        public const string CountUserByRole = "DbInitializer.count_user_by_role.sql";
         public const string InsertSeedUser = "DbInitializer.insert_seed_user.sql";
     }
 }

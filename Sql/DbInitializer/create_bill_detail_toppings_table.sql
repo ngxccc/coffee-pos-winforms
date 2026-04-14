@@ -6,5 +6,5 @@ CREATE TABLE IF NOT EXISTS bill_detail_toppings (
     topping_name VARCHAR(100) NOT NULL,
     price DECIMAL(18, 2) NOT NULL,
     quantity INT NOT NULL DEFAULT 1,
-    created_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
