@@ -1,4 +1,5 @@
 using CoffeePOS.Forms;
+using CoffeePOS.Shared.Enums;
 
 namespace CoffeePOS.Core;
 
@@ -28,7 +29,7 @@ public class AppStateManager : ApplicationContext
     private void ShowMainWorkspace()
     {
         Form nextForm;
-        if (_session.CurrentUser!.Role == 0)
+        if (_session.CurrentUser!.Role == UserRole.Admin)
         {
             nextForm = _formFactory.CreateForm<AdminDashboardForm>();
         }

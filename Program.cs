@@ -1,5 +1,6 @@
 using CoffeePOS.Core;
 using CoffeePOS.Data;
+using CoffeePOS.Shared.Enums;
 using CoffeePOS.Shared.Helpers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -69,9 +70,13 @@ static class Program
         Host.CreateDefaultBuilder()
             .ConfigureServices((context, services) =>
             {
-                var dataSource = NpgsqlDataSource.Create(connStr);
+                var dataSourceBuilder = new NpgsqlDataSourceBuilder(connStr);
+                dataSourceBuilder.MapEnum<UserRole>("user_role");
 
-                services.AddSingleton(dataSource);
+                // PERF: Build the actual NpgsqlDataSource that implements IAsyncDisposable and manages Connection Pool
+                var npgsqlDataSource = dataSourceBuilder.Build();
+
+                services.AddSingleton(npgsqlDataSource);
                 services.AddSingleton<AppStateManager>();
                 services.AddSingleton<IUserSession, UserSession>();
                 services.AddSingleton<IFormFactory, FormFactory>();

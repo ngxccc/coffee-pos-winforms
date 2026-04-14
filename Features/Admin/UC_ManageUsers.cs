@@ -1,6 +1,6 @@
 using CoffeePOS.Core;
 using CoffeePOS.Features.Admin.Controls;
-using CoffeePOS.Forms;
+using CoffeePOS.Forms.Core;
 using CoffeePOS.Services.Contracts.Commands;
 using CoffeePOS.Services.Contracts.Queries;
 using CoffeePOS.Shared.Dtos;
@@ -78,25 +78,23 @@ public class UC_ManageUsers : UserControl
 
     private async void AddUserAsync(object? sender, EventArgs e)
     {
-        using var dialog = _formFactory.CreateForm<AddUserForm>();
-        if (dialog.ShowDialog(this) != DialogResult.OK)
-        {
-            return;
-        }
+        var uiFields = new UC_UserAccountFields(null); // null = Add Mode
+        using var shell = new DynamicModalShell<UserAccountPayload>("THÊM NHÂN VIÊN MỚI", uiFields, new Size(420, 480));
+
+        if (shell.ShowDialog(this) != DialogResult.OK) return;
 
         try
         {
-            await _userService.AddUserAsync(dialog.BuildCommand());
+            // WHY: ExtractData now natively returns UserAccountPayload without risky angle-bracket casting.
+            var payload = shell.ExtractData();
+
+            // Map pure UI state to Business DTO
+            var command = new CreateUserDto(payload.Username, payload.FullName, payload.Role, payload.Password, payload.Password);
+
+            await _userService.AddUserAsync(command);
+
             MessageBoxHelper.Info("Thêm nhân viên thành công!", owner: this);
             await LoadDataAsync();
-        }
-        catch (ArgumentException ex)
-        {
-            MessageBoxHelper.Warning(ex.Message, "Lỗi nhập liệu", this);
-        }
-        catch (InvalidOperationException ex)
-        {
-            MessageBoxHelper.Warning(ex.Message, "Cảnh báo", this);
         }
         catch (Exception ex)
         {
@@ -107,38 +105,34 @@ public class UC_ManageUsers : UserControl
     private async void EditUserAsync(object? sender, EventArgs e)
     {
         if (_dgvUsers.SelectedRows.Count == 0) return;
+        if (_dgvUsers.SelectedRows[0].DataBoundItem is not UserGridDto selectedUser) return;
 
-        if (_dgvUsers.SelectedRows[0].DataBoundItem is not UserGridDto selectedUser)
-        {
-            MessageBoxHelper.Warning("Không thể đọc dữ liệu người dùng đã chọn.", "Lỗi", this);
-            return;
-        }
+        var uiFields = new UC_UserAccountFields(selectedUser); // pass data = Edit Mode
+        using var shell = new DynamicModalShell<UserAccountPayload>($"CẬP NHẬT TÀI KHOẢN: {selectedUser.Username}", uiFields, new Size(420, 480));
 
-        using var dialog = _formFactory.CreateForm<EditUserForm>();
-        dialog.LoadUser(selectedUser);
-        if (dialog.ShowDialog(this) != DialogResult.OK)
-        {
-            return;
-        }
+        if (shell.ShowDialog(this) != DialogResult.OK) return;
 
         try
         {
-            await _userService.UpdateUserAccountAsync(_session.CurrentUser!.Id, dialog.BuildCommand());
+            var payload = shell.ExtractData();
+
+            // Map pure UI state to Business DTO
+            var command = new UpdateUserAccountDto(
+                selectedUser.Id,
+                payload.Username,
+                payload.FullName,
+                payload.Role,
+                payload.Password,
+                payload.ConfirmPassword);
+
+            await _userService.UpdateUserAccountAsync(_session.CurrentUser!.Id, command);
 
             MessageBoxHelper.Info($"Đã cập nhật tài khoản '{selectedUser.Username}'.", owner: this);
             await LoadDataAsync();
         }
-        catch (ArgumentException ex)
-        {
-            MessageBoxHelper.Warning(ex.Message, "Lỗi nhập liệu", this);
-        }
-        catch (InvalidOperationException ex)
-        {
-            MessageBoxHelper.Warning(ex.Message, "Cảnh báo", this);
-        }
         catch (Exception ex)
         {
-            MessageBoxHelper.Error($"Lỗi cập nhật tài khoản: {ex.Message}", owner: this);
+            MessageBoxHelper.Error($"Lỗi cập nhật: {ex.Message}", owner: this);
         }
     }
 

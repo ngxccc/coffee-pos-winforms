@@ -1,3 +1,4 @@
+using CoffeePOS.Shared.Enums;
 using CoffeePOS.Shared.Helpers;
 
 namespace CoffeePOS.Forms;
@@ -10,16 +11,14 @@ public abstract class BaseUserAccountForm : BaseCrudForm
     protected readonly TextBox TxtPassword;
     protected readonly TextBox TxtConfirmPassword;
 
-    protected BaseUserAccountForm(
-        string title,
-        Size formSize,
-        string passwordLabel,
-        string saveButtonText,
-        Color saveButtonColor,
-        Point saveButtonLocation,
-        Point cancelButtonLocation)
+    protected readonly Button BtnSave;
+    protected readonly Button BtnCancel;
+
+    // FIXME: Removed excessive parameters. Base class should only enforce structure, not layout specifics.
+    protected BaseUserAccountForm(string title, Size formSize, string passwordLabel)
         : base(title, formSize)
     {
+        // TODO: Replace absolute Points with TableLayoutPanel for DPI awareness in production
         TxtUsername = CreateTextBox(new Point(20, 45), 370);
         TxtFullName = CreateTextBox(new Point(20, 110), 370);
 
@@ -37,11 +36,15 @@ public abstract class BaseUserAccountForm : BaseCrudForm
         TxtPassword = CreatePasswordBox(new Point(20, 240), 370);
         TxtConfirmPassword = CreatePasswordBox(new Point(20, 305), 370);
 
-        var btnSave = CreatePrimaryButton(saveButtonText, saveButtonLocation, new Size(100, 32), saveButtonColor);
-        btnSave.Click += (_, _) => DialogResult = DialogResult.OK;
+        // HACK: Base layout locations. Subclasses can modify these properties if strictly needed.
+        BtnSave = CreatePrimaryButton("LƯU", new Point(20, 370), new Size(100, 32), Color.Blue);
+        BtnCancel = CreateCancelButton(new Point(130, 370));
 
-        var btnCancel = CreateCancelButton(cancelButtonLocation);
-        btnCancel.Click += (_, _) => DialogResult = DialogResult.Cancel;
+        // PERF: Native DialogResult routing. Zero lambda allocation.
+        BtnCancel.DialogResult = DialogResult.Cancel;
+
+        // WHY: Intercept the click to run validation before officially setting DialogResult.OK
+        BtnSave.Click += BtnSave_Click;
 
         Controls.AddRange(
         [
@@ -55,13 +58,24 @@ public abstract class BaseUserAccountForm : BaseCrudForm
             TxtPassword,
             CreateLabel("Xác nhận mật khẩu", new Point(20, 280)),
             TxtConfirmPassword,
-            btnSave,
-            btnCancel
+            BtnSave,
+            BtnCancel
         ]);
 
-        AcceptButton = btnSave;
-        CancelButton = btnCancel;
+        AcceptButton = BtnSave;
+        CancelButton = BtnCancel;
     }
 
-    protected int SelectedRoleValue => CboRole.SelectedValue is int roleValue ? roleValue : 1;
+    protected UserRole SelectedRole => CboRole.SelectedValue is UserRole roleValue ? roleValue : UserRole.Cashier;
+
+    // WHY: Force subclasses to implement their own business rules before allowing the form to close
+    protected abstract bool ValidateInput();
+
+    private void BtnSave_Click(object? sender, EventArgs e)
+    {
+        if (ValidateInput())
+        {
+            DialogResult = DialogResult.OK;
+        }
+    }
 }

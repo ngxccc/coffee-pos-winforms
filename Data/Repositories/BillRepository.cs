@@ -40,7 +40,8 @@ public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
                 batchCommand.Parameters.AddWithValue("p", item.ProductId);
                 batchCommand.Parameters.AddWithValue("n", item.ProductName);
                 batchCommand.Parameters.AddWithValue("q", item.Quantity);
-                batchCommand.Parameters.AddWithValue("price", item.Price);
+                batchCommand.Parameters.AddWithValue("basePrice", item.Price);
+                batchCommand.Parameters.AddWithValue("note", item.Note ?? string.Empty);
 
                 batch.BatchCommands.Add(batchCommand);
             }
@@ -74,7 +75,7 @@ public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
                 reader.GetRequiredInt("product_id"),
                 reader.GetRequiredString("product_name"),
                 reader.GetRequiredInt("quantity"),
-                reader.GetRequiredDecimal("price"),
+                reader.GetRequiredDecimal("base_price"),
                 reader.GetNullableString("note") ?? string.Empty));
         }
 

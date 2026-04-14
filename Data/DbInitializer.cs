@@ -13,9 +13,11 @@ public static class DbInitializer
     private static readonly string SqlCreateBillsTable = SqlFileLoader.Load(SqlKeys.DbInitializer.CreateBillsTable);
     private static readonly string SqlCreateBillsIndexes = SqlFileLoader.Load(SqlKeys.DbInitializer.CreateBillsIndexes);
     private static readonly string SqlCreateBillDetailsTable = SqlFileLoader.Load(SqlKeys.DbInitializer.CreateBillDetailsTable);
+    private static readonly string SqlCreateToppingsTable = SqlFileLoader.Load(SqlKeys.DbInitializer.CreateToppingsTable);
+    private static readonly string SqlCreateBillDetailToppingsTable = SqlFileLoader.Load(SqlKeys.DbInitializer.CreateBillDetailToppingsTable);
     private static readonly string SqlCreateShiftReportsTable = SqlFileLoader.Load(SqlKeys.DbInitializer.CreateShiftReportsTable);
     private static readonly string SqlCreateShiftReportsIndexes = SqlFileLoader.Load(SqlKeys.DbInitializer.CreateShiftReportsIndexes);
-    private static readonly string SqlCountUserByUsername = SqlFileLoader.Load(SqlKeys.DbInitializer.CountUserByUsername);
+    private static readonly string SqlCountUserByRole = SqlFileLoader.Load(SqlKeys.DbInitializer.CountUserByRole);
     private static readonly string SqlInsertSeedUser = SqlFileLoader.Load(SqlKeys.DbInitializer.InsertSeedUser);
 
     public static void Initialize(string connStr)
@@ -31,6 +33,8 @@ public static class DbInitializer
         ExecuteSql(conn, SqlCreateBillsTable);
         ExecuteSql(conn, SqlCreateBillsIndexes);
         ExecuteSql(conn, SqlCreateBillDetailsTable);
+        ExecuteSql(conn, SqlCreateToppingsTable);
+        ExecuteSql(conn, SqlCreateBillDetailToppingsTable);
         ExecuteSql(conn, SqlCreateShiftReportsTable);
         ExecuteSql(conn, SqlCreateShiftReportsIndexes);
 
@@ -45,26 +49,26 @@ public static class DbInitializer
 
     private static void SeedAdminUser(NpgsqlConnection conn)
     {
-        long countAdmin = GetUserCountByUsername(conn, "admin");
-        long countEmployee = GetUserCountByUsername(conn, "staff");
+        long countAdmin = GetUserCountByRole(conn, "admin");
+        long countCashier = GetUserCountByRole(conn, "cashier");
 
         if (countAdmin == 0)
         {
             string hash = BCrypt.Net.BCrypt.HashPassword("admin123", workFactor: 11);
-            InsertSeedUser(conn, "admin", hash, "Administrator", "admin");
+            InsertSeedUser(conn, "admin", hash, "Seed Admin", "admin");
         }
 
-        if (countEmployee == 0)
+        if (countCashier == 0)
         {
             string hash = BCrypt.Net.BCrypt.HashPassword("123123", workFactor: 11);
-            InsertSeedUser(conn, "staff", hash, "Staff", "cashier");
+            InsertSeedUser(conn, "cashier", hash, "Seed Cashier", "cashier");
         }
     }
 
-    private static long GetUserCountByUsername(NpgsqlConnection conn, string username)
+    private static long GetUserCountByRole(NpgsqlConnection conn, string role)
     {
-        using var cmd = new NpgsqlCommand(SqlCountUserByUsername, conn);
-        cmd.Parameters.AddWithValue("username", username);
+        using var cmd = new NpgsqlCommand(SqlCountUserByRole, conn);
+        cmd.Parameters.AddWithValue("role", role);
         return (long)cmd.ExecuteScalar()!;
     }
 

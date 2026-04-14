@@ -1,5 +1,6 @@
 using CoffeePOS.Data.Repositories.Contracts;
 using CoffeePOS.Shared.Dtos;
+using CoffeePOS.Shared.Enums;
 using CoffeePOS.Shared.Helpers;
 using Npgsql;
 
@@ -22,17 +23,25 @@ public class UserRepository(NpgsqlDataSource dataSource) : IUserRepository
         using var cmd = new NpgsqlCommand(SqlGetAll, conn);
         using var reader = await cmd.ExecuteReaderAsync();
 
+        // PERF: O(N) Iteration.
+        // WHY: Bypassing string allocation by extracting the natively mapped Enum directly.
+        int idOrdinal = reader.GetOrdinal("id");
+        int usernameOrdinal = reader.GetOrdinal("username");
+        int fullNameOrdinal = reader.GetOrdinal("full_name");
+        int roleOrdinal = reader.GetOrdinal("role");
+        int isActiveOrdinal = reader.GetOrdinal("is_active");
+
         while (await reader.ReadAsync())
         {
-            int role = reader.GetRequiredInt("role");
-            bool isActive = reader.GetRequiredBool("is_active");
+            var role = reader.GetFieldValue<UserRole>(roleOrdinal);
+            var isActive = reader.GetBoolean(isActiveOrdinal);
 
             result.Add(new UserGridDto(
-                reader.GetRequiredInt("id"),
-                reader.GetRequiredString("username"),
-                reader.GetNullableString("full_name") ?? "---",
+                reader.GetInt32(idOrdinal),
+                reader.GetString(usernameOrdinal),
+                reader.IsDBNull(fullNameOrdinal) ? "---" : reader.GetString(fullNameOrdinal),
                 role,
-                role == 0 ? "Admin" : "Thu ngân",
+                role.ToDisplayName(),
                 isActive,
                 isActive ? "Đang hoạt động" : "Đã khóa"));
         }
@@ -43,44 +52,44 @@ public class UserRepository(NpgsqlDataSource dataSource) : IUserRepository
     public async Task<AuthUserDto?> AuthenticateAsync(string username, string password)
     {
         using var conn = await dataSource.OpenConnectionAsync();
-
         using var cmd = new NpgsqlCommand(SqlAuthenticate, conn);
         cmd.Parameters.AddWithValue("u", username);
 
         using var reader = await cmd.ExecuteReaderAsync();
         if (await reader.ReadAsync())
         {
-            string dbHash = reader.GetRequiredString("password_hash");
-            bool isActive = reader.GetRequiredBool("is_active");
+            string dbHash = reader.GetFieldValue<string>(reader.GetOrdinal("password_hash"));
+            bool isActive = reader.GetBoolean(reader.GetOrdinal("is_active"));
 
-            bool isValid = BCrypt.Net.BCrypt.Verify(password, dbHash);
-
-            if (isValid)
+            // HACK: Synchronous BCrypt verify inside Async method.
+            // Consider Task.Run for high-throughput if CPU bound.
+            if (BCrypt.Net.BCrypt.Verify(password, dbHash))
             {
                 if (!isActive)
-                {
                     throw new InvalidOperationException("Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.");
-                }
 
                 return new AuthUserDto(
-                    reader.GetRequiredInt("id"),
-                    reader.GetRequiredString("username"),
-                    reader.GetRequiredString("full_name"),
-                    reader.GetRequiredInt("role"));
+                    reader.GetInt32(reader.GetOrdinal("id")),
+                    reader.GetString(reader.GetOrdinal("username")),
+                    reader.GetString(reader.GetOrdinal("full_name")),
+                    reader.GetFieldValue<UserRole>(reader.GetOrdinal("role")));
             }
         }
 
         return null;
     }
 
-    public async Task InsertUserAsync(string username, string fullName, int role, string passwordHash)
+    public async Task InsertUserAsync(string username, string fullName, UserRole role, string passwordHash)
     {
         using var conn = await dataSource.OpenConnectionAsync();
         using var cmd = new NpgsqlCommand(SqlInsert, conn);
-        cmd.Parameters.AddWithValue("username", username);
-        cmd.Parameters.AddWithValue("hash", passwordHash);
-        cmd.Parameters.AddWithValue("fullName", fullName);
-        cmd.Parameters.AddWithValue("role", role);
+
+        // PERF: Sử dụng Generic NpgsqlParameter<T> để zero-boxing và bypass hoàn toàn Type Inference
+        cmd.Parameters.Add(new NpgsqlParameter<string>("username", username));
+        cmd.Parameters.Add(new NpgsqlParameter<string>("hash", passwordHash));
+        cmd.Parameters.Add(new NpgsqlParameter<string>("full_name", fullName));
+        // WHY: Truyền thẳng Enum xuống. Npgsql Global Mapper sẽ tự động dịch nó sang PostgreSQL custom enum type
+        cmd.Parameters.Add(new NpgsqlParameter<UserRole>("role", role));
 
         try
         {
@@ -92,14 +101,15 @@ public class UserRepository(NpgsqlDataSource dataSource) : IUserRepository
         }
     }
 
-    public async Task UpdateUserProfileAsync(int userId, string username, string fullName, int role)
+    public async Task UpdateUserProfileAsync(int userId, string username, string fullName, UserRole role)
     {
         using var conn = await dataSource.OpenConnectionAsync();
         using var cmd = new NpgsqlCommand(SqlUpdateProfile, conn);
-        cmd.Parameters.AddWithValue("id", userId);
-        cmd.Parameters.AddWithValue("username", username);
-        cmd.Parameters.AddWithValue("fullName", fullName);
-        cmd.Parameters.AddWithValue("role", role);
+
+        cmd.Parameters.Add(new NpgsqlParameter<int>("id", userId));
+        cmd.Parameters.Add(new NpgsqlParameter<string>("username", username));
+        cmd.Parameters.Add(new NpgsqlParameter<string>("fullName", fullName));
+        cmd.Parameters.Add(new NpgsqlParameter<UserRole>("role", role));
 
         try
         {
@@ -114,10 +124,10 @@ public class UserRepository(NpgsqlDataSource dataSource) : IUserRepository
     public async Task SetUserActiveStatusAsync(int targetUserId, bool isActive)
     {
         using var conn = await dataSource.OpenConnectionAsync();
-
         using var cmd = new NpgsqlCommand(SqlSetActiveStatus, conn);
-        cmd.Parameters.AddWithValue("id", targetUserId);
-        cmd.Parameters.AddWithValue("isActive", isActive);
+
+        cmd.Parameters.Add(new NpgsqlParameter<int>("id", targetUserId));
+        cmd.Parameters.Add(new NpgsqlParameter<bool>("isActive", isActive));
 
         await cmd.ExecuteNonQueryAsync();
     }
@@ -136,8 +146,10 @@ public class UserRepository(NpgsqlDataSource dataSource) : IUserRepository
     {
         using var conn = await dataSource.OpenConnectionAsync();
         using var cmd = new NpgsqlCommand(SqlUpdatePassword, conn);
-        cmd.Parameters.AddWithValue("hash", newPasswordHash);
-        cmd.Parameters.AddWithValue("id", userId);
+
+        cmd.Parameters.Add(new NpgsqlParameter<int>("id", userId));
+        cmd.Parameters.Add(new NpgsqlParameter<string>("hash", newPasswordHash));
+
         await cmd.ExecuteNonQueryAsync();
     }
 }

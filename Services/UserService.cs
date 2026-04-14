@@ -1,6 +1,7 @@
 using CoffeePOS.Data.Repositories.Contracts;
 using CoffeePOS.Services.Contracts.Commands;
 using CoffeePOS.Shared.Dtos;
+using CoffeePOS.Shared.Enums;
 
 namespace CoffeePOS.Services;
 
@@ -22,7 +23,7 @@ public class UserService(IUserRepository userRepo) : IUserService
         if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(fullName))
             throw new ArgumentException("Vui lòng nhập đầy đủ tài khoản và họ tên!");
 
-        if (command.Role is not (0 or 1))
+        if (command.Role is not (UserRole.Admin or UserRole.Cashier))
             throw new ArgumentException("Vai trò không hợp lệ!");
 
         if (command.Password.Length < 6)
@@ -62,10 +63,10 @@ public class UserService(IUserRepository userRepo) : IUserService
         if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(fullName))
             throw new ArgumentException("Vui lòng nhập đầy đủ tài khoản và họ tên!");
 
-        if (command.Role is not (0 or 1))
+        if (command.Role is not (UserRole.Admin or UserRole.Cashier))
             throw new ArgumentException("Vai trò không hợp lệ!");
 
-        if (adminId == command.TargetUserId && command.Role != 0)
+        if (adminId == command.TargetUserId && command.Role != UserRole.Admin)
             throw new InvalidOperationException("Không thể tự đổi vai trò của chính bạn thành Thu ngân.");
 
         await userRepo.UpdateUserProfileAsync(command.TargetUserId, username, fullName, command.Role);

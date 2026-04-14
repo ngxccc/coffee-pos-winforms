@@ -1,5 +1,6 @@
 using CoffeePOS.Core;
 using CoffeePOS.Services.Contracts.Commands;
+using CoffeePOS.Shared.Enums;
 using CoffeePOS.Shared.Helpers;
 
 namespace CoffeePOS.Forms;
@@ -49,7 +50,7 @@ public class SettingForm : Form
             Height = 40
         };
 
-        var pnlRole = CreateInfoRow("Vai trò:", _session.CurrentUser?.Role == 0 ? "Admin" : "Thu ngân");
+        var pnlRole = CreateInfoRow("Vai trò:", FormatRole(_session.CurrentUser?.Role));
         var pnlFullName = CreateInfoRow("Họ tên:", _session.CurrentUser?.FullName ?? "N/A");
         var pnlUsername = CreateInfoRow("Tài khoản:", _session.CurrentUser?.Username ?? "N/A");
 
@@ -175,6 +176,14 @@ public class SettingForm : Form
         pnl.Controls.Add(lblKey);
         return pnl;
     }
+
+    private static string FormatRole(UserRole? role)
+        => role switch
+        {
+            UserRole.Admin => "Admin",
+            UserRole.Cashier => "Thu ngân",
+            _ => "N/A"
+        };
 
     private async Task ChangePasswordAsync()
     {
