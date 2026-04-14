@@ -273,8 +273,8 @@ public class ProductCustomizationForm : Form
         {
             _allToppings = await _productQueryService.GetAllToppingsAsync();
             _lstToppings.DataSource = _allToppings;
-            _lstToppings.DisplayMember = "Name";
-            _lstToppings.ValueMember = "Id";
+            _lstToppings.DisplayMember = nameof(ToppingGridDto.Name);
+            _lstToppings.ValueMember = nameof(ToppingGridDto.Id);
 
             ApplyExistingToppingsSelection();
         }

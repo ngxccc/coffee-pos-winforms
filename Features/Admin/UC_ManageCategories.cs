@@ -90,7 +90,7 @@ public class UC_ManageCategories : UserControl
     private async void EditCategoryAsync(object? s, EventArgs e)
     {
         if (_dgvCategories.SelectedRows.Count == 0) return;
-        int id = (int)_dgvCategories.SelectedRows[0].Cells["Id"].Value;
+        int id = (int)_dgvCategories.SelectedRows[0].Cells[nameof(CategoryGridDto.Id)].Value;
         var cat = await _categoryQueryService.GetCategoryByIdAsync(id);
         if (cat == null) return;
 
@@ -102,8 +102,8 @@ public class UC_ManageCategories : UserControl
     private async void DeleteCategoryAsync(object? s, EventArgs e)
     {
         if (_dgvCategories.SelectedRows.Count == 0) return;
-        string name = _dgvCategories.SelectedRows[0].Cells["Name"].Value.ToString()!;
-        int id = (int)_dgvCategories.SelectedRows[0].Cells["Id"].Value;
+        string name = _dgvCategories.SelectedRows[0].Cells[nameof(CategoryGridDto.Name)].Value.ToString()!;
+        int id = (int)_dgvCategories.SelectedRows[0].Cells[nameof(CategoryGridDto.Id)].Value;
 
         if (_toolbar.IsTrashMode)
         {

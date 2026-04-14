@@ -159,9 +159,9 @@ public class UC_Billing : UserControl
         if (_flowBillItemList == null)
             return;
 
-        string uniqueKey = $"{productId}";
+        string uniqueKey = BuildLegacyKey(productId, string.Empty);
 
-        if (_billItemsDict.TryGetValue(productId.ToString(), out UC_BillItem? existingItem))
+        if (_billItemsDict.TryGetValue(uniqueKey, out UC_BillItem? existingItem))
         {
             existingItem.UpdateQty(qty);
             _flowBillItemList.ScrollControlIntoView(existingItem);
@@ -184,20 +184,16 @@ public class UC_Billing : UserControl
         if (_flowBillItemList == null)
             return;
 
-        string uniqueKey = $"{cartItem.ProductId}_{string.Join(",", cartItem.Toppings.Select(t => t.ToppingId))}";
+        string uniqueKey = BuildCustomizedKey(cartItem);
 
-        // Create a UC_BillItem with the customized display name
-        UC_BillItem billItem = CreateBillItem(
-            cartItem.ProductId,
-            cartItem.DisplayName,
-            cartItem.Quantity,
-            cartItem.BasePrice,
-            ""
-        );
+        if (_billItemsDict.TryGetValue(uniqueKey, out UC_BillItem? existingItem))
+        {
+            existingItem.UpdateQty(cartItem.Quantity);
+            _flowBillItemList.ScrollControlIntoView(existingItem);
+            return;
+        }
 
-        // Link the CartItemDto to the UC_BillItem for edit mode
-        billItem.LinkedCartItem = cartItem;
-        billItem.OnEditItemRequest += async (s, item) => await HandleEditCartItemAsync(item, cartItem);
+        UC_BillItem billItem = CreateCustomizedBillItem(cartItem);
 
         _flowBillItemList.Controls.Add(billItem);
         _billItemsDict.Add(uniqueKey, billItem);
@@ -208,7 +204,51 @@ public class UC_Billing : UserControl
         UpdateTotal(cartItem.TotalLinePrice);
     }
 
-    private async Task HandleEditCartItemAsync(CartItemDto cartItem, CartItemDto linkedItem)
+    public void UpdateCustomizedItem(CartItemDto existingItem, CartItemDto updatedItem)
+    {
+        if (_flowBillItemList == null)
+            return;
+
+        var oldBillItem = _billItemsDict.Values.FirstOrDefault(x => ReferenceEquals(x.LinkedCartItem, existingItem));
+        if (oldBillItem == null)
+            return;
+
+        string? oldKey = FindKeyByItem(oldBillItem);
+        decimal oldTotal = oldBillItem.TotalValue;
+        int oldIndex = _flowBillItemList.Controls.GetChildIndex(oldBillItem);
+
+        if (oldKey != null)
+            _billItemsDict.Remove(oldKey);
+
+        _flowBillItemList.Controls.Remove(oldBillItem);
+        oldBillItem.Dispose();
+
+        existingItem.ProductId = updatedItem.ProductId;
+        existingItem.ProductName = updatedItem.ProductName;
+        existingItem.SizeName = updatedItem.SizeName;
+        existingItem.BasePrice = updatedItem.BasePrice;
+        existingItem.Quantity = updatedItem.Quantity;
+        existingItem.Toppings = [.. updatedItem.Toppings];
+
+        string newKey = BuildCustomizedKey(existingItem);
+        UpdateTotal(-oldTotal);
+
+        if (_billItemsDict.TryGetValue(newKey, out UC_BillItem? mergeTarget))
+        {
+            mergeTarget.UpdateQty(existingItem.Quantity);
+            _cartItems.Remove(existingItem);
+            return;
+        }
+
+        UC_BillItem newBillItem = CreateCustomizedBillItem(existingItem);
+        _flowBillItemList.Controls.Add(newBillItem);
+        _flowBillItemList.Controls.SetChildIndex(newBillItem, oldIndex);
+        _billItemsDict.Add(newKey, newBillItem);
+
+        UpdateTotal(newBillItem.TotalValue);
+    }
+
+    private async Task HandleEditCartItemAsync(CartItemDto cartItem)
     {
         // This will be implemented in the form integration
         OnEditCartItem?.Invoke(this, cartItem);
@@ -236,8 +276,12 @@ public class UC_Billing : UserControl
         UpdateTotal(-item.TotalValue);
         _flowBillItemList.Controls.Remove(item);
 
-        string keyToDelete = $"{item.ProductId}_{item.Note}";
-        _billItemsDict.Remove(keyToDelete);
+        string? keyToDelete = FindKeyByItem(item);
+        if (keyToDelete != null)
+            _billItemsDict.Remove(keyToDelete);
+
+        if (item.LinkedCartItem != null)
+            _cartItems.Remove(item.LinkedCartItem);
 
         item.Dispose();
     }
@@ -282,6 +326,20 @@ public class UC_Billing : UserControl
         var list = new List<CreateBillItemDto>();
         foreach (var item in _billItemsDict.Values)
         {
+            if (item.LinkedCartItem != null)
+            {
+                var linked = item.LinkedCartItem;
+                decimal unitPrice = GetCustomizedUnitPrice(linked);
+
+                list.Add(new CreateBillItemDto(
+                    linked.ProductId,
+                    linked.DisplayName,
+                    linked.Quantity,
+                    unitPrice,
+                    string.Empty));
+                continue;
+            }
+
             list.Add(new CreateBillItemDto(
                 item.ProductId,
                 item.ItemName,
@@ -290,5 +348,63 @@ public class UC_Billing : UserControl
                 item.Note));
         }
         return list;
+    }
+
+    private static string BuildLegacyKey(int productId, string note)
+    {
+        return $"{productId}_{note}";
+    }
+
+    private static string BuildCustomizedKey(CartItemDto item)
+    {
+        string toppingIds = string.Join(",", item.Toppings.Select(t => t.ToppingId).OrderBy(id => id));
+        return $"{item.ProductId}_{item.SizeName}_{toppingIds}";
+    }
+
+    private static decimal GetCustomizedUnitPrice(CartItemDto item)
+    {
+        return item.BasePrice + item.Toppings.Sum(t => t.Price);
+    }
+
+    private static int GetQuantityDelta(decimal moneyDiff, decimal unitPrice)
+    {
+        if (unitPrice <= 0)
+            return 0;
+
+        return (int)Math.Round(moneyDiff / unitPrice, MidpointRounding.AwayFromZero);
+    }
+
+    private string? FindKeyByItem(UC_BillItem item)
+    {
+        foreach (var pair in _billItemsDict)
+        {
+            if (ReferenceEquals(pair.Value, item))
+                return pair.Key;
+        }
+
+        return null;
+    }
+
+    private UC_BillItem CreateCustomizedBillItem(CartItemDto cartItem)
+    {
+        decimal unitPrice = GetCustomizedUnitPrice(cartItem);
+
+        UC_BillItem billItem = CreateBillItem(
+            cartItem.ProductId,
+            cartItem.DisplayName,
+            cartItem.Quantity,
+            unitPrice,
+            string.Empty);
+
+        billItem.LinkedCartItem = cartItem;
+        billItem.OnEditItemRequest += async (s, item) => await HandleEditCartItemAsync(item);
+        billItem.OnAmountChanged += (s, moneyDiff) =>
+        {
+            int quantityDelta = GetQuantityDelta(moneyDiff, unitPrice);
+            if (quantityDelta != 0)
+                cartItem.Quantity += quantityDelta;
+        };
+
+        return billItem;
     }
 }

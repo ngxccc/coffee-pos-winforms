@@ -173,8 +173,7 @@ public class CashierWorkspaceForm : Form
         if (customForm.ShowDialog(this) == DialogResult.OK)
         {
             var updatedItem = customForm.GetFinalCartItem();
-            // TODO: Update cart with updatedItem
-            // For now, this is a placeholder
+            _ucBilling.UpdateCustomizedItem(cartItem, updatedItem);
         }
     }
 

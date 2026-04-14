@@ -126,8 +126,8 @@ public abstract class BaseProductForm : BaseCrudForm
         {
             var categories = await _categoryQueryService.GetSelectableCategoriesAsync();
             CboCategory.DataSource = categories;
-            CboCategory.DisplayMember = "Name";
-            CboCategory.ValueMember = "Id";
+            CboCategory.DisplayMember = nameof(CategoryOptionDto.Name);
+            CboCategory.ValueMember = nameof(CategoryOptionDto.Id);
 
             if (_initialCategoryId > 0)
             {
