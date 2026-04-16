@@ -4,14 +4,14 @@ using CoffeePOS.Shared.Helpers;
 
 namespace CoffeePOS.Forms;
 
-public class LoginForm : Form
+public class LoginForm : AntdUI.Window
 {
     private readonly IUserService _userService;
     private readonly IUserSession _session;
 
-    private TextBox txtUsername = null!;
-    private TextBox txtPassword = null!;
-    private Button btnLogin = null!;
+    private AntdUI.Input txtUsername = null!;
+    private AntdUI.Input txtPassword = null!;
+    private AntdUI.Button btnLogin = null!;
 
     public LoginForm(IUserService userService, IUserSession session)
     {
@@ -59,11 +59,13 @@ public class LoginForm : Form
             TextAlign = ContentAlignment.BottomLeft,
         };
 
-        txtUsername = new TextBox
+        txtUsername = new AntdUI.Input
         {
             Font = new Font("Segoe UI", 14),
             Dock = DockStyle.Top,
             Margin = new Padding(0, 0, 0, 20),
+            PlaceholderText = "Nhập tên đăng nhập",
+            AllowClear = true,
             TabIndex = 0
         };
 
@@ -78,10 +80,11 @@ public class LoginForm : Form
             TextAlign = ContentAlignment.BottomLeft
         };
 
-        txtPassword = new TextBox
+        txtPassword = new AntdUI.Input
         {
             Font = new Font("Segoe UI", 14),
-            PasswordChar = '●',
+            UseSystemPasswordChar = true,
+            PlaceholderText = "Nhập mật khẩu",
             Dock = DockStyle.Top,
             TabIndex = 1
         };
@@ -93,17 +96,14 @@ public class LoginForm : Form
             Padding = new Padding(40, 20, 40, 40)
         };
 
-        btnLogin = new Button
+        btnLogin = new AntdUI.Button
         {
             Text = "ĐĂNG NHẬP",
             Font = new Font("Segoe UI", 12, FontStyle.Bold),
-            ForeColor = Color.White,
-            BackColor = Color.FromArgb(0, 122, 204),
-            FlatStyle = FlatStyle.Flat,
+            Type = AntdUI.TTypeMini.Primary,
             Dock = DockStyle.Fill,
             Cursor = Cursors.Hand
         };
-        btnLogin.FlatAppearance.BorderSize = 0;
 
         pnlInputs.Controls.Add(txtPassword);
         pnlInputs.Controls.Add(lblPass);

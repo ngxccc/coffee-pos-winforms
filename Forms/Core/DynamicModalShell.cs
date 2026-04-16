@@ -1,11 +1,16 @@
 namespace CoffeePOS.Forms.Core;
 
-// PERF: Generic constraint <T> eliminates the need for expensive runtime Boxing/Unboxing and reflection casting.
-public sealed class DynamicModalShell<T> : Form
+using System;
+using System.Drawing;
+using System.Windows.Forms;
+using AntdUI;
+
+public sealed class DynamicModalShell<T> : Window
 {
     private readonly IValidatableComponent<T> _innerContent;
-    private readonly Button _btnSave;
-    private readonly Button _btnCancel;
+    private readonly Control _contentControl;
+    private readonly AntdUI.Button _btnSave;
+    private readonly AntdUI.Button _btnCancel;
     private readonly bool _showSaveButton;
 
     public DynamicModalShell(
@@ -16,60 +21,102 @@ public sealed class DynamicModalShell<T> : Form
         string saveButtonText = "LƯU",
         string cancelButtonText = "HUỶ")
     {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            throw new ArgumentException("Tiêu đề không được để trống.", nameof(title));
+        }
+
+        ArgumentNullException.ThrowIfNull(contentModule);
+
+        if (contentModule is not IValidatableComponent<T> validatableContent)
+        {
+            throw new ArgumentException($"Nội dung modal phải implement IValidatableComponent<{typeof(T).Name}>.", nameof(contentModule));
+        }
+
         Text = title;
         Size = modalSize;
-        FormBorderStyle = FormBorderStyle.FixedDialog;
         StartPosition = FormStartPosition.CenterParent;
         MaximizeBox = false;
         MinimizeBox = false;
+        Resizable = false;
+        ShowInTaskbar = false;
         BackColor = Color.White;
         _showSaveButton = showSaveButton;
+        _innerContent = validatableContent;
+        _contentControl = contentModule;
 
-        // WHY: Hard constraint. If contentModule doesn't implement the exact T, it crashes here instantly rather than failing silently later.
-        _innerContent = (contentModule as IValidatableComponent<T>)
-            ?? throw new ArgumentException($"Ruột Form bị lỗi: Phải implement IValidatableComponent<{typeof(T).Name}>!");
+        _contentControl.Dock = DockStyle.Fill;
+        Controls.Add(_contentControl);
 
-        contentModule.Dock = DockStyle.Fill;
-        Controls.Add(contentModule);
+        var pnlActions = new AntdUI.Panel
+        {
+            Dock = DockStyle.Bottom,
+            Height = 60,
+            Back = Color.WhiteSmoke
+        };
 
-        var pnlActions = new Panel { Dock = DockStyle.Bottom, Height = 60, BackColor = Color.WhiteSmoke };
+        // WHY: Use StackPanel to mock Web Flexbox behavior. Prevents coordinates from breaking when DPI scale > 100%.
+        var stackActions = new StackPanel
+        {
+            Dock = DockStyle.Right,
+            AutoSize = true,
+            Margin = new Padding(10),
+            Gap = 10
+        };
 
-        _btnSave = new Button { Text = saveButtonText, Width = 100, Height = 40, Location = new Point(modalSize.Width - 240, 10), BackColor = Color.FromArgb(46, 204, 113), ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Visible = showSaveButton };
-        _btnSave.FlatAppearance.BorderSize = 0;
+        _btnSave = new AntdUI.Button
+        {
+            Text = saveButtonText,
+            Size = new Size(100, 40),
+            Type = TTypeMini.Primary,
+            Visible = showSaveButton
+        };
         _btnSave.Click += HandleSaveAction;
 
-        _btnCancel = new Button { Text = cancelButtonText, Width = 100, Height = 40, Location = new Point(modalSize.Width - 130, 10), BackColor = Color.Gray, ForeColor = Color.White, FlatStyle = FlatStyle.Flat, DialogResult = DialogResult.Cancel };
-        _btnCancel.FlatAppearance.BorderSize = 0;
-
-        if (!showSaveButton)
+        _btnCancel = new AntdUI.Button
         {
-            _btnCancel.Location = new Point(modalSize.Width - 130, 10);
-        }
-
-        pnlActions.Controls.AddRange([_btnSave, _btnCancel]);
-        Controls.Add(pnlActions);
+            Text = cancelButtonText,
+            Size = new Size(100, 40),
+            Type = TTypeMini.Default,
+            DialogResult = DialogResult.Cancel
+        };
 
         if (showSaveButton)
         {
             AcceptButton = _btnSave;
         }
+
         CancelButton = _btnCancel;
+
+        stackActions.Controls.Add(_btnCancel);
+        if (showSaveButton)
+        {
+            stackActions.Controls.Add(_btnSave);
+        }
+
+        pnlActions.Controls.Add(stackActions);
+        Controls.Add(pnlActions);
     }
 
     private void HandleSaveAction(object? sender, EventArgs e)
     {
-        if (!_showSaveButton)
-        {
-            return;
-        }
+        if (!_showSaveButton) return;
 
-        if (_innerContent.ValidateInput())
-        {
-            DialogResult = DialogResult.OK;
-            Close();
-        }
+        if (!_innerContent.ValidateInput()) return;
+
+        DialogResult = DialogResult.OK;
+        Close();
     }
 
-    // WHY: Returns strongly-typed T. Compiler guarantees type safety for the caller. No more runtime (T) casting.
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _btnSave.Click -= HandleSaveAction;
+        }
+
+        base.Dispose(disposing);
+    }
+
     public T ExtractData() => _innerContent.GetPayload();
 }

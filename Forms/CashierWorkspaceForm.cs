@@ -12,7 +12,7 @@ using Serilog;
 
 namespace CoffeePOS.Forms;
 
-public class CashierWorkspaceForm : Form
+public class CashierWorkspaceForm : AntdUI.Window
 {
     // DEPENDENCIES & CONTROLS
     private readonly IBillService _billService;

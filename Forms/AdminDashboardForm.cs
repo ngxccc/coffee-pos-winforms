@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace CoffeePOS.Forms;
 
-public class AdminDashboardForm : Form
+public class AdminDashboardForm : AntdUI.Window
 {
     private readonly IUserSession _session;
     private readonly IServiceProvider _serviceProvider;

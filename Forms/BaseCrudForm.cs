@@ -2,7 +2,7 @@ using CoffeePOS.Shared.Helpers;
 
 namespace CoffeePOS.Forms;
 
-public abstract class BaseCrudForm : Form
+public abstract class BaseCrudForm : AntdUI.Window
 {
     protected BaseCrudForm(string title, Size size)
     {
