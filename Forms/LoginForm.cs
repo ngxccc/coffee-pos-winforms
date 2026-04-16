@@ -30,9 +30,10 @@ public class LoginForm : AntdUI.Window
         Text = "CoffeePOS - Đăng Nhập";
         AutoScaleMode = AutoScaleMode.Font;
         StartPosition = FormStartPosition.CenterScreen;
-        BackColor = Color.White;
         FormBorderStyle = FormBorderStyle.FixedSingle;
         ClientSize = new Size(400, 400);
+        windowBar?.SuspendLayout();
+        SuspendLayout();
 
         // PageHeader Bar
         windowBar = new AntdUI.PageHeader
@@ -44,7 +45,7 @@ public class LoginForm : AntdUI.Window
             ShowButton = true,
             ShowIcon = false,
             DividerShow = true,
-            Location = new Point(0, 0)
+            Location = new Point(0, 0),
         };
 
         AntdUI.Panel pnlInputs = new()
@@ -124,6 +125,8 @@ public class LoginForm : AntdUI.Window
         Controls.Add(pnlInputs);  // Fill ở giữa
         Controls.Add(windowBar);  // Top
         Controls.Add(pnlFooter);  // Bottom
+        windowBar.ResumeLayout(false);
+        ResumeLayout(false);
     }
 
     private async Task BtnLogin_Click(object? sender, EventArgs e)
