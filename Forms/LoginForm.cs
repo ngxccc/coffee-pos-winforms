@@ -32,7 +32,7 @@ public class LoginForm : AntdUI.Window
         StartPosition = FormStartPosition.CenterScreen;
         FormBorderStyle = FormBorderStyle.FixedSingle;
         ClientSize = new Size(400, 400);
-        windowBar.SuspendLayout();
+        windowBar?.SuspendLayout();
         SuspendLayout();
 
         // PageHeader Bar
