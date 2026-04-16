@@ -79,13 +79,21 @@ public class CashierWorkspaceForm : AntdUI.Window
 
     private void AssembleLayout()
     {
-        Controls.Add(_ucSidebar); // Trái
-        Controls.Add(_ucBilling); // Phải
-        Controls.Add(_ucBillHistory); // Fill
-        Controls.Add(_ucMenu); // Fill
-        Controls.Add(windowBar);
+        SuspendLayout();
+        try
+        {
+            Controls.Add(_ucSidebar); // Trái
+            Controls.Add(_ucBilling); // Phải
+            Controls.Add(_ucBillHistory); // Fill
+            Controls.Add(_ucMenu); // Fill
+            Controls.Add(windowBar);
 
-        _ucMenu.BringToFront();
+            _ucMenu.BringToFront();
+        }
+        finally
+        {
+            ResumeLayout(true);
+        }
     }
 
     private void InitializeUI()
@@ -110,25 +118,33 @@ public class CashierWorkspaceForm : AntdUI.Window
 
     private void SetupHeader()
     {
-        _lblUserInfo.Dock = DockStyle.Right;
-        _lblUserInfo.Width = 260;
-        _lblUserInfo.ForeColor = Color.FromArgb(0, 122, 204);
-        _lblUserInfo.Font = new Font("Segoe UI", 10, FontStyle.Bold);
-        _lblUserInfo.TextAlign = ContentAlignment.MiddleRight;
-        _lblUserInfo.Padding = new Padding(0, 0, 8, 0);
-        _lblUserInfo.Text = $"Ca trực: {_session.CurrentUser?.FullName ?? "N/A"}";
+        windowBar.SuspendLayout();
+        try
+        {
+            _lblUserInfo.Dock = DockStyle.Right;
+            _lblUserInfo.Width = 260;
+            _lblUserInfo.ForeColor = Color.FromArgb(0, 122, 204);
+            _lblUserInfo.Font = new Font("Segoe UI", 10, FontStyle.Bold);
+            _lblUserInfo.TextAlign = ContentAlignment.MiddleRight;
+            _lblUserInfo.Padding = new Padding(0, 0, 8, 0);
+            _lblUserInfo.Text = $"Ca trực: {_session.CurrentUser?.FullName ?? "N/A"}";
 
-        _lblTime.Dock = DockStyle.Right;
-        _lblTime.Width = 150;
-        _lblTime.ShowTime = true;
-        _lblTime.AutoWidth = false;
-        _lblTime.DragMove = false;
-        _lblTime.ForeColor = Color.FromArgb(0, 122, 204);
-        _lblTime.Font = new Font("Segoe UI", 10, FontStyle.Bold);
-        _lblTime.Padding = new Padding(0, 2, 8, 2);
+            _lblTime.Dock = DockStyle.Right;
+            _lblTime.Width = 150;
+            _lblTime.ShowTime = true;
+            _lblTime.AutoWidth = false;
+            _lblTime.DragMove = false;
+            _lblTime.ForeColor = Color.FromArgb(0, 122, 204);
+            _lblTime.Font = new Font("Segoe UI", 10, FontStyle.Bold);
+            _lblTime.Padding = new Padding(0, 2, 8, 2);
 
-        windowBar.Controls.Add(_lblUserInfo);
-        windowBar.Controls.Add(_lblTime);
+            windowBar.Controls.Add(_lblUserInfo);
+            windowBar.Controls.Add(_lblTime);
+        }
+        finally
+        {
+            windowBar.ResumeLayout(true);
+        }
     }
 
     private void SetupSidebar()
