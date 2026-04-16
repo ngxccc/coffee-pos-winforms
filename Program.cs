@@ -1,5 +1,7 @@
+using System.Runtime.InteropServices;
 using CoffeePOS.Core;
 using CoffeePOS.Data;
+using CoffeePOS.Extensions;
 using CoffeePOS.Shared.Enums;
 using CoffeePOS.Shared.Helpers;
 using Microsoft.Extensions.Configuration;
@@ -16,6 +18,12 @@ static class Program
     static void Main()
     {
         ApplicationConfiguration.Initialize();
+
+        // WHY: Nâng cấp chất lượng render GDI+ để giao diện không bị mờ trên màn 2K/4K
+        AntdUI.Config.TextRenderingHighQuality = true;
+        AntdUI.Config.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
+        // WHY: Đăng ký Theme sáng/tối và viền Form
+        AntdUI.Config.Theme().Dark("#000", "#fff").Light("#fff", "#000").FormBorderColor();
 
         var bootstrapConfig = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
@@ -86,27 +94,6 @@ static class Program
                 services.AddHostedService<PdfPrintWorker>();
                 services.AddHostedService<TrashCleanupWorker>();
 
-                services.Scan(scan => scan
-                    .FromAssemblies(typeof(Program).Assembly) // Quét từ lõi project
-
-                    // QUY TẮC A: Repositories và Services
-                    // Tự động map Interface -> Class (vd: IProductRepository -> ProductRepository)
-                    .AddClasses(classes => classes.Where(c =>
-                        c.Name.EndsWith("Repository") ||
-                        c.Name.EndsWith("Service")))
-                    .AsImplementedInterfaces()
-                    .WithSingletonLifetime()
-
-                    // QUY TẮC B: Tất cả các Forms
-                    // Map chính nó (AsSelf) để gọi đẻ ra Form
-                    .AddClasses(classes => classes.Where(c => c.Name.EndsWith("Form")))
-                    .AsSelf()
-                    .WithTransientLifetime()
-
-                    // QUY TẮC C: Tất cả các UserControls (UC_*)
-                    .AddClasses(classes => classes.Where(c => c.Name.StartsWith("UC_")))
-                    .AsSelf()
-                    .WithTransientLifetime()
-                );
+                services.AddCoffeePosServices();
             });
 }
