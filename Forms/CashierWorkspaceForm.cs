@@ -29,8 +29,9 @@ public class CashierWorkspaceForm : AntdUI.Window
     private readonly UC_Billing _ucBilling = null!;
     private readonly UC_BillHistory _ucBillHistory = null!;
     private readonly UC_Menu _ucMenu = null!;
-    private readonly Label _lblUserInfo = new();
-    private CancellationTokenSource? _clockCts;
+    private readonly AntdUI.Label _lblUserInfo = new();
+    private readonly AntdUI.LabelTime _lblTime = new();
+    private AntdUI.PageHeader windowBar = null!;
 
     // Logic Components
     private bool _isProcessingPayment = false;
@@ -80,9 +81,9 @@ public class CashierWorkspaceForm : AntdUI.Window
     {
         Controls.Add(_ucSidebar); // Trái
         Controls.Add(_ucBilling); // Phải
-        Controls.Add(_lblUserInfo); // Top
         Controls.Add(_ucBillHistory); // Fill
         Controls.Add(_ucMenu); // Fill
+        Controls.Add(windowBar);
 
         _ucMenu.BringToFront();
     }
@@ -94,21 +95,40 @@ public class CashierWorkspaceForm : AntdUI.Window
         ClientSize = new Size(1280, 800);
         StartPosition = FormStartPosition.CenterScreen;
         BackColor = Color.White;
+
+        windowBar = new()
+        {
+            Dock = DockStyle.Top,
+            Height = 40,
+            Text = "CoffeePOS",
+            ShowButton = true,
+            ShowIcon = false,
+            DividerShow = true,
+            Location = new Point(0, 0),
+        };
     }
 
     private void SetupHeader()
     {
-        _lblUserInfo.Dock = DockStyle.Top;
-        _lblUserInfo.Height = 25;
-        _lblUserInfo.BackColor = Color.FromArgb(245, 245, 245);
+        _lblUserInfo.Dock = DockStyle.Right;
+        _lblUserInfo.Width = 260;
         _lblUserInfo.ForeColor = Color.FromArgb(0, 122, 204);
-        _lblUserInfo.Font = new Font("Segoe UI", 12, FontStyle.Bold);
-        _lblUserInfo.TextAlign = ContentAlignment.MiddleLeft;
-        _lblUserInfo.Padding = new Padding(0, 0, 20, 0);
+        _lblUserInfo.Font = new Font("Segoe UI", 10, FontStyle.Bold);
+        _lblUserInfo.TextAlign = ContentAlignment.MiddleRight;
+        _lblUserInfo.Padding = new Padding(0, 0, 8, 0);
+        _lblUserInfo.Text = $"Ca trực: {_session.CurrentUser?.FullName ?? "N/A"}";
 
-        _clockCts = new CancellationTokenSource();
+        _lblTime.Dock = DockStyle.Right;
+        _lblTime.Width = 150;
+        _lblTime.ShowTime = true;
+        _lblTime.AutoWidth = false;
+        _lblTime.DragMove = false;
+        _lblTime.ForeColor = Color.FromArgb(0, 122, 204);
+        _lblTime.Font = new Font("Segoe UI", 10, FontStyle.Bold);
+        _lblTime.Padding = new Padding(0, 2, 8, 2);
 
-        _ = StartRealTimeClockAsync(_clockCts.Token);
+        windowBar.Controls.Add(_lblUserInfo);
+        windowBar.Controls.Add(_lblTime);
     }
 
     private void SetupSidebar()
@@ -429,44 +449,6 @@ public class CashierWorkspaceForm : AntdUI.Window
             return;
         }
 
-        if (!e.Cancel && _clockCts != null)
-        {
-            _clockCts.Cancel();
-            _clockCts.Dispose();
-        }
-
         base.OnFormClosing(e);
-    }
-
-    private async Task StartRealTimeClockAsync(CancellationToken token)
-    {
-        try
-        {
-            while (!token.IsCancellationRequested)
-            {
-                var user = _session.CurrentUser;
-
-                if (user != null)
-                {
-                    var now = DateTime.Now;
-                    _lblUserInfo.Text = $"Ca trực: {user.FullName}   |   🕒 {now:dd/MM/yyyy HH:mm:ss}";
-
-                    int msUntilNextSecond = 1000 - now.Millisecond;
-                    await Task.Delay(msUntilNextSecond + 1, token);
-                }
-                else
-                {
-                    _lblUserInfo.Text = string.Empty;
-                    await Task.Delay(1000, token);
-                }
-            }
-        }
-        catch (TaskCanceledException)
-        {
-        }
-        catch (Exception ex)
-        {
-            Log.Error($"Clock Error: {ex.Message}");
-        }
     }
 }
