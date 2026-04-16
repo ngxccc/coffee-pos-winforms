@@ -6,6 +6,9 @@ public static class UiTheme
     public static readonly Color SurfaceAlt = Color.WhiteSmoke;
     public static readonly Color BrandPrimary = Color.FromArgb(0, 122, 204);
     public static readonly Color TextPrimary = Color.FromArgb(31, 30, 68);
+    public static readonly Color SidebarHover = Color.FromArgb(41, 40, 78);
+    public static readonly Color SidebarText = Color.Gainsboro;
+    public static readonly Color SidebarTextActive = Color.White;
 
     public const int PagePadding = 14;
     public const int BlockGap = 10;
