@@ -12,6 +12,7 @@ public class LoginForm : AntdUI.Window
     private AntdUI.Input txtUsername = null!;
     private AntdUI.Input txtPassword = null!;
     private AntdUI.Button btnLogin = null!;
+    private AntdUI.PageHeader? windowBar = null!;
 
     public LoginForm(IUserService userService, IUserSession session)
     {
@@ -28,29 +29,32 @@ public class LoginForm : AntdUI.Window
     {
         Text = "CoffeePOS - Đăng Nhập";
         AutoScaleMode = AutoScaleMode.Font;
-        ClientSize = new Size(400, 450);
         StartPosition = FormStartPosition.CenterScreen;
         BackColor = Color.White;
         FormBorderStyle = FormBorderStyle.FixedSingle;
-        MaximizeBox = false;
+        ClientSize = new Size(400, 400);
 
-        Label lblTitle = new()
+        // PageHeader Bar
+        windowBar = new AntdUI.PageHeader
         {
-            Text = "ĐĂNG NHẬP",
-            Font = new Font("Segoe UI", 24, FontStyle.Bold),
-            ForeColor = Color.FromArgb(0, 122, 204),
             Dock = DockStyle.Top,
-            Height = 120,
-            TextAlign = ContentAlignment.MiddleCenter
+            Height = 40,
+            Text = "CoffeePOS",
+            SubText = "Đăng Nhập Hệ Thống",
+            ShowButton = true,
+            ShowIcon = false,
+            DividerShow = true,
+            Location = new Point(0, 0)
         };
 
-        Panel pnlInputs = new()
+        AntdUI.Panel pnlInputs = new()
         {
             Dock = DockStyle.Fill,
-            Padding = new Padding(40, 20, 40, 20)
+            Padding = new Padding(40, 20, 40, 20),
+            BackColor = Color.White
         };
 
-        Label lblUser = new()
+        AntdUI.Label lblUser = new()
         {
             Text = "Tên đăng nhập:",
             Font = new Font("Segoe UI", 10, FontStyle.Bold),
@@ -63,21 +67,23 @@ public class LoginForm : AntdUI.Window
         {
             Font = new Font("Segoe UI", 14),
             Dock = DockStyle.Top,
+            Height = 44,
             Margin = new Padding(0, 0, 0, 20),
             PlaceholderText = "Nhập tên đăng nhập",
             AllowClear = true,
             TabIndex = 0
         };
 
-        Panel spacer1 = new() { Dock = DockStyle.Top, Height = 20 };
+        AntdUI.Panel spacer1 = new() { Dock = DockStyle.Top, Height = 20, Back = Color.White };
 
-        Label lblPass = new()
+        AntdUI.Label lblPass = new()
         {
             Text = "Mật khẩu:",
             Font = new Font("Segoe UI", 10, FontStyle.Bold),
             Dock = DockStyle.Top,
             Height = 30,
-            TextAlign = ContentAlignment.BottomLeft
+            TextAlign = ContentAlignment.BottomLeft,
+            ForeColor = Color.FromArgb(31, 30, 68)
         };
 
         txtPassword = new AntdUI.Input
@@ -86,14 +92,16 @@ public class LoginForm : AntdUI.Window
             UseSystemPasswordChar = true,
             PlaceholderText = "Nhập mật khẩu",
             Dock = DockStyle.Top,
+            Height = 44,
             TabIndex = 1
         };
 
-        Panel pnlFooter = new()
+        AntdUI.Panel pnlFooter = new()
         {
             Dock = DockStyle.Bottom,
             Height = 120,
-            Padding = new Padding(40, 20, 40, 40)
+            Padding = new Padding(40, 20, 40, 40),
+            BackColor = Color.White
         };
 
         btnLogin = new AntdUI.Button
@@ -114,7 +122,7 @@ public class LoginForm : AntdUI.Window
         pnlFooter.Controls.Add(btnLogin);
 
         Controls.Add(pnlInputs);  // Fill ở giữa
-        Controls.Add(lblTitle);   // Top
+        Controls.Add(windowBar);  // Top
         Controls.Add(pnlFooter);  // Bottom
     }
 

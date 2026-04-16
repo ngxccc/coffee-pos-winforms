@@ -6,11 +6,12 @@ namespace CoffeePOS.Features.Billing;
 
 public class UC_ProductCustomization : UserControl, IValidatableComponent<CartItemDto>
 {
-    private RadioButton _rbS = null!;
-    private RadioButton _rbM = null!;
-    private RadioButton _rbL = null!;
-    private CheckedListBox _lstToppings = null!;
-    private NumericUpDown _numQuantity = null!;
+    private AntdUI.Radio _rbS = null!;
+    private AntdUI.Radio _rbM = null!;
+    private AntdUI.Radio _rbL = null!;
+    private FlowLayoutPanel _pnlToppings = null!;
+    private AntdUI.InputNumber _numQuantity = null!;
+    private readonly Dictionary<int, AntdUI.Checkbox> _toppingChecks = [];
 
     private readonly IProductQueryService _productQueryService;
     private readonly ProductDetailDto _product;
@@ -90,24 +91,33 @@ public class UC_ProductCustomization : UserControl, IValidatableComponent<CartIt
             Margin = new Padding(0, 0, 0, 15)
         };
 
-        var grpSize = new GroupBox
+        var grpSize = new AntdUI.Panel
         {
-            Text = "Kích cỡ",
-            Font = new Font("Segoe UI", 10, FontStyle.Bold),
-            ForeColor = Color.FromArgb(64, 64, 64),
+            Radius = 8,
+            Back = Color.WhiteSmoke,
             Dock = DockStyle.Fill,
             Margin = new Padding(0, 0, 0, 15),
             AutoSize = true,
             MinimumSize = new Size(0, 70),
         };
+        var lblSize = new AntdUI.Label
+        {
+            Text = "Kích cỡ",
+            Dock = DockStyle.Top,
+            Height = 30,
+            Font = new Font("Segoe UI", 10, FontStyle.Bold),
+            ForeColor = Color.FromArgb(64, 64, 64),
+            Padding = new Padding(10, 8, 0, 0)
+        };
         var sizeFlow = new FlowLayoutPanel
         {
-            Dock = DockStyle.Fill,
+            Dock = DockStyle.Bottom,
+            Height = 40,
             FlowDirection = FlowDirection.LeftToRight,
             Padding = new Padding(10)
         };
 
-        _rbS = new RadioButton
+        _rbS = new AntdUI.Radio
         {
             Text = "S (Nhỏ)",
             AutoSize = true,
@@ -115,7 +125,7 @@ public class UC_ProductCustomization : UserControl, IValidatableComponent<CartIt
             Checked = true,
             Cursor = Cursors.Hand
         };
-        _rbM = new RadioButton
+        _rbM = new AntdUI.Radio
         {
             Text = "M (Vừa)",
             AutoSize = true,
@@ -123,7 +133,7 @@ public class UC_ProductCustomization : UserControl, IValidatableComponent<CartIt
             Cursor = Cursors.Hand,
             Margin = new Padding(20, 0, 0, 0)
         };
-        _rbL = new RadioButton
+        _rbL = new AntdUI.Radio
         {
             Text = "L (Lớn)",
             AutoSize = true,
@@ -132,48 +142,67 @@ public class UC_ProductCustomization : UserControl, IValidatableComponent<CartIt
             Margin = new Padding(20, 0, 0, 0)
         };
         sizeFlow.Controls.AddRange([_rbS, _rbM, _rbL]);
+        grpSize.Controls.Add(lblSize);
         grpSize.Controls.Add(sizeFlow);
 
-        var grpTopping = new GroupBox
+        var grpTopping = new AntdUI.Panel
         {
-            Text = "Topping (Lựa chọn tuỳ ý)",
-            Font = new Font("Segoe UI", 10, FontStyle.Bold),
-            ForeColor = Color.FromArgb(64, 64, 64),
+            Radius = 8,
+            Back = Color.WhiteSmoke,
             Dock = DockStyle.Fill,
             Margin = new Padding(0, 0, 0, 15)
         };
-
-        _lstToppings = new CheckedListBox
+        var lblTopping = new AntdUI.Label
         {
-            Dock = DockStyle.Fill,
-            Font = new Font("Segoe UI", 10),
-            CheckOnClick = true,
-            BorderStyle = BorderStyle.None,
-            Margin = new Padding(10)
-        };
-        grpTopping.Controls.Add(_lstToppings);
-
-        var grpQuantity = new GroupBox
-        {
-            Text = "Số lượng",
+            Text = "Topping (Lựa chọn tuỳ ý)",
+            Dock = DockStyle.Top,
+            Height = 30,
             Font = new Font("Segoe UI", 10, FontStyle.Bold),
             ForeColor = Color.FromArgb(64, 64, 64),
+            Padding = new Padding(10, 8, 0, 0)
+        };
+
+        _pnlToppings = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            AutoScroll = true,
+            FlowDirection = FlowDirection.TopDown,
+            WrapContents = false,
+            Padding = new Padding(10)
+        };
+        grpTopping.Controls.Add(_pnlToppings);
+        grpTopping.Controls.Add(lblTopping);
+
+        var grpQuantity = new AntdUI.Panel
+        {
+            Radius = 8,
+            Back = Color.WhiteSmoke,
             Dock = DockStyle.Fill,
             Margin = new Padding(0, 0, 0, 10),
             AutoSize = true,
             MinimumSize = new Size(0, 70)
         };
+        var lblQuantity = new AntdUI.Label
+        {
+            Text = "Số lượng",
+            Dock = DockStyle.Top,
+            Height = 30,
+            Font = new Font("Segoe UI", 10, FontStyle.Bold),
+            ForeColor = Color.FromArgb(64, 64, 64),
+            Padding = new Padding(10, 8, 0, 0)
+        };
 
-        _numQuantity = new NumericUpDown
+        _numQuantity = new AntdUI.InputNumber
         {
             Value = 1,
             Minimum = 1,
             Maximum = 100,
             Font = new Font("Segoe UI", 12, FontStyle.Bold),
-            TextAlign = HorizontalAlignment.Center,
             Width = 100,
-            Location = new Point(15, 30)
+            Location = new Point(15, 35),
+            ShowControl = true
         };
+        grpQuantity.Controls.Add(lblQuantity);
         grpQuantity.Controls.Add(_numQuantity);
 
         layout.Controls.Add(lblTitle, 0, 0);
@@ -201,7 +230,8 @@ public class UC_ProductCustomization : UserControl, IValidatableComponent<CartIt
     {
         string size = _rbS.Checked ? "S" : _rbM.Checked ? "M" : "L";
 
-        var selectedToppings = _lstToppings.CheckedItems.Cast<ToppingGridDto>()
+        var selectedToppings = _allToppings
+            .Where(t => _toppingChecks.TryGetValue(t.Id, out var cb) && cb.Checked)
             .Select(t => new CartToppingDto(t.Id, t.Name, t.Price))
             .ToList();
 
@@ -221,9 +251,21 @@ public class UC_ProductCustomization : UserControl, IValidatableComponent<CartIt
         try
         {
             _allToppings = await _productQueryService.GetAllToppingsAsync();
-            _lstToppings.DataSource = _allToppings;
-            _lstToppings.DisplayMember = nameof(ToppingGridDto.Name);
-            _lstToppings.ValueMember = nameof(ToppingGridDto.Id);
+            _pnlToppings.Controls.Clear();
+            _toppingChecks.Clear();
+
+            foreach (var topping in _allToppings)
+            {
+                var cb = new AntdUI.Checkbox
+                {
+                    Text = $"{topping.Name} (+{topping.Price:N0} đ)",
+                    AutoSize = true,
+                    Tag = topping.Id,
+                    Margin = new Padding(0, 4, 0, 4)
+                };
+                _toppingChecks[topping.Id] = cb;
+                _pnlToppings.Controls.Add(cb);
+            }
         }
         catch (Exception ex)
         {
@@ -254,11 +296,11 @@ public class UC_ProductCustomization : UserControl, IValidatableComponent<CartIt
         _numQuantity.Value = _existingItem.Quantity;
 
         var selectedIds = _existingItem.Toppings.Select(t => t.ToppingId).ToHashSet();
-        for (int i = 0; i < _lstToppings.Items.Count; i++)
+        foreach (var id in selectedIds)
         {
-            if (_lstToppings.Items[i] is ToppingGridDto topping && selectedIds.Contains(topping.Id))
+            if (_toppingChecks.TryGetValue(id, out var checkbox))
             {
-                _lstToppings.SetItemChecked(i, true);
+                checkbox.Checked = true;
             }
         }
     }

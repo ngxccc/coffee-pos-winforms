@@ -1,7 +1,6 @@
 using CoffeePOS.Core;
 using CoffeePOS.Features.Admin;
 using CoffeePOS.Shared.Helpers;
-using FontAwesome.Sharp;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CoffeePOS.Forms;
@@ -13,11 +12,11 @@ public class AdminDashboardForm : AntdUI.Window
     private readonly Dictionary<string, UserControl> _viewCache = [];
 
     // UI COMPONENTS
-    private Panel pnlSidebar = null!;
-    private Panel pnlHeader = null!;
-    private Panel pnlContent = null!;
+    private AntdUI.Panel pnlSidebar = null!;
+    private AntdUI.Panel pnlHeader = null!;
+    private AntdUI.Panel pnlContent = null!;
 
-    private Label lblPlaceholder = null!;
+    private AntdUI.Label lblPlaceholder = null!;
 
     public AdminDashboardForm(IServiceProvider serviceProvider, IUserSession session)
     {
@@ -36,31 +35,35 @@ public class AdminDashboardForm : AntdUI.Window
         Text = "Hệ Thống Quản Trị - CoffeePOS Admin";
         ClientSize = new Size(1366, 768);
         StartPosition = FormStartPosition.CenterScreen;
-        BackColor = Color.FromArgb(245, 245, 255);
+        BackColor = UiTheme.Surface;
 
-        pnlSidebar = new Panel
+        pnlSidebar = new AntdUI.Panel
         {
             Dock = DockStyle.Left,
             Width = 220,
-            BackColor = Color.FromArgb(31, 30, 68)
+            Radius = 0,
+            Back = UiTheme.TextPrimary
         };
-        pnlHeader = new Panel
+        pnlHeader = new AntdUI.Panel
         {
             Dock = DockStyle.Top,
             Height = 30,
-            BackColor = Color.White
+            Radius = 0,
+            Back = UiTheme.Surface
         };
-        pnlContent = new Panel
+        pnlContent = new AntdUI.Panel
         {
             Dock = DockStyle.Fill,
+            Radius = 0,
+            Back = UiTheme.Surface,
             Padding = new Padding(20)
         };
 
-        Label lblUserInfo = new()
+        AntdUI.Label lblUserInfo = new()
         {
             Text = $"Quản trị viên: {_session.CurrentUser?.FullName} | Đăng nhập: {_session.LoginTime:HH:mm}",
             Font = new Font("Segoe UI", 12, FontStyle.Bold),
-            ForeColor = Color.FromArgb(0, 122, 204),
+            ForeColor = UiTheme.BrandPrimary,
             Dock = DockStyle.Right,
             AutoSize = false,
             Width = 500,
@@ -69,7 +72,7 @@ public class AdminDashboardForm : AntdUI.Window
         };
         pnlHeader.Controls.Add(lblUserInfo);
 
-        lblPlaceholder = new Label
+        lblPlaceholder = new AntdUI.Label
         {
             Text = "CHÀO MỪNG ADMIN!\nHãy chọn một chức năng bên Menu.",
             Font = new Font("Segoe UI", 24, FontStyle.Bold),
@@ -86,7 +89,7 @@ public class AdminDashboardForm : AntdUI.Window
 
     private void SetupSidebarMenu()
     {
-        Label lblLogo = new()
+        AntdUI.Label lblLogo = new()
         {
             Text = "QUẢN TRỊ",
             Font = new Font("Segoe UI", 18, FontStyle.Bold),
@@ -96,45 +99,39 @@ public class AdminDashboardForm : AntdUI.Window
             TextAlign = ContentAlignment.MiddleCenter
         };
 
-        pnlSidebar.Controls.Add(CreateMenuButton("Đăng xuất", IconChar.SignOutAlt, BtnLogout_Click));
-        pnlSidebar.Controls.Add(CreateMenuButton("Hóa đơn & Báo cáo", IconChar.FileInvoiceDollar, (s, e) => NavigateTo<UC_ManageBills>("BILLS")));
-        pnlSidebar.Controls.Add(CreateMenuButton("Nhân sự", IconChar.Users, (s, e) => NavigateTo<UC_ManageUsers>("USERS")));
-        pnlSidebar.Controls.Add(CreateMenuButton("Danh mục", IconChar.Tags, (s, e) => NavigateTo<UC_ManageCategories>("CATEGORIES")));
-        pnlSidebar.Controls.Add(CreateMenuButton("Sản phẩm", IconChar.Coffee, (s, e) => NavigateTo<UC_ManageProducts>("PRODUCTS")));
-        pnlSidebar.Controls.Add(CreateMenuButton("Tổng quan", IconChar.ChartBar, (s, e) => NavigateTo<UC_Dashboard>("DASHBOARD")));
+        pnlSidebar.Controls.Add(CreateMenuButton("Đăng xuất", BtnLogout_Click));
+        pnlSidebar.Controls.Add(CreateMenuButton("Hóa đơn & Báo cáo", (s, e) => NavigateTo<UC_ManageBills>("BILLS")));
+        pnlSidebar.Controls.Add(CreateMenuButton("Nhân sự", (s, e) => NavigateTo<UC_ManageUsers>("USERS")));
+        pnlSidebar.Controls.Add(CreateMenuButton("Danh mục", (s, e) => NavigateTo<UC_ManageCategories>("CATEGORIES")));
+        pnlSidebar.Controls.Add(CreateMenuButton("Sản phẩm", (s, e) => NavigateTo<UC_ManageProducts>("PRODUCTS")));
+        pnlSidebar.Controls.Add(CreateMenuButton("Tổng quan", (s, e) => NavigateTo<UC_Dashboard>("DASHBOARD")));
 
         pnlSidebar.Controls.Add(lblLogo);
     }
 
-    private static IconButton CreateMenuButton(string text, IconChar icon, EventHandler clickEvent)
+    private static AntdUI.Button CreateMenuButton(string text, EventHandler clickEvent)
     {
-        IconButton btn = new()
+        AntdUI.Button btn = new()
         {
-            Text = "  " + text,
-            UseMnemonic = false,
-            IconChar = icon,
-            IconSize = 32,
-            IconColor = Color.Gainsboro,
+            Text = text,
             ForeColor = Color.Gainsboro,
             Font = new Font("Segoe UI", 11, FontStyle.Regular),
+            Type = AntdUI.TTypeMini.Default,
+            Radius = 0,
             Dock = DockStyle.Top,
             Height = 60,
-            FlatStyle = FlatStyle.Flat,
-            ImageAlign = ContentAlignment.MiddleLeft,
             TextAlign = ContentAlignment.MiddleLeft,
-            TextImageRelation = TextImageRelation.ImageBeforeText,
             Padding = new Padding(10, 0, 0, 0),
             Cursor = Cursors.Hand
         };
-        btn.FlatAppearance.BorderSize = 0;
 
         btn.MouseEnter += (s, e) =>
         {
-            btn.BackColor = Color.FromArgb(41, 40, 78); btn.ForeColor = Color.White; btn.IconColor = Color.White;
+            btn.BackColor = Color.FromArgb(41, 40, 78); btn.ForeColor = Color.White;
         };
         btn.MouseLeave += (s, e) =>
         {
-            btn.BackColor = Color.Transparent; btn.ForeColor = Color.Gainsboro; btn.IconColor = Color.Gainsboro;
+            btn.BackColor = Color.Transparent; btn.ForeColor = Color.Gainsboro;
         };
 
         btn.Click += clickEvent;

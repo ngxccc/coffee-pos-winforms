@@ -1,6 +1,5 @@
 using CoffeePOS.Shared.Dtos;
 using CoffeePOS.Shared.Helpers;
-using FontAwesome.Sharp;
 
 namespace CoffeePOS.Features.Billing;
 
@@ -11,7 +10,7 @@ public class UC_BillItem : Panel
     private Label _lblPrice = null!;
     private Label _lblNote = null!;
     private Label _lblName = null!;
-    private IconPictureBox _picFood = null!;
+    private PictureBox _picFood = null!;
 
     // DATA FIELDS
     private int _quantity;
@@ -67,13 +66,10 @@ public class UC_BillItem : Panel
         _ = ImageHelper.LoadImageAsync(_picFood, ImageIdentifier, foodName, ProductId);
     }
 
-    private static IconPictureBox BuildImagePanel()
+    private static PictureBox BuildImagePanel()
     {
-        return new IconPictureBox
+        return new PictureBox
         {
-            IconChar = IconChar.Spinner,
-            IconColor = Color.Gray,
-            IconSize = 40,
             SizeMode = PictureBoxSizeMode.CenterImage,
             Size = new Size(90, 90),
             Dock = DockStyle.Left,
@@ -92,8 +88,8 @@ public class UC_BillItem : Panel
             Tag = "BLOCK_DOUBLE_CLICK"
         };
 
-        var btnMinus = CreateQtyButton(IconChar.Minus);
-        var btnPlus = CreateQtyButton(IconChar.Plus);
+        var btnMinus = CreateQtyButton("-");
+        var btnPlus = CreateQtyButton("+");
 
         _lblCount = new Label
         {
@@ -121,17 +117,15 @@ public class UC_BillItem : Panel
             BackColor = Color.Transparent
         };
 
-        var btnDelete = new IconButton
+        var btnDelete = new AntdUI.Button
         {
-            IconChar = IconChar.TrashAlt,
-            IconSize = 18,
-            IconColor = Color.Red,
+            Text = "X",
+            Type = AntdUI.TTypeMini.Error,
             Dock = DockStyle.Right,
             Width = 30,
-            FlatStyle = FlatStyle.Flat,
+            Radius = 6,
             Cursor = Cursors.Hand
         };
-        btnDelete.FlatAppearance.BorderSize = 0;
         btnDelete.Click += (s, e) => OnDeleteRequest?.Invoke(this, this);
 
         _lblPrice = new Label
@@ -181,20 +175,17 @@ public class UC_BillItem : Panel
         return pnl;
     }
 
-    private static IconButton CreateQtyButton(IconChar icon)
+    private static AntdUI.Button CreateQtyButton(string text)
     {
-        var btn = new IconButton
+        var btn = new AntdUI.Button
         {
-            IconChar = icon,
-            IconSize = 12,
-            IconColor = Color.Black,
+            Text = text,
+            Type = AntdUI.TTypeMini.Default,
             Width = 25,
-            Dock = (icon == IconChar.Minus) ? DockStyle.Left : DockStyle.Right,
-            FlatStyle = FlatStyle.Flat,
+            Dock = text == "-" ? DockStyle.Left : DockStyle.Right,
             BackColor = Color.FromArgb(240, 240, 240),
             Cursor = Cursors.Hand
         };
-        btn.FlatAppearance.BorderSize = 0;
         return btn;
     }
 
@@ -205,7 +196,7 @@ public class UC_BillItem : Panel
             return;
         }
 
-        if (control is not Button && control is not IconButton)
+        if (control is not Button && control is not AntdUI.Button)
         {
             control.DoubleClick += (s, e) =>
             {

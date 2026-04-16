@@ -1,15 +1,14 @@
 using CoffeePOS.Shared.Helpers;
-using FontAwesome.Sharp;
 
 namespace CoffeePOS.Features.Admin.Controls;
 
 public abstract class BaseAdminHeaderToolbar : UserControl
 {
-    protected readonly TextBox _txtSearch;
-    protected CheckBox? _chkTrashMode;
-    protected readonly IconButton _btnDelete;
-    protected readonly IconButton _btnEdit;
-    protected readonly IconButton _btnAdd;
+    protected readonly AntdUI.Input _txtSearch;
+    protected AntdUI.Checkbox? _chkTrashMode;
+    protected readonly AntdUI.Button _btnDelete;
+    protected readonly AntdUI.Button _btnEdit;
+    protected readonly AntdUI.Button _btnAdd;
 
     public event EventHandler? AddClicked;
     public event EventHandler? EditClicked;
@@ -26,43 +25,41 @@ public abstract class BaseAdminHeaderToolbar : UserControl
 
     protected abstract bool ShowTrashMode { get; }
 
-    protected virtual (string addLabel, IconChar addIcon, string editLabel, IconChar editIcon, string deleteLabel, IconChar deleteIcon) GetButtonConfig() =>
-        ("Thêm", IconChar.Plus, "Sửa", IconChar.Pen, "Xóa", IconChar.Trash);
+    protected virtual (string addLabel, string editLabel, string deleteLabel) GetButtonConfig() =>
+        ("Thêm", "Sửa", "Xóa");
 
     protected BaseAdminHeaderToolbar()
     {
         Dock = DockStyle.Top;
-        Height = 80;
-        Padding = new Padding(0, 10, 0, 10);
-        BackColor = Color.White;
+        Height = UiTheme.ToolbarHeight;
+        Padding = new Padding(UiTheme.PagePadding, UiTheme.BlockGap, UiTheme.PagePadding, UiTheme.BlockGap);
+        BackColor = UiTheme.Surface;
 
-        // Title
-        Label lblTitle = new()
+        var lblTitle = new AntdUI.Label
         {
             Text = Title,
             Font = new Font("Segoe UI", 16, FontStyle.Bold),
-            ForeColor = Color.FromArgb(0, 122, 204),
+            ForeColor = UiTheme.BrandPrimary,
             AutoSize = true,
             Location = new Point(0, 20)
         };
 
-        // Search Box
-        _txtSearch = new TextBox
+        _txtSearch = new AntdUI.Input
         {
             Width = 300,
             Font = new Font("Segoe UI", 12),
             Location = new Point(250, 22),
-            PlaceholderText = SearchPlaceholder
+            PlaceholderText = SearchPlaceholder,
+            AllowClear = true
         };
         _txtSearch.OnDebouncedTextChanged(300, () => SearchChanged?.Invoke());
 
         Controls.Add(lblTitle);
         Controls.Add(_txtSearch);
 
-        // Trash Mode Checkbox (optional)
         if (ShowTrashMode)
         {
-            _chkTrashMode = new CheckBox
+            _chkTrashMode = new AntdUI.Checkbox
             {
                 Text = "Xem Thùng Rác",
                 Font = new Font("Segoe UI", 12, FontStyle.Bold),
@@ -71,12 +68,11 @@ public abstract class BaseAdminHeaderToolbar : UserControl
                 Location = new Point(570, 25),
                 Cursor = Cursors.Hand
             };
-            _chkTrashMode.CheckedChanged += OnTrashModeChanged;
+            _chkTrashMode.CheckedChanged += (_, _) => OnTrashModeChanged(this, EventArgs.Empty);
             Controls.Add(_chkTrashMode);
         }
 
-        // Action Buttons
-        FlowLayoutPanel flpButtons = new()
+        var flpButtons = new FlowLayoutPanel
         {
             Dock = DockStyle.Right,
             Width = 400,
@@ -84,23 +80,36 @@ public abstract class BaseAdminHeaderToolbar : UserControl
             Padding = new Padding(0, 10, 0, 0)
         };
 
-        var (addLabel, addIcon, editLabel, editIcon, deleteLabel, deleteIcon) = GetButtonConfig();
+        var (addLabel, editLabel, deleteLabel) = GetButtonConfig();
 
-        _btnDelete = UIHelper.CreateActionButton(deleteLabel, deleteIcon, Color.FromArgb(231, 76, 60), (_, _) => DeleteClicked?.Invoke(this, EventArgs.Empty));
-        _btnEdit = UIHelper.CreateActionButton(editLabel, editIcon, Color.FromArgb(243, 156, 18), (_, _) => EditClicked?.Invoke(this, EventArgs.Empty));
-        _btnAdd = UIHelper.CreateActionButton(addLabel, addIcon, Color.FromArgb(46, 204, 113), (_, _) => AddClicked?.Invoke(this, EventArgs.Empty));
+        _btnDelete = CreateActionButton(deleteLabel, UiTheme.DeleteButtonType, (_, _) => DeleteClicked?.Invoke(this, EventArgs.Empty));
+        _btnEdit = CreateActionButton(editLabel, UiTheme.EditButtonType, (_, _) => EditClicked?.Invoke(this, EventArgs.Empty));
+        _btnAdd = CreateActionButton(addLabel, UiTheme.AddButtonType, (_, _) => AddClicked?.Invoke(this, EventArgs.Empty));
 
         flpButtons.Controls.AddRange([_btnDelete, _btnEdit, _btnAdd]);
         Controls.Add(flpButtons);
+    }
+
+    private static AntdUI.Button CreateActionButton(string text, AntdUI.TTypeMini type, EventHandler click)
+    {
+        var btn = new AntdUI.Button
+        {
+            Text = text,
+            Type = type,
+            Size = new Size(120, 38),
+            Cursor = Cursors.Hand,
+            Margin = new Padding(5, 0, 0, 0)
+        };
+        btn.Click += click;
+        return btn;
     }
 
     protected virtual void OnTrashModeChanged(object? sender, EventArgs e)
     {
         if (_chkTrashMode == null) return;
 
-        _btnDelete.Text = _chkTrashMode.Checked ? " Khôi phục" : " Xóa";
-        _btnDelete.IconChar = _chkTrashMode.Checked ? IconChar.TrashRestore : IconChar.Trash;
-        _btnDelete.BackColor = _chkTrashMode.Checked ? Color.FromArgb(46, 204, 113) : Color.FromArgb(231, 76, 60);
+        _btnDelete.Text = _chkTrashMode.Checked ? "Khôi phục" : "Xóa";
+        _btnDelete.Type = _chkTrashMode.Checked ? UiTheme.AddButtonType : UiTheme.DeleteButtonType;
 
         _btnAdd.Visible = !_chkTrashMode.Checked;
         _btnEdit.Visible = !_chkTrashMode.Checked;

@@ -1,5 +1,4 @@
 using CoffeePOS.Shared.Helpers;
-using FontAwesome.Sharp;
 
 namespace CoffeePOS.Features.Admin.Controls;
 

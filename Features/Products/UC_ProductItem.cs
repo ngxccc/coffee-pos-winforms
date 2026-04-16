@@ -1,5 +1,4 @@
 using CoffeePOS.Shared.Helpers;
-using FontAwesome.Sharp;
 using Serilog;
 
 namespace CoffeePOS.Features.Products;
@@ -7,7 +6,7 @@ namespace CoffeePOS.Features.Products;
 public class UC_ProductItem : UserControl
 {
     // UI Components
-    private IconPictureBox _iconFood = null!;
+    private PictureBox _iconFood = null!;
     private Label _lblName = null!;
     private Label _lblPrice = null!;
 
@@ -75,13 +74,10 @@ public class UC_ProductItem : UserControl
         };
     }
 
-    private static IconPictureBox BuildFoodIcon()
+    private static PictureBox BuildFoodIcon()
     {
-        return new IconPictureBox
+        return new PictureBox
         {
-            IconChar = IconChar.Spinner,
-            IconSize = 40,
-            IconColor = Color.Gray,
             Dock = DockStyle.Top,
             Height = 100,
             BackColor = Color.FromArgb(245, 245, 245),

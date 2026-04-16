@@ -46,7 +46,7 @@ public class UC_ManageBills : UserControl
     private void InitializeUI()
     {
         Dock = DockStyle.Fill;
-        BackColor = Color.White;
+        BackColor = UiTheme.Surface;
 
         _toolbar = new UC_BillsHeaderToolbar();
         _toolbar.LoadClicked += async (_, _) => await LoadBillsAsync();
@@ -61,11 +61,20 @@ public class UC_ManageBills : UserControl
         _dgvBills.SelectionChanged += (_, _) => RefreshCancelButtonState();
         _dgvBills.CellDoubleClick += DgvBills_CellDoubleClick;
 
+        var hostPanel = new AntdUI.Panel
+        {
+            Dock = DockStyle.Fill,
+            Radius = 8,
+            Back = UiTheme.Surface,
+            Padding = new Padding(UiTheme.BlockGap)
+        };
+        hostPanel.Controls.Add(_dgvBills);
+
         _billsGrid = new StatefulSortableGrid<BillReportDto>(_dgvBills);
         _billsGrid.AttachSortHandler();
         _billsGrid.SortChanged += ApplySort;
 
-        Controls.Add(_dgvBills);
+        Controls.Add(hostPanel);
         Controls.Add(_toolbar);
     }
 

@@ -30,7 +30,7 @@ public class UC_ManageCategories : UserControl
     private void InitializeUI()
     {
         Dock = DockStyle.Fill;
-        BackColor = Color.White;
+        BackColor = UiTheme.Surface;
 
         _toolbar = new UC_CategoriesHeaderToolbar();
         _toolbar.SearchChanged += ApplyFilterAndSort;
@@ -46,11 +46,20 @@ public class UC_ManageCategories : UserControl
         _dgvCategories.ApplyStandardAdminStyle();
         _dgvCategories.CellDoubleClick += EditCategoryAsync;
 
+        var hostPanel = new AntdUI.Panel
+        {
+            Dock = DockStyle.Fill,
+            Radius = 8,
+            Back = UiTheme.Surface,
+            Padding = new Padding(UiTheme.BlockGap)
+        };
+        hostPanel.Controls.Add(_dgvCategories);
+
         _categoriesGrid = new StatefulSortableGrid<CategoryGridDto>(_dgvCategories);
         _categoriesGrid.AttachSortHandler();
         _categoriesGrid.SortChanged += ApplyFilterAndSort;
 
-        Controls.Add(_dgvCategories);
+        Controls.Add(hostPanel);
         Controls.Add(_toolbar);
     }
 

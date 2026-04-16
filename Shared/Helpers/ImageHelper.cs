@@ -1,4 +1,3 @@
-using FontAwesome.Sharp;
 using Serilog;
 
 namespace CoffeePOS.Shared.Helpers;
@@ -8,11 +7,13 @@ public static class ImageHelper
     private static readonly HttpClient HttpClient = new();
     private static readonly string BaseImageDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Images", "Products");
 
-    public static async Task LoadImageAsync(IconPictureBox pictureBox, string? imageIdentifier, string fallbackName, int colorSeed)
+    public static async Task LoadImageAsync(PictureBox pictureBox, string? imageIdentifier, string fallbackName, int colorSeed)
     {
         if (pictureBox.IsDisposed) return;
 
-        pictureBox.IconChar = IconChar.Spinner;
+        var oldLoading = pictureBox.Image;
+        pictureBox.Image = CreateLoadingPlaceholderImage();
+        oldLoading?.Dispose();
         pictureBox.SizeMode = PictureBoxSizeMode.CenterImage;
 
         try
@@ -27,8 +28,6 @@ public static class ImageHelper
 
             if (realImage != null)
             {
-                pictureBox.IconChar = IconChar.None;
-
                 var oldImage = pictureBox.Image;
                 pictureBox.Image = realImage;
                 oldImage?.Dispose();
@@ -83,14 +82,22 @@ public static class ImageHelper
         }
     }
 
-    private static void ApplyPlaceholder(IconPictureBox pictureBox, string text, int seed)
+    private static void ApplyPlaceholder(PictureBox pictureBox, string text, int seed)
     {
-        pictureBox.IconChar = IconChar.None;
         pictureBox.SizeMode = PictureBoxSizeMode.CenterImage;
 
         var oldImage = pictureBox.Image;
         pictureBox.Image = CreatePlaceholderImage(text, seed);
         oldImage?.Dispose();
+    }
+
+    private static Bitmap CreateLoadingPlaceholderImage()
+    {
+        Bitmap loading = new(100, 100);
+        using Graphics g = Graphics.FromImage(loading);
+        g.Clear(Color.FromArgb(245, 245, 245));
+        g.DrawString("...", new Font("Segoe UI", 22, FontStyle.Bold), Brushes.Gray, 30, 28);
+        return loading;
     }
 
     public static Bitmap CreatePlaceholderImage(string text, int colorSeed)

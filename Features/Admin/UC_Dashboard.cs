@@ -14,9 +14,9 @@ public class UC_Dashboard : UserControl
     private readonly IDashboardQueryService _dashboardQueryService;
 
     // UI Controls
-    private Label _lblTodayRevenue = null!;
-    private Label _lblTodayOrders = null!;
-    private Label _lblTodayAverageOrder = null!;
+    private AntdUI.Label _lblTodayRevenue = null!;
+    private AntdUI.Label _lblTodayOrders = null!;
+    private AntdUI.Label _lblTodayAverageOrder = null!;
     private CartesianChart _chartRevenue = null!;
     private PieChart _chartTopProducts = null!;
 
@@ -30,7 +30,7 @@ public class UC_Dashboard : UserControl
     private void InitializeUI()
     {
         Dock = DockStyle.Fill;
-        BackColor = Color.FromArgb(245, 245, 255);
+        BackColor = UiTheme.Surface;
 
         // TẠO LƯỚI BỐ CỤC CHÍNH (2 Dòng)
         TableLayoutPanel tlpMain = new()
@@ -93,14 +93,14 @@ public class UC_Dashboard : UserControl
         Controls.Add(tlpMain);
     }
 
-    private static Label CreateKpiCard(string title, string value)
+    private static AntdUI.Label CreateKpiCard(string title, string value)
     {
-        Label lbl = new()
+        AntdUI.Label lbl = new()
         {
             Text = $"{title}\n{value}",
             Font = new Font("Segoe UI", 16, FontStyle.Bold),
             ForeColor = Color.White,
-            BackColor = Color.FromArgb(46, 204, 113),
+            BackColor = UiTheme.BrandPrimary,
             Dock = DockStyle.Fill,
             TextAlign = ContentAlignment.MiddleCenter,
             Margin = new Padding(8, 6, 8, 6)

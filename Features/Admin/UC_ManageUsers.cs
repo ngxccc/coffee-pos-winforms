@@ -34,7 +34,7 @@ public class UC_ManageUsers : UserControl
     private void InitializeUI()
     {
         Dock = DockStyle.Fill;
-        BackColor = Color.White;
+        BackColor = UiTheme.Surface;
 
         _toolbar = new UC_UsersHeaderToolbar();
         _toolbar.SearchChanged += ApplyFilterAndSort;
@@ -49,11 +49,20 @@ public class UC_ManageUsers : UserControl
         _dgvUsers.ApplyStandardAdminStyle();
         _dgvUsers.CellDoubleClick += EditUserAsync;
 
+        var hostPanel = new AntdUI.Panel
+        {
+            Dock = DockStyle.Fill,
+            Radius = 8,
+            Back = UiTheme.Surface,
+            Padding = new Padding(UiTheme.BlockGap)
+        };
+        hostPanel.Controls.Add(_dgvUsers);
+
         _usersGrid = new StatefulSortableGrid<UserGridDto>(_dgvUsers);
         _usersGrid.AttachSortHandler();
         _usersGrid.SortChanged += ApplyFilterAndSort;
 
-        Controls.Add(_dgvUsers);
+        Controls.Add(hostPanel);
         Controls.Add(_toolbar);
     }
 

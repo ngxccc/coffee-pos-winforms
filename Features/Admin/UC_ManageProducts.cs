@@ -35,7 +35,7 @@ public class UC_ManageProducts : UserControl
     private void InitializeUI()
     {
         Dock = DockStyle.Fill;
-        BackColor = Color.White;
+        BackColor = UiTheme.Surface;
 
         _toolbar = new UC_ProductsHeaderToolbar();
         _toolbar.SearchChanged += ApplyFilterAndSort;
@@ -51,11 +51,20 @@ public class UC_ManageProducts : UserControl
         _dgvProducts.ApplyStandardAdminStyle();
         _dgvProducts.CellDoubleClick += EditProductAsync;
 
+        var hostPanel = new AntdUI.Panel
+        {
+            Dock = DockStyle.Fill,
+            Radius = 8,
+            Back = UiTheme.Surface,
+            Padding = new Padding(UiTheme.BlockGap)
+        };
+        hostPanel.Controls.Add(_dgvProducts);
+
         _productsGrid = new StatefulSortableGrid<ProductGridDto>(_dgvProducts);
         _productsGrid.AttachSortHandler();
         _productsGrid.SortChanged += ApplyFilterAndSort;
 
-        Controls.Add(_dgvProducts);
+        Controls.Add(hostPanel);
         Controls.Add(_toolbar);
     }
 

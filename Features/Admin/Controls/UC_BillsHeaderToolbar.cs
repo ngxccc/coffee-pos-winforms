@@ -1,5 +1,4 @@
 using CoffeePOS.Shared.Helpers;
-using FontAwesome.Sharp;
 
 namespace CoffeePOS.Features.Admin.Controls;
 
@@ -7,8 +6,8 @@ public class UC_BillsHeaderToolbar : UserControl
 {
     private readonly DateTimePicker _dtpFrom;
     private readonly DateTimePicker _dtpTo;
-    private readonly IconButton _btnCancelBill;
-    private readonly Label _lblSummary;
+    private readonly AntdUI.Button _btnCancelBill;
+    private readonly AntdUI.Label _lblSummary;
 
     public event EventHandler? LoadClicked;
     public event EventHandler? CancelClicked;
@@ -20,7 +19,7 @@ public class UC_BillsHeaderToolbar : UserControl
 
     public string SummaryText
     {
-        get => _lblSummary.Text;
+        get => _lblSummary.Text ?? string.Empty;
         set => _lblSummary.Text = value;
     }
 
@@ -34,27 +33,25 @@ public class UC_BillsHeaderToolbar : UserControl
         if (restoreMode)
         {
             _btnCancelBill.Text = "Khôi phục đơn";
-            _btnCancelBill.IconChar = IconChar.Undo;
-            _btnCancelBill.BackColor = Color.FromArgb(46, 204, 113);
+            _btnCancelBill.Type = UiTheme.AddButtonType;
             return;
         }
 
         _btnCancelBill.Text = "Huỷ hoá đơn";
-        _btnCancelBill.IconChar = IconChar.Ban;
-        _btnCancelBill.BackColor = Color.FromArgb(231, 76, 60);
+        _btnCancelBill.Type = UiTheme.DeleteButtonType;
     }
 
     public UC_BillsHeaderToolbar()
     {
         Dock = DockStyle.Top;
         Height = 134;
-        BackColor = Color.White;
+        BackColor = UiTheme.Surface;
 
-        var lblTitle = new Label
+        var lblTitle = new AntdUI.Label
         {
             Text = "QUẢN LÝ HOÁ ĐƠN & BÁO CÁO",
             Font = new Font("Segoe UI", 16, FontStyle.Bold),
-            ForeColor = Color.FromArgb(0, 122, 204),
+            ForeColor = UiTheme.BrandPrimary,
             Dock = DockStyle.Top,
             Height = 42,
             TextAlign = ContentAlignment.MiddleLeft
@@ -86,9 +83,9 @@ public class UC_BillsHeaderToolbar : UserControl
             Value = DateTime.Today
         };
 
-        var btnLoad = UIHelper.CreateActionButton("Tải dữ liệu", IconChar.Search, Color.FromArgb(52, 152, 219), (_, _) => LoadClicked?.Invoke(this, EventArgs.Empty));
-        _btnCancelBill = UIHelper.CreateActionButton("Huỷ hoá đơn", IconChar.Ban, Color.FromArgb(231, 76, 60), (_, _) => CancelClicked?.Invoke(this, EventArgs.Empty));
-        var btnExport = UIHelper.CreateActionButton("Xuất báo cáo", IconChar.FileCsv, Color.FromArgb(46, 204, 113), (_, _) => ExportClicked?.Invoke(this, EventArgs.Empty));
+        var btnLoad = CreateActionButton("Tải dữ liệu", UiTheme.PrimaryButtonType, (_, _) => LoadClicked?.Invoke(this, EventArgs.Empty));
+        _btnCancelBill = CreateActionButton("Huỷ hoá đơn", UiTheme.DeleteButtonType, (_, _) => CancelClicked?.Invoke(this, EventArgs.Empty));
+        var btnExport = CreateActionButton("Xuất báo cáo", UiTheme.AddButtonType, (_, _) => ExportClicked?.Invoke(this, EventArgs.Empty));
 
         _btnCancelBill.Enabled = false;
 
@@ -100,12 +97,12 @@ public class UC_BillsHeaderToolbar : UserControl
         pnlFilters.Controls.Add(_btnCancelBill);
         pnlFilters.Controls.Add(btnExport);
 
-        _lblSummary = new Label
+        _lblSummary = new AntdUI.Label
         {
             Dock = DockStyle.Fill,
             Height = 34,
             Font = new Font("Segoe UI", 10, FontStyle.Bold),
-            ForeColor = Color.FromArgb(31, 30, 68),
+            ForeColor = UiTheme.TextPrimary,
             TextAlign = ContentAlignment.MiddleLeft,
             Padding = new Padding(6, 0, 0, 0)
         };
@@ -115,13 +112,27 @@ public class UC_BillsHeaderToolbar : UserControl
         Controls.Add(lblTitle);
     }
 
-    private static Label CreateFilterLabel(string text)
+    private static AntdUI.Button CreateActionButton(string text, AntdUI.TTypeMini type, EventHandler click)
     {
-        return new Label
+        var btn = new AntdUI.Button
+        {
+            Text = text,
+            Type = type,
+            Size = new Size(120, 38),
+            Cursor = Cursors.Hand,
+            Margin = new Padding(8, 0, 0, 0)
+        };
+        btn.Click += click;
+        return btn;
+    }
+
+    private static AntdUI.Label CreateFilterLabel(string text)
+    {
+        return new AntdUI.Label
         {
             Text = text,
             Font = new Font("Segoe UI", 10, FontStyle.Bold),
-            ForeColor = Color.FromArgb(31, 30, 68),
+            ForeColor = UiTheme.TextPrimary,
             Width = 80,
             Height = 36,
             TextAlign = ContentAlignment.MiddleLeft,
