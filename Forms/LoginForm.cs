@@ -12,7 +12,7 @@ public class LoginForm : AntdUI.Window
     private AntdUI.Input txtUsername = null!;
     private AntdUI.Input txtPassword = null!;
     private AntdUI.Button btnLogin = null!;
-    private AntdUI.PageHeader? windowBar = null!;
+    private AntdUI.PageHeader windowBar = null!;
 
     public LoginForm(IUserService userService, IUserSession session)
     {
@@ -32,7 +32,7 @@ public class LoginForm : AntdUI.Window
         StartPosition = FormStartPosition.CenterScreen;
         FormBorderStyle = FormBorderStyle.FixedSingle;
         ClientSize = new Size(400, 400);
-        windowBar?.SuspendLayout();
+        windowBar.SuspendLayout();
         SuspendLayout();
 
         // PageHeader Bar
