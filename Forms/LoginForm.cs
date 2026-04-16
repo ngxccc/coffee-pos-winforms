@@ -111,7 +111,8 @@ public class LoginForm : AntdUI.Window
             Font = new Font("Segoe UI", 12, FontStyle.Bold),
             Type = AntdUI.TTypeMini.Primary,
             Dock = DockStyle.Fill,
-            Cursor = Cursors.Hand
+            Cursor = Cursors.Hand,
+            LoadingValue = 0.3F
         };
 
         pnlInputs.Controls.Add(txtPassword);
@@ -141,6 +142,7 @@ public class LoginForm : AntdUI.Window
         }
 
         btnLogin.Enabled = false;
+        btnLogin.Loading = true;
         btnLogin.Text = "Đang xử lý...";
 
         try
@@ -169,6 +171,7 @@ public class LoginForm : AntdUI.Window
         finally
         {
             btnLogin.Enabled = true;
+            btnLogin.Loading = false;
             btnLogin.Text = "ĐĂNG NHẬP";
         }
     }
