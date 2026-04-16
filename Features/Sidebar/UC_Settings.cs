@@ -11,9 +11,9 @@ public class UC_Settings : UserControl, IValidatableComponent<ChangePasswordPayl
 {
     private readonly IUserSession _session;
 
-    private TextBox _txtOldPass = null!;
-    private TextBox _txtNewPass = null!;
-    private TextBox _txtConfirmPass = null!;
+    private AntdUI.Input _txtOldPass = null!;
+    private AntdUI.Input _txtNewPass = null!;
+    private AntdUI.Input _txtConfirmPass = null!;
 
     public UC_Settings(IUserSession session)
     {
@@ -26,13 +26,15 @@ public class UC_Settings : UserControl, IValidatableComponent<ChangePasswordPayl
         Dock = DockStyle.Fill;
         BackColor = Color.White;
 
-        Panel pnlMain = new()
+        var pnlMain = new AntdUI.Panel
         {
             Dock = DockStyle.Fill,
-            Padding = new Padding(30)
+            Padding = new Padding(30),
+            Radius = 0,
+            Back = Color.White
         };
 
-        Label lblTitle = new()
+        var lblTitle = new AntdUI.Label
         {
             Text = "THÔNG TIN CÁ NHÂN",
             Font = new Font("Segoe UI", 16, FontStyle.Bold),
@@ -45,19 +47,21 @@ public class UC_Settings : UserControl, IValidatableComponent<ChangePasswordPayl
         var pnlFullName = CreateInfoRow("Họ tên:", _session.CurrentUser?.FullName ?? "N/A");
         var pnlUsername = CreateInfoRow("Tài khoản:", _session.CurrentUser?.Username ?? "N/A");
 
-        Panel pnlDivider = new()
+        var pnlDivider = new AntdUI.Panel
         {
             Dock = DockStyle.Top,
-            Height = 30
+            Height = 30,
+            Radius = 0,
+            Back = Color.White
         };
-        pnlDivider.Controls.Add(new Label
+        pnlDivider.Controls.Add(new AntdUI.Divider
         {
             Dock = DockStyle.Bottom,
             Height = 2,
-            BackColor = Color.LightGray
+            Text = string.Empty
         });
 
-        Label lblPassTitle = new()
+        var lblPassTitle = new AntdUI.Label
         {
             Text = "ĐỔI MẬT KHẨU",
             Font = new Font("Segoe UI", 14, FontStyle.Bold),
@@ -113,17 +117,23 @@ public class UC_Settings : UserControl, IValidatableComponent<ChangePasswordPayl
     public ChangePasswordPayload GetPayload()
         => new(_txtOldPass.Text, _txtNewPass.Text, _txtConfirmPass.Text);
 
-    private static Panel CreateInfoRow(string labelText, string valueText)
+    private static AntdUI.Panel CreateInfoRow(string labelText, string valueText)
     {
-        Panel pnl = new() { Dock = DockStyle.Top, Height = 35 };
-        Label lblVal = new()
+        var pnl = new AntdUI.Panel
+        {
+            Dock = DockStyle.Top,
+            Height = 35,
+            Radius = 0,
+            Back = Color.White
+        };
+        var lblVal = new AntdUI.Label
         {
             Text = valueText,
             Dock = DockStyle.Fill,
             Font = new Font("Segoe UI", 11, FontStyle.Bold),
             TextAlign = ContentAlignment.MiddleLeft
         };
-        Label lblKey = new()
+        var lblKey = new AntdUI.Label
         {
             Text = labelText,
             Dock = DockStyle.Left,
@@ -138,16 +148,23 @@ public class UC_Settings : UserControl, IValidatableComponent<ChangePasswordPayl
         return pnl;
     }
 
-    private static Panel CreateInputRow(string labelText, out TextBox txt)
+    private static AntdUI.Panel CreateInputRow(string labelText, out AntdUI.Input txt)
     {
-        Panel pnl = new() { Dock = DockStyle.Top, Height = 60, Padding = new Padding(0, 5, 0, 5) };
-        txt = new TextBox
+        var pnl = new AntdUI.Panel
+        {
+            Dock = DockStyle.Top,
+            Height = 60,
+            Padding = new Padding(0, 5, 0, 5),
+            Radius = 0,
+            Back = Color.White
+        };
+        txt = new AntdUI.Input
         {
             Dock = DockStyle.Bottom,
             Font = new Font("Segoe UI", 12),
-            PasswordChar = '*'
+            UseSystemPasswordChar = true
         };
-        Label lblKey = new()
+        var lblKey = new AntdUI.Label
         {
             Text = labelText,
             Dock = DockStyle.Top,

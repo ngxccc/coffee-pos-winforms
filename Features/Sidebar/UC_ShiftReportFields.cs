@@ -12,10 +12,10 @@ public class UC_ShiftReportFields : UserControl, IValidatableComponent<ShiftRepo
     private readonly IUserSession _session;
     private readonly IShiftReportQueryService _shiftReportQueryService;
 
-    private Label _lblTotalBills = null!;
-    private Label _lblExpectedCash = null!;
-    private TextBox _txtActualCash = null!;
-    private TextBox _txtNote = null!;
+    private AntdUI.Label _lblTotalBills = null!;
+    private AntdUI.Label _lblExpectedCash = null!;
+    private AntdUI.Input _txtActualCash = null!;
+    private AntdUI.Input _txtNote = null!;
 
     private int _totalBills;
     private decimal _expectedCash;
@@ -57,7 +57,7 @@ public class UC_ShiftReportFields : UserControl, IValidatableComponent<ShiftRepo
         };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
 
-        Label lblHeader = new()
+        var lblHeader = new AntdUI.Label
         {
             Text = $"Nhân viên: {_session.CurrentUser?.FullName}",
             Font = new Font("Segoe UI", 12, FontStyle.Bold),
@@ -66,14 +66,15 @@ public class UC_ShiftReportFields : UserControl, IValidatableComponent<ShiftRepo
             Margin = new Padding(0, 0, 0, 20)
         };
 
-        _lblTotalBills = new Label
+        _lblTotalBills = new AntdUI.Label
         {
             Text = "Tổng hoá đơn: Đang tải...",
             Font = new Font("Segoe UI", 11),
             AutoSize = true,
             Margin = new Padding(0, 0, 0, 5)
         };
-        _lblExpectedCash = new Label
+
+        _lblExpectedCash = new AntdUI.Label
         {
             Text = "Tiền trên hệ thống: [ĐÃ ẨN]",
             Font = new Font("Segoe UI", 11),
@@ -81,32 +82,37 @@ public class UC_ShiftReportFields : UserControl, IValidatableComponent<ShiftRepo
             Margin = new Padding(0, 0, 0, 20)
         };
 
-        Label lblInputTitle = new()
+        var lblInputTitle = new AntdUI.Label
         {
             Text = "Nhập số tiền mặt thực tế trong két:",
             Font = new Font("Segoe UI", 10, FontStyle.Bold),
             AutoSize = true,
             Margin = new Padding(0, 0, 0, 5)
         };
-        _txtActualCash = new TextBox
+
+        _txtActualCash = new AntdUI.Input
         {
             Font = new Font("Segoe UI", 13),
             Margin = new Padding(0, 0, 0, 10),
+            PlaceholderText = "VD: 2500000",
+            AllowClear = true,
             Dock = DockStyle.Fill
         };
 
-        Label lblNote = new()
+        var lblNote = new AntdUI.Label
         {
             Text = "Ghi chú (lý do lệch tiền nếu có):",
             Font = new Font("Segoe UI", 10),
             AutoSize = true,
             Margin = new Padding(0, 5, 0, 5)
         };
-        _txtNote = new TextBox
+
+        _txtNote = new AntdUI.Input
         {
             Multiline = true,
             Font = new Font("Segoe UI", 10),
             Dock = DockStyle.Fill,
+            AllowClear = true,
             Margin = new Padding(0)
         };
 

@@ -11,11 +11,11 @@ public record UserAccountPayload(string Username, string FullName, UserRole Role
 // HACK: Strongly typed implementation of the generic interface.
 public class UC_UserAccountFields : UserControl, IValidatableComponent<UserAccountPayload>
 {
-    private TextBox _txtUsername = null!;
-    private TextBox _txtFullName = null!;
+    private AntdUI.Input _txtUsername = null!;
+    private AntdUI.Input _txtFullName = null!;
     private ComboBox _cboRole = null!;
-    private TextBox _txtPassword = null!;
-    private TextBox _txtConfirm = null!;
+    private AntdUI.Input _txtPassword = null!;
+    private AntdUI.Input _txtConfirm = null!;
 
     private readonly UserGridDto? _existingUser;
 
@@ -37,15 +37,29 @@ public class UC_UserAccountFields : UserControl, IValidatableComponent<UserAccou
         int width = 370;
 
         // HACK: Stack-based manual layout computation
-        Controls.Add(new Label { Text = "Tên đăng nhập", Location = new Point(left, yPos), AutoSize = true });
-        _txtUsername = new TextBox { Location = new Point(left, yPos += 25), Width = width, Font = new Font("Segoe UI", 10) };
+        Controls.Add(new AntdUI.Label { Text = "Tên đăng nhập", Location = new Point(left, yPos), AutoSize = true });
+        _txtUsername = new AntdUI.Input
+        {
+            Location = new Point(left, yPos += 25),
+            Width = width,
+            Font = new Font("Segoe UI", 10),
+            PlaceholderText = "Nhập tên đăng nhập",
+            AllowClear = true
+        };
         Controls.Add(_txtUsername);
 
-        Controls.Add(new Label { Text = "Họ tên", Location = new Point(left, yPos += 45), AutoSize = true });
-        _txtFullName = new TextBox { Location = new Point(left, yPos += 25), Width = width, Font = new Font("Segoe UI", 10) };
+        Controls.Add(new AntdUI.Label { Text = "Họ tên", Location = new Point(left, yPos += 45), AutoSize = true });
+        _txtFullName = new AntdUI.Input
+        {
+            Location = new Point(left, yPos += 25),
+            Width = width,
+            Font = new Font("Segoe UI", 10),
+            PlaceholderText = "Nhập họ tên",
+            AllowClear = true
+        };
         Controls.Add(_txtFullName);
 
-        Controls.Add(new Label { Text = "Vai trò", Location = new Point(left, yPos += 45), AutoSize = true });
+        Controls.Add(new AntdUI.Label { Text = "Vai trò", Location = new Point(left, yPos += 45), AutoSize = true });
         _cboRole = new ComboBox
         {
             Location = new Point(left, yPos += 25),
@@ -60,33 +74,35 @@ public class UC_UserAccountFields : UserControl, IValidatableComponent<UserAccou
 
         // WHY: Passwords might be optional during Edit mode, indicated by label text
         string passLabel = _existingUser == null ? "Mật khẩu" : "Mật khẩu mới (Để trống nếu không đổi)";
-        Controls.Add(new Label
+        Controls.Add(new AntdUI.Label
         {
             Text = passLabel,
             Location = new Point(left, yPos += 45),
             AutoSize = true
         });
-        _txtPassword = new TextBox
+        _txtPassword = new AntdUI.Input
         {
             Location = new Point(left, yPos += 25),
             Width = width,
             Font = new Font("Segoe UI", 10),
-            UseSystemPasswordChar = true
+            UseSystemPasswordChar = true,
+            PlaceholderText = "Nhập mật khẩu mới"
         };
         Controls.Add(_txtPassword);
 
-        Controls.Add(new Label
+        Controls.Add(new AntdUI.Label
         {
             Text = "Xác nhận mật khẩu",
             Location = new Point(left, yPos += 45),
             AutoSize = true
         });
-        _txtConfirm = new TextBox
+        _txtConfirm = new AntdUI.Input
         {
             Location = new Point(left, yPos += 25),
             Width = width,
             Font = new Font("Segoe UI", 10),
-            UseSystemPasswordChar = true
+            UseSystemPasswordChar = true,
+            PlaceholderText = "Nhập lại mật khẩu"
         };
         Controls.Add(_txtConfirm);
     }

@@ -1,5 +1,3 @@
-using FontAwesome.Sharp;
-
 namespace CoffeePOS.Features.Sidebar;
 
 public class UC_Sidebar : UserControl
@@ -20,19 +18,19 @@ public class UC_Sidebar : UserControl
         Dock = DockStyle.Left;
         BackColor = Color.FromArgb(30, 30, 30);
 
-        IconButton btnHome = CreateSidebarButton(IconChar.Home);
+        var btnHome = CreateSidebarButton("HOME");
         btnHome.Dock = DockStyle.Top;
         btnHome.Click += (s, e) => OnHomeClicked?.Invoke(this, EventArgs.Empty);
 
-        IconButton btnLogout = CreateSidebarButton(IconChar.SignOutAlt);
+        var btnLogout = CreateSidebarButton("LOGOUT");
         btnLogout.Dock = DockStyle.Bottom;
         btnLogout.Click += (s, e) => OnLogoutClicked?.Invoke(this, EventArgs.Empty);
 
-        IconButton btnSettings = CreateSidebarButton(IconChar.Cog);
+        var btnSettings = CreateSidebarButton("SETTING");
         btnSettings.Dock = DockStyle.Bottom;
         btnSettings.Click += (s, e) => OnSettingsClicked?.Invoke(this, EventArgs.Empty);
 
-        IconButton btnBillHistory = CreateSidebarButton(IconChar.History);
+        var btnBillHistory = CreateSidebarButton("BILL");
         btnBillHistory.Dock = DockStyle.Bottom;
         btnBillHistory.Click += (s, e) => OnBillHistoryClicked?.Invoke(this, EventArgs.Empty);
 
@@ -42,19 +40,17 @@ public class UC_Sidebar : UserControl
         Controls.Add(btnLogout);
     }
 
-    private static IconButton CreateSidebarButton(IconChar icon)
+    private static AntdUI.Button CreateSidebarButton(string text)
     {
-        return new IconButton
+        return new AntdUI.Button
         {
-            IconChar = icon,
-            IconColor = Color.White,
-            IconSize = 32,
+            Text = text,
+            Type = AntdUI.TTypeMini.Default,
             Height = 80,
-            FlatStyle = FlatStyle.Flat,
-            ForeColor = Color.Transparent,
-            TextImageRelation = TextImageRelation.Overlay,
+            Radius = 0,
             Cursor = Cursors.Hand,
-            FlatAppearance = { BorderSize = 0, MouseOverBackColor = Color.FromArgb(50, 50, 50) }
+            ForeColor = Color.White,
+            BackColor = Color.Transparent
         };
     }
 }

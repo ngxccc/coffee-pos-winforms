@@ -72,7 +72,7 @@ public class UC_ProductCustomization : UserControl, IValidatableComponent<CartIt
         };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
 
-        var lblTitle = new Label
+        var lblTitle = new AntdUI.Label
         {
             Text = $"Sản phẩm: {_product.Name}",
             Font = new Font("Segoe UI", 12, FontStyle.Bold),
@@ -81,7 +81,7 @@ public class UC_ProductCustomization : UserControl, IValidatableComponent<CartIt
             Margin = new Padding(0, 0, 0, 5)
         };
 
-        var lblPrice = new Label
+        var lblPrice = new AntdUI.Label
         {
             Text = $"Giá gốc: {_product.Price:N0} đ",
             Font = new Font("Segoe UI", 10),

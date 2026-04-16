@@ -8,7 +8,7 @@ public record ProductPayload(string Name, decimal Price, int CategoryId, string 
 
 public class UC_ProductFields : UserControl, IValidatableComponent<ProductPayload>
 {
-    private readonly TextBox _txtName;
+    private readonly AntdUI.Input _txtName;
     private readonly NumericUpDown _nudPrice;
     private readonly ComboBox _cboCategory;
     private readonly PictureBox _picImage;
@@ -19,21 +19,23 @@ public class UC_ProductFields : UserControl, IValidatableComponent<ProductPayloa
         Dock = DockStyle.Fill;
         BackColor = Color.White;
 
-        Controls.Add(new Label
+        Controls.Add(new AntdUI.Label
         {
             Text = "Tên món",
             Location = new Point(20, 20),
             AutoSize = true
         });
-        _txtName = new TextBox
+        _txtName = new AntdUI.Input
         {
             Location = new Point(20, 45),
             Width = 420,
-            Font = new Font("Segoe UI", 11)
+            Font = new Font("Segoe UI", 11),
+            PlaceholderText = "Nhập tên món",
+            AllowClear = true
         };
         Controls.Add(_txtName);
 
-        Controls.Add(new Label
+        Controls.Add(new AntdUI.Label
         {
             Text = "Giá bán (VNĐ)",
             Location = new Point(20, 85),
@@ -50,7 +52,7 @@ public class UC_ProductFields : UserControl, IValidatableComponent<ProductPayloa
         };
         Controls.Add(_nudPrice);
 
-        Controls.Add(new Label
+        Controls.Add(new AntdUI.Label
         {
             Text = "Danh mục",
             Location = new Point(240, 85),
@@ -68,7 +70,7 @@ public class UC_ProductFields : UserControl, IValidatableComponent<ProductPayloa
         };
         Controls.Add(_cboCategory);
 
-        Controls.Add(new Label
+        Controls.Add(new AntdUI.Label
         {
             Text = "Hình ảnh",
             Location = new Point(20, 150),
@@ -83,11 +85,12 @@ public class UC_ProductFields : UserControl, IValidatableComponent<ProductPayloa
         };
         Controls.Add(_picImage);
 
-        var btnChooseImage = new Button
+        var btnChooseImage = new AntdUI.Button
         {
             Text = "Chọn ảnh",
             Location = new Point(190, 175),
             Size = new Size(120, 35),
+            Type = AntdUI.TTypeMini.Primary,
             Cursor = Cursors.Hand
         };
         btnChooseImage.Click += (_, _) => ChooseImage();
