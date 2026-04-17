@@ -1,6 +1,5 @@
-using System.Runtime.InteropServices;
+using System.Diagnostics;
 using CoffeePOS.Core;
-using CoffeePOS.Data;
 using CoffeePOS.Extensions;
 using CoffeePOS.Shared.Enums;
 using CoffeePOS.Shared.Helpers;
@@ -19,10 +18,9 @@ static class Program
     {
         ApplicationConfiguration.Initialize();
 
-        // WHY: Nâng cấp chất lượng render GDI+ để giao diện không bị mờ trên màn 2K/4K
+        // WHY: GDI+ text rendering optimization for High-DPI screens
         AntdUI.Config.TextRenderingHighQuality = true;
         AntdUI.Config.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
-        // WHY: Đăng ký Theme sáng/tối và viền Form
         AntdUI.Config.Theme().Dark("#000", "#fff").Light("#fff", "#000").FormBorderColor();
 
         var bootstrapConfig = new ConfigurationBuilder()
@@ -39,22 +37,27 @@ static class Program
         try
         {
             Log.Information("=== KHỞI ĐỘNG PHẦN MỀM COFFEE POS ===");
+            var startupTimer = Stopwatch.StartNew();
 
             SqlFileLoader.ValidateAllSqlKeys();
+            Log.Information("Startup phase SqlFileLoader.ValidateAllSqlKeys: {ElapsedMs} ms", startupTimer.ElapsedMilliseconds);
 
             string connStr = bootstrapConfig.GetConnectionString("DefaultConnection")
                              ?? throw new Exception("Chưa cấu hình ConnectionString!");
 
             host = CreateHostBuilder(connStr).UseSerilog().Build();
+            Log.Information("Startup phase Host.Build: {ElapsedMs} ms", startupTimer.ElapsedMilliseconds);
 
-            DbInitializer.Initialize(connStr);
-            TimeKeeper.Initialize(connStr);
-            InvoiceGenerator.Initialize();
+            // PERF: TimeKeeper and DbInitializer calls removed to unblock Main Thread
+            // InvoiceGenerator initialization deferred to LoginForm background worker
 
-            // Tự động gọi ExecuteAsync của tất cả các BackgroundService
             host.Start();
+            Log.Information("Startup phase host.Start: {ElapsedMs} ms", startupTimer.ElapsedMilliseconds);
 
             var appState = host.Services.GetRequiredService<AppStateManager>();
+            Log.Information("Startup phase Resolve AppStateManager: {ElapsedMs} ms", startupTimer.ElapsedMilliseconds);
+
+            Log.Information("Startup complete - opening first form at {ElapsedMs} ms", startupTimer.ElapsedMilliseconds);
             Application.Run(appState);
         }
         catch (Exception ex)
@@ -81,7 +84,6 @@ static class Program
                 var dataSourceBuilder = new NpgsqlDataSourceBuilder(connStr);
                 dataSourceBuilder.MapEnum<UserRole>("user_role");
 
-                // PERF: Build the actual NpgsqlDataSource that implements IAsyncDisposable and manages Connection Pool
                 var npgsqlDataSource = dataSourceBuilder.Build();
 
                 services.AddSingleton(npgsqlDataSource);

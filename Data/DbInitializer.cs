@@ -1,4 +1,5 @@
 using CoffeePOS.Shared.Helpers;
+using Microsoft.Extensions.Configuration;
 using Npgsql;
 
 namespace CoffeePOS.Data;
@@ -20,65 +21,75 @@ public static class DbInitializer
     private static readonly string SqlCountUserByRole = SqlFileLoader.Load(SqlKeys.DbInitializer.CountUserByRole);
     private static readonly string SqlInsertSeedUser = SqlFileLoader.Load(SqlKeys.DbInitializer.InsertSeedUser);
 
-    public static void Initialize(string connStr)
+    // PERF: Utilize NpgsqlDataSource for built-in connection pooling and multiplexing
+    public static async Task InitializeAsync(NpgsqlDataSource dataSource, IConfiguration config)
     {
-        using var conn = new NpgsqlConnection(connStr);
-        conn.Open();
+        // WHY: Short-circuit directly from configuration. Zero database hits required to check state.
+        bool shouldRunMigration = config.GetValue<bool>("SystemConfig:RunDatabaseMigrationsOnStartup");
 
-        ExecuteSql(conn, SqlCreateEnums);
-        ExecuteSql(conn, SqlCreateUsersTable);
-        ExecuteSql(conn, SqlCreateCategoriesTable);
-        ExecuteSql(conn, SqlCreateProductsTable);
-        ExecuteSql(conn, SqlCreateProductsIndexes);
-        ExecuteSql(conn, SqlCreateBillsTable);
-        ExecuteSql(conn, SqlCreateBillsIndexes);
-        ExecuteSql(conn, SqlCreateBillDetailsTable);
-        ExecuteSql(conn, SqlCreateToppingsTable);
-        ExecuteSql(conn, SqlCreateBillDetailToppingsTable);
-        ExecuteSql(conn, SqlCreateShiftReportsTable);
-        ExecuteSql(conn, SqlCreateShiftReportsIndexes);
+        if (!shouldRunMigration)
+        {
+            return;
+        }
 
-        SeedAdminUser(conn);
+        await using var conn = await dataSource.OpenConnectionAsync();
+
+        // TODO: Replace manual script execution with DbUp or EF Core Migrations for real version tracking.
+        await ExecuteSqlAsync(conn, SqlCreateEnums);
+        await ExecuteSqlAsync(conn, SqlCreateUsersTable);
+        await ExecuteSqlAsync(conn, SqlCreateCategoriesTable);
+        await ExecuteSqlAsync(conn, SqlCreateProductsTable);
+        await ExecuteSqlAsync(conn, SqlCreateProductsIndexes);
+        await ExecuteSqlAsync(conn, SqlCreateBillsTable);
+        await ExecuteSqlAsync(conn, SqlCreateBillsIndexes);
+        await ExecuteSqlAsync(conn, SqlCreateBillDetailsTable);
+        await ExecuteSqlAsync(conn, SqlCreateToppingsTable);
+        await ExecuteSqlAsync(conn, SqlCreateBillDetailToppingsTable);
+        await ExecuteSqlAsync(conn, SqlCreateShiftReportsTable);
+        await ExecuteSqlAsync(conn, SqlCreateShiftReportsIndexes);
+
+        await SeedAdminUserAsync(conn);
     }
 
-    private static void ExecuteSql(NpgsqlConnection conn, string sql)
+    private static async Task ExecuteSqlAsync(NpgsqlConnection conn, string sql)
     {
-        using var cmd = new NpgsqlCommand(sql, conn);
-        cmd.ExecuteNonQuery();
+        await using var cmd = new NpgsqlCommand(sql, conn);
+        await cmd.ExecuteNonQueryAsync();
     }
 
-    private static void SeedAdminUser(NpgsqlConnection conn)
+    private static async Task SeedAdminUserAsync(NpgsqlConnection conn)
     {
-        long countAdmin = GetUserCountByRole(conn, "admin");
-        long countCashier = GetUserCountByRole(conn, "cashier");
+        long countAdmin = await GetUserCountByRoleAsync(conn, "admin");
+        long countCashier = await GetUserCountByRoleAsync(conn, "cashier");
 
         if (countAdmin == 0)
         {
             string hash = BCrypt.Net.BCrypt.HashPassword("admin123", workFactor: 11);
-            InsertSeedUser(conn, "admin", hash, "Seed Admin", "admin");
+            await InsertSeedUserAsync(conn, "admin", hash, "Seed Admin", "admin");
         }
 
         if (countCashier == 0)
         {
             string hash = BCrypt.Net.BCrypt.HashPassword("123123", workFactor: 11);
-            InsertSeedUser(conn, "cashier", hash, "Seed Cashier", "cashier");
+            await InsertSeedUserAsync(conn, "cashier", hash, "Seed Cashier", "cashier");
         }
     }
 
-    private static long GetUserCountByRole(NpgsqlConnection conn, string role)
+    private static async Task<long> GetUserCountByRoleAsync(NpgsqlConnection conn, string role)
     {
-        using var cmd = new NpgsqlCommand(SqlCountUserByRole, conn);
+        await using var cmd = new NpgsqlCommand(SqlCountUserByRole, conn);
         cmd.Parameters.AddWithValue("role", role);
-        return (long)cmd.ExecuteScalar()!;
+        var result = await cmd.ExecuteScalarAsync();
+        return (long)(result ?? 0L);
     }
 
-    private static void InsertSeedUser(NpgsqlConnection conn, string username, string hash, string fullName, string role)
+    private static async Task InsertSeedUserAsync(NpgsqlConnection conn, string username, string hash, string fullName, string role)
     {
-        using var cmd = new NpgsqlCommand(SqlInsertSeedUser, conn);
+        await using var cmd = new NpgsqlCommand(SqlInsertSeedUser, conn);
         cmd.Parameters.AddWithValue("username", username);
         cmd.Parameters.AddWithValue("hash", hash);
         cmd.Parameters.AddWithValue("fullName", fullName);
         cmd.Parameters.AddWithValue("role", role);
-        cmd.ExecuteNonQuery();
+        await cmd.ExecuteNonQueryAsync();
     }
 }

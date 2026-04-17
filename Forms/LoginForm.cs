@@ -1,43 +1,86 @@
 using AntdUI;
 using CoffeePOS.Core;
+using CoffeePOS.Data;
 using CoffeePOS.Services.Contracts.Commands;
 using CoffeePOS.Shared.Helpers;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Npgsql;
 
 namespace CoffeePOS.Forms;
 
-// WHY: This file handles strictly Business Logic and State Mutations. Zero UI rendering code allowed here.
 public partial class LoginForm : Window
 {
     private readonly IUserService _userService;
     private readonly IUserSession _session;
+    private readonly IServiceProvider _serviceProvider;
+    private readonly NpgsqlDataSource _dataSource;
     private CancellationTokenSource? _cts;
+    private bool _isSystemReady = false;
 
-    public LoginForm(IUserService userService, IUserSession session)
+    public LoginForm(IServiceProvider serviceProvider, IUserService userService, IUserSession session, NpgsqlDataSource dataSource)
     {
+        _serviceProvider = serviceProvider;
         _userService = userService;
         _session = session;
+        _dataSource = dataSource;
 
-        // HACK: Physically located in LoginForm.Designer.cs
         InitializeComponent();
 
-        // PERF: Global KeyHook replaces standard AcceptButton to work flawlessly with AntdUI custom GDI+ controls
         KeyPreview = true;
         KeyDown += HandleGlobalKeyDown;
     }
 
-    // HACK: Bắt sự kiện Window bị tắt (bấm nút X)
+    // PERF: Trigger async initialization ONLY after the Form handles its first paint event
+    protected override async void OnShown(EventArgs e)
+    {
+        base.OnShown(e);
+
+        if (_isSystemReady) return;
+
+        _btnLogin.Enabled = false;
+        _btnLogin.Loading = true;
+        _btnLogin.Text = "Hệ Thống Đang Khởi Động...";
+
+        try
+        {
+            // PERF: Dependency Injection required for IConfiguration
+            var config = _serviceProvider.GetRequiredService<IConfiguration>();
+            // PERF: Maximize throughput by executing Disk I/O (Font) and Network I/O (DB) concurrently.
+            var initPdfTask = Task.Run(() => InvoiceGenerator.Initialize());
+            var initDbTask = DbInitializer.InitializeAsync(_dataSource, config);
+
+            await Task.WhenAll(initPdfTask, initDbTask);
+
+            _isSystemReady = true;
+        }
+        catch (Exception ex)
+        {
+            MessageBoxHelper.Error($"Initialization Failed: {ex.Message}", "CRITICAL ERROR");
+            Application.Exit();
+        }
+        finally
+        {
+            if (!IsDisposed && !Disposing && _isSystemReady)
+            {
+                _btnLogin.Enabled = true;
+                _btnLogin.Loading = false;
+                _btnLogin.Text = "ĐĂNG NHẬP";
+                _txtUsername.Focus();
+            }
+        }
+    }
+
     protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
     {
         base.OnClosing(e);
-
-        // Gửi tín hiệu Hủy xuống tất cả các Task đang dùng Token này
         _cts?.Cancel();
         _cts?.Dispose();
     }
 
     private void HandleGlobalKeyDown(object? sender, KeyEventArgs e)
     {
-        if (e.KeyCode == Keys.Enter && !_btnLogin.Loading)
+        if (e.KeyCode == Keys.Enter && !_btnLogin.Loading && _isSystemReady)
         {
             e.SuppressKeyPress = true;
             HandleLoginAsync(this, EventArgs.Empty);
@@ -46,6 +89,8 @@ public partial class LoginForm : Window
 
     private async void HandleLoginAsync(object? sender, EventArgs e)
     {
+        if (!_isSystemReady) return;
+
         string username = _txtUsername.Text.Trim();
         string password = _txtPassword.Text;
 
@@ -80,15 +125,15 @@ public partial class LoginForm : Window
         }
         catch (OperationCanceledException)
         {
-            // PERF: Bắt đúng lỗi Hủy Task. Không làm gì cả vì Form đang bị đóng rồi, văng MessageBox lên lúc này sẽ gây lỗi UI.
+            // BUG: Silent catch intentional during Form disposal
         }
         catch (InvalidOperationException ex)
         {
-            MessageBoxHelper.Warning(ex.Message, "Tài khoản bị khóa", this);
+            MessageBoxHelper.Warning(ex.Message, "Tài khoản của bạn đã bị khóa!\nMọi thắc mắc xin liên hệ quản trị viên.", this);
         }
         catch (Exception ex)
         {
-            MessageBoxHelper.Error($"Lỗi kết nối CSDL: {ex.Message}", owner: this);
+            MessageBoxHelper.Error($"Connection Error: {ex.Message}", owner: this);
         }
         finally
         {
