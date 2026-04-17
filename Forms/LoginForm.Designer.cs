@@ -4,10 +4,10 @@ namespace CoffeePOS.Forms;
 
 public partial class LoginForm
 {
-    private Input _txtUsername = null!;
-    private Input _txtPassword = null!;
-    private AntdUI.Button _btnLogin = null!;
-    private PageHeader _windowBar = null!;
+    private Input _txtUsername = null;
+    private Input _txtPassword = null;
+    private AntdUI.Button _btnLogin = null;
+    private PageHeader _windowBar = null;
 
     private void InitializeComponent()
     {
