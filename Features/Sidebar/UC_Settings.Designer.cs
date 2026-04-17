@@ -130,7 +130,7 @@ partial class UC_Settings
             ForeColor = Color.FromArgb(231, 76, 60),
             Dock = DockStyle.Top,
             Height = 40,
-            TextAlign = ContentAlignment.MiddleLeft,
+            TextAlign = ContentAlignment.MiddleCenter,
             Margin = new Padding(0, 0, 0, 10)
         };
 
