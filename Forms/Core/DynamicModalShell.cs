@@ -48,7 +48,7 @@ public sealed class DynamicModalShell<T> : Window
         _contentControl.Dock = DockStyle.Fill;
         Controls.Add(_contentControl);
 
-        var pnlActions = new AntdUI.Panel
+        AntdUI.Panel pnlActions = new()
         {
             Dock = DockStyle.Bottom,
             Height = 60,
@@ -56,7 +56,7 @@ public sealed class DynamicModalShell<T> : Window
         };
 
         // WHY: Use StackPanel to mock Web Flexbox behavior. Prevents coordinates from breaking when DPI scale > 100%.
-        var stackActions = new StackPanel
+        StackPanel stackActions = new()
         {
             Dock = DockStyle.Right,
             AutoSize = true,
@@ -64,21 +64,27 @@ public sealed class DynamicModalShell<T> : Window
             Gap = 10
         };
 
-        _btnSave = new AntdUI.Button
+        _btnSave = new()
         {
             Text = saveButtonText,
             Size = new Size(100, 40),
+            Font = new Font("Segoe UI", 12, FontStyle.Bold),
             Type = TTypeMini.Primary,
-            Visible = showSaveButton
+            Visible = showSaveButton,
+            Shape = TShape.Round,
+            Cursor = Cursors.Hand,
         };
         _btnSave.Click += HandleSaveAction;
 
-        _btnCancel = new AntdUI.Button
+        _btnCancel = new()
         {
             Text = cancelButtonText,
             Size = new Size(100, 40),
+            Font = new Font("Segoe UI", 12, FontStyle.Bold),
             Type = TTypeMini.Default,
-            DialogResult = DialogResult.Cancel
+            DialogResult = DialogResult.Cancel,
+            Shape = TShape.Round,
+            Cursor = Cursors.Hand,
         };
 
         if (showSaveButton)
