@@ -36,15 +36,15 @@ partial class UC_Settings
             Back = Color.White
         };
 
-        AntdUI.Label lblTitle = new()
+        AntdUI.Divider divTitle = new()
         {
             Text = "THÔNG TIN CÁ NHÂN",
             Font = new Font("Segoe UI", 16F, FontStyle.Bold),
             ForeColor = Color.FromArgb(0, 122, 204),
+            ColorSplit = Color.FromArgb(0, 122, 204),
             Dock = DockStyle.Top,
             Height = 40,
-            TextAlign = ContentAlignment.MiddleCenter,
-            Margin = new Padding(0, 0, 0, 20)
+            Margin = new Padding(0, 10, 0, 10)
         };
 
         // --- SECTION 1: THÔNG TIN (Matrix 3x2) ---
@@ -123,15 +123,15 @@ partial class UC_Settings
         };
 
         // --- SECTION 2: MẬT KHẨU (Matrix 3x2) ---
-        AntdUI.Label lblPassTitle = new()
+        AntdUI.Divider divPassTitle = new()
         {
             Text = "ĐỔI MẬT KHẨU",
             Font = new Font("Segoe UI", 14F, FontStyle.Bold),
             ForeColor = Color.FromArgb(231, 76, 60),
+            ColorSplit = Color.FromArgb(231, 76, 60),
             Dock = DockStyle.Top,
             Height = 40,
-            TextAlign = ContentAlignment.MiddleCenter,
-            Margin = new Padding(0, 0, 0, 10)
+            Margin = new Padding(0, 10, 0, 10)
         };
 
         TableLayoutPanel tlpPassSection = new()
@@ -207,10 +207,10 @@ partial class UC_Settings
 
         // HACK: Z-Order stacking for DockStyle.Top (Phải Add ngược từ dưới lên trên)
         pnlMain.Controls.Add(tlpPassSection);
-        pnlMain.Controls.Add(lblPassTitle);
+        pnlMain.Controls.Add(divPassTitle);
         pnlMain.Controls.Add(divider);
         pnlMain.Controls.Add(tlpInfoSection);
-        pnlMain.Controls.Add(lblTitle);
+        pnlMain.Controls.Add(divTitle);
 
         Controls.Add(pnlMain);
     }
