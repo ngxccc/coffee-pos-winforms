@@ -19,6 +19,7 @@ public partial class UC_Sidebar : UserControl
     {
         InitializeComponent();
         Load += OnComponentLoad;
+        _btnToggle.Click += OnToggleClicked;
     }
 
     public void Setup(IUserSession session)
@@ -31,6 +32,22 @@ public partial class UC_Sidebar : UserControl
     {
         if (DesignMode) return;
         RenderNavigationTree();
+    }
+
+    private void OnToggleClicked(object? sender, EventArgs e)
+    {
+        _menuMain.Collapsed = !_menuMain.Collapsed;
+
+        if (_menuMain.Collapsed)
+        {
+            Width = 80;
+            _btnToggle.IconSvg = SvgAssets.MenuUnfoldOutlined;
+        }
+        else
+        {
+            Width = _sidebarWidth;
+            _btnToggle.IconSvg = SvgAssets.MenuFoldOutlined;
+        }
     }
 
     // PERF: Time/Space Complexity is O(N) where N is the number of menu items.
