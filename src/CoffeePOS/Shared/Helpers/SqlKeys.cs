@@ -66,22 +66,4 @@ public static class SqlKeys
     {
         public const string Get = "Topping.get.sql";
     }
-
-    public static class DbInitializer
-    {
-        public const string CreateEnums = "DbInitializer.create_enums.sql";
-        public const string CreateUsersTable = "DbInitializer.create_users_table.sql";
-        public const string CreateCategoriesTable = "DbInitializer.create_categories_table.sql";
-        public const string CreateProductsTable = "DbInitializer.create_products_table.sql";
-        public const string CreateProductsIndexes = "DbInitializer.create_products_indexes.sql";
-        public const string CreateBillsTable = "DbInitializer.create_bills_table.sql";
-        public const string CreateBillsIndexes = "DbInitializer.create_bills_indexes.sql";
-        public const string CreateBillDetailsTable = "DbInitializer.create_bill_details_table.sql";
-        public const string CreateToppingsTable = "DbInitializer.create_toppings_table.sql";
-        public const string CreateBillDetailToppingsTable = "DbInitializer.create_bill_detail_toppings_table.sql";
-        public const string CreateShiftReportsTable = "DbInitializer.create_shift_reports_table.sql";
-        public const string CreateShiftReportsIndexes = "DbInitializer.create_shift_reports_indexes.sql";
-        public const string CountUserByRole = "DbInitializer.count_user_by_role.sql";
-        public const string InsertSeedUser = "DbInitializer.insert_seed_user.sql";
-    }
 }

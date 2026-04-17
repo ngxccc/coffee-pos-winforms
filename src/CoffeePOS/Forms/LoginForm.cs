@@ -48,9 +48,8 @@ public partial class LoginForm : Window
             var config = _serviceProvider.GetRequiredService<IConfiguration>();
             // PERF: Maximize throughput by executing Disk I/O (Font) and Network I/O (DB) concurrently.
             var initPdfTask = Task.Run(() => InvoiceGenerator.Initialize());
-            var initDbTask = DbInitializer.InitializeAsync(_dataSource, config);
 
-            await Task.WhenAll(initPdfTask, initDbTask);
+            await initPdfTask;
 
             _isSystemReady = true;
         }

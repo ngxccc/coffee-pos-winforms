@@ -4,15 +4,16 @@ using CoffeePOS.Shared.Helpers;
 
 namespace CoffeePOS.Features.Admin.Controls;
 
-public record ProductPayload(string Name, decimal Price, int CategoryId, string SelectedImagePath);
+public record ProductPayload(string Name, decimal Price, int CategoryId, string ImageUrl);
 
 public class UC_ProductFields : UserControl, IValidatableComponent<ProductPayload>
 {
     private readonly AntdUI.Input _txtName;
     private readonly NumericUpDown _nudPrice;
     private readonly ComboBox _cboCategory;
+    private readonly AntdUI.Input _txtImageUrl;
     private readonly PictureBox _picImage;
-    private string _selectedImagePath = string.Empty;
+    private readonly AntdUI.Button _btnChooseImage;
 
     public UC_ProductFields(IReadOnlyList<CategoryOptionDto> categories, ProductDetailDto? existingProduct = null)
     {
@@ -72,40 +73,53 @@ public class UC_ProductFields : UserControl, IValidatableComponent<ProductPayloa
 
         Controls.Add(new AntdUI.Label
         {
-            Text = "Hình ảnh",
+            Text = "Link Hình Ảnh (URL) hoặc Upload",
             Location = new Point(20, 150),
             AutoSize = true
         });
-        _picImage = new PictureBox
+
+        _txtImageUrl = new AntdUI.Input
         {
             Location = new Point(20, 175),
+            Width = 340,
+            Font = new Font("Segoe UI", 11),
+            PlaceholderText = "https://i.imgur.com/...",
+            AllowClear = true
+        };
+        // PERF: Async loading preview when user manually pastes a URL
+        _txtImageUrl.TextChanged += async (_, _) => await PreviewImageAsync(_txtImageUrl.Text);
+        Controls.Add(_txtImageUrl);
+
+        _btnChooseImage = new AntdUI.Button
+        {
+            Text = "Up ảnh",
+            Location = new Point(370, 175),
+            Size = new Size(70, 38),
+            Type = AntdUI.TTypeMini.Primary,
+            Cursor = Cursors.Hand
+        };
+        _btnChooseImage.Click += HandleLocalImageUploadAsync;
+        Controls.Add(_btnChooseImage);
+
+        _picImage = new PictureBox
+        {
+            Location = new Point(20, 220),
             Size = new Size(150, 150),
             BorderStyle = BorderStyle.FixedSingle,
             SizeMode = PictureBoxSizeMode.Zoom
         };
         Controls.Add(_picImage);
 
-        var btnChooseImage = new AntdUI.Button
-        {
-            Text = "Chọn ảnh",
-            Location = new Point(190, 175),
-            Size = new Size(120, 35),
-            Type = AntdUI.TTypeMini.Primary,
-            Cursor = Cursors.Hand
-        };
-        btnChooseImage.Click += (_, _) => ChooseImage();
-        Controls.Add(btnChooseImage);
-
         if (existingProduct != null)
         {
             _txtName.Text = existingProduct.Name;
             _nudPrice.Value = existingProduct.Price;
             _cboCategory.SelectedValue = existingProduct.CategoryId;
+            _txtImageUrl.Text = existingProduct.ImageUrl;
 
             if (!string.IsNullOrWhiteSpace(existingProduct.ImageUrl))
             {
-                var fullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Images", "Products", existingProduct.ImageUrl);
-                LoadImageSafely(fullPath);
+                _ = PreviewImageAsync(existingProduct.ImageUrl);
             }
         }
     }
@@ -141,33 +155,50 @@ public class UC_ProductFields : UserControl, IValidatableComponent<ProductPayloa
             _txtName.Text.Trim(),
             _nudPrice.Value,
             (int)_cboCategory.SelectedValue!,
-            _selectedImagePath);
+            _txtImageUrl.Text.Trim());
 
-    private void ChooseImage()
+    private async void HandleLocalImageUploadAsync(object? sender, EventArgs e)
     {
         using OpenFileDialog ofd = new();
         ofd.Filter = "Image Files|*.jpg;*.jpeg;*.png;*.webp";
-        if (ofd.ShowDialog() != DialogResult.OK)
-        {
-            return;
-        }
+        if (ofd.ShowDialog() != DialogResult.OK) return;
 
-        _selectedImagePath = ofd.FileName;
-        LoadImageSafely(_selectedImagePath);
+        _btnChooseImage.Loading = true;
+        _btnChooseImage.Enabled = false;
+
+        try
+        {
+            // Network I/O execution
+            string cloudUrl = await ImgurHelper.UploadImageAsync(ofd.FileName);
+            _txtImageUrl.Text = cloudUrl;
+        }
+        catch (Exception ex)
+        {
+            MessageBoxHelper.Error($"Up ảnh xịt: {ex.Message}", owner: this);
+        }
+        finally
+        {
+            _btnChooseImage.Loading = false;
+            _btnChooseImage.Enabled = true;
+        }
     }
 
-    private void LoadImageSafely(string imagePath)
+    private async Task PreviewImageAsync(string url)
     {
-        if (!File.Exists(imagePath))
+        if (string.IsNullOrWhiteSpace(url) || !Uri.TryCreate(url, UriKind.Absolute, out _))
         {
+            _picImage.Image?.Dispose();
+            _picImage.Image = null;
             return;
         }
 
-        _picImage.Image?.Dispose();
-        _picImage.Image = null;
-
-        using var fs = new FileStream(imagePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-        using var img = Image.FromStream(fs);
-        _picImage.Image = new Bitmap(img);
+        try
+        {
+            await ImageHelper.LoadImageAsync(_picImage, url, "Preview", 0);
+        }
+        catch
+        {
+            // BUG: Silent fail on preview to prevent UI crashing if user pastes a broken URL
+        }
     }
 }

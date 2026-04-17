@@ -23,7 +23,7 @@ public class AppStateManager : ApplicationContext
         loginForm.FormClosed += OnFormClosed;
 
         MainForm = loginForm;
-        loginForm.Show();
+        // loginForm.Show();
     }
 
     private void ShowMainWorkspace()

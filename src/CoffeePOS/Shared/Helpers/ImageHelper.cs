@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Serilog;
 
 namespace CoffeePOS.Shared.Helpers;
@@ -6,6 +7,9 @@ public static class ImageHelper
 {
     private static readonly HttpClient HttpClient = new();
     private static readonly string BaseImageDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Images", "Products");
+
+    // PERF: Thread-safe In-Memory Cache lưu mảng byte để chống giật lag và tiết kiệm băng thông
+    private static readonly ConcurrentDictionary<string, byte[]> _byteCache = new();
 
     public static async Task LoadImageAsync(PictureBox pictureBox, string? imageIdentifier, string fallbackName, int colorSeed)
     {
@@ -22,7 +26,7 @@ public static class ImageHelper
 
             if (pictureBox.IsDisposed)
             {
-                realImage?.Dispose(); // Tránh leak nếu user đóng form lúc đang tải
+                realImage?.Dispose();
                 return;
             }
 
@@ -52,29 +56,42 @@ public static class ImageHelper
 
         try
         {
-            string urlOrPath = identifier.StartsWith("http", StringComparison.OrdinalIgnoreCase)
-                ? identifier
-                : Path.Combine(BaseImageDir, identifier);
-
             byte[] imageBytes;
 
-            if (Uri.TryCreate(urlOrPath, UriKind.Absolute, out Uri? uri) &&
-                (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
+            // 1. Kiểm tra RAM trước (Cache Hit)
+            if (_byteCache.TryGetValue(identifier, out var cachedBytes))
             {
-                imageBytes = await HttpClient.GetByteArrayAsync(uri);
-            }
-            else if (File.Exists(urlOrPath))
-            {
-                imageBytes = await File.ReadAllBytesAsync(urlOrPath);
+                imageBytes = cachedBytes;
             }
             else
             {
-                return null;
+                // 2. Không có trong RAM thì mới đi tải (Cache Miss)
+                string urlOrPath = identifier.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+                    ? identifier
+                    : Path.Combine(BaseImageDir, identifier);
+
+                if (Uri.TryCreate(urlOrPath, UriKind.Absolute, out Uri? uri) &&
+                    (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
+                {
+                    imageBytes = await HttpClient.GetByteArrayAsync(uri);
+                }
+                else if (File.Exists(urlOrPath))
+                {
+                    imageBytes = await File.ReadAllBytesAsync(urlOrPath);
+                }
+                else
+                {
+                    return null;
+                }
+
+                // Lưu vào RAM cho lần sau
+                _byteCache.TryAdd(identifier, imageBytes);
             }
 
+            // Mất vài ms để decode byte[] thành Bitmap nhưng cực kỳ an toàn cho GDI+
             using var ms = new MemoryStream(imageBytes);
             using var originalImage = Image.FromStream(ms);
-            return new Bitmap(originalImage); // Deep copy an toàn
+            return new Bitmap(originalImage);
         }
         catch
         {

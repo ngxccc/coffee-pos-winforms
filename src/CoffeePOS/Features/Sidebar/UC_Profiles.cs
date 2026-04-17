@@ -22,7 +22,6 @@ public partial class UC_Profiles : UserControl, IValidatableComponent<ChangePass
 
     private void HydrateData()
     {
-        Log.Debug($"{_session?.CurrentUser?.Role}");
         _lblRoleValue.Text = FormatRole(_session?.CurrentUser?.Role);
         _lblFullNameValue.Text = _session?.CurrentUser?.FullName ?? "N/A";
         _lblUsernameValue.Text = _session?.CurrentUser?.Username ?? "N/A";

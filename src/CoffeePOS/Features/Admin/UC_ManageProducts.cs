@@ -142,7 +142,7 @@ public class UC_ManageProducts : UserControl
             }
 
             var payload = shell.ExtractData();
-            string finalFileName = SaveSelectedImageAndResolveName(payload.SelectedImagePath, string.Empty);
+            string finalFileName = SaveSelectedImageAndResolveName(payload.ImageUrl, string.Empty);
 
             await _productService.AddProductAsync(new UpsertProductDto(
                 0,
@@ -184,7 +184,7 @@ public class UC_ManageProducts : UserControl
             }
 
             var payload = shell.ExtractData();
-            string finalFileName = SaveSelectedImageAndResolveName(payload.SelectedImagePath, product.ImageUrl ?? string.Empty);
+            string finalFileName = SaveSelectedImageAndResolveName(payload.ImageUrl, product.ImageUrl ?? string.Empty);
 
             await _productService.UpdateProductAsync(new UpsertProductDto(
                 product.Id,
@@ -193,7 +193,7 @@ public class UC_ManageProducts : UserControl
                 payload.CategoryId,
                 finalFileName));
 
-            if (!string.IsNullOrWhiteSpace(payload.SelectedImagePath))
+            if (!string.IsNullOrWhiteSpace(payload.ImageUrl))
             {
                 TryDeletePreviousImage(product.ImageUrl);
             }

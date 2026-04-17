@@ -24,7 +24,7 @@ static class Program
         AntdUI.Config.Theme().Dark("#000", "#fff").Light("#fff", "#000").FormBorderColor();
 
         var bootstrapConfig = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
+            .SetBasePath(AppContext.BaseDirectory)
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
             .Build();
 
@@ -47,9 +47,6 @@ static class Program
 
             host = CreateHostBuilder(connStr).UseSerilog().Build();
             Log.Information("Startup phase Host.Build: {ElapsedMs} ms", startupTimer.ElapsedMilliseconds);
-
-            // PERF: TimeKeeper and DbInitializer calls removed to unblock Main Thread
-            // InvoiceGenerator initialization deferred to LoginForm background worker
 
             host.Start();
             Log.Information("Startup phase host.Start: {ElapsedMs} ms", startupTimer.ElapsedMilliseconds);
