@@ -45,21 +45,24 @@ public sealed class DynamicModalShell<T> : Window
         _innerContent = validatableContent;
         _contentControl = contentModule;
 
-        _contentControl.Dock = DockStyle.Fill;
-        Controls.Add(_contentControl);
-
         AntdUI.Panel pnlActions = new()
         {
             Dock = DockStyle.Bottom,
-            Height = 60,
-            Back = Color.WhiteSmoke
+            Height = 50,
+        };
+
+        Divider divider1 = new()
+        {
+            Dock = DockStyle.Bottom,
+            Thickness = 1F,
+            Size = new Size(modalSize.Width, 1),
         };
 
         // WHY: Use StackPanel to mock Web Flexbox behavior. Prevents coordinates from breaking when DPI scale > 100%.
         StackPanel stackActions = new()
         {
             Dock = DockStyle.Right,
-            AutoSize = true,
+            Width = 230,
             Margin = new Padding(10),
             Gap = 10
         };
@@ -94,13 +97,17 @@ public sealed class DynamicModalShell<T> : Window
 
         CancelButton = _btnCancel;
 
-        stackActions.Controls.Add(_btnCancel);
         if (showSaveButton)
         {
             stackActions.Controls.Add(_btnSave);
         }
+        stackActions.Controls.Add(_btnCancel);
 
         pnlActions.Controls.Add(stackActions);
+
+        _contentControl.Dock = DockStyle.Fill;
+        Controls.Add(_contentControl);
+        Controls.Add(divider1);
         Controls.Add(pnlActions);
     }
 
