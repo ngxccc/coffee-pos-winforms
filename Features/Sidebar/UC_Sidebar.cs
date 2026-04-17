@@ -37,7 +37,7 @@ public partial class UC_Sidebar : UserControl
 
         if (_menuMain.Collapsed)
         {
-            Width = 80;
+            Width = _sidebarWidthCollaped;
             _btnToggle.IconSvg = SvgAssets.MenuUnfoldOutlined;
         }
         else

@@ -9,7 +9,9 @@ partial class UC_Sidebar
     private AntdUI.Menu _menuMain = null!;
     private AntdUI.Panel _panelFooter = null!;
     private AntdUI.Button _btnToggle = null!;
+    // TODO: Dynamic width via _menuMain collapsed
     private int _sidebarWidth = 200;
+    private int _sidebarWidthCollaped = 80;
 
     protected override void Dispose(bool disposing)
     {
@@ -28,7 +30,7 @@ partial class UC_Sidebar
         BackColor = Color.White;
         Margin = new Padding(0);
         Name = "UC_Sidebar";
-        Size = new Size(_sidebarWidth, 800);
+        Size = new Size(_sidebarWidthCollaped, 800);
         Dock = DockStyle.Left;
         Padding = new Padding(5);
         SuspendLayout();
@@ -62,7 +64,8 @@ partial class UC_Sidebar
             Dock = DockStyle.Fill,
             Font = new Font("Segoe UI", 11F),
             Name = "menuMain",
-            TabIndex = 1
+            TabIndex = 1,
+            Collapsed = true
         };
 
         _panelFooter.Controls.Add(_btnToggle);
