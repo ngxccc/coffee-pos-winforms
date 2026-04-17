@@ -15,7 +15,7 @@ public abstract class BaseCrudForm : AntdUI.Window
         BackColor = Color.White;
     }
 
-    protected static Label CreateLabel(string text, Point location)
+    protected static AntdUI.Label CreateLabel(string text, Point location)
         => new()
         {
             Text = text,
@@ -24,7 +24,7 @@ public abstract class BaseCrudForm : AntdUI.Window
             Location = location
         };
 
-    protected static TextBox CreateTextBox(Point location, int width, float fontSize = 11)
+    protected static AntdUI.Input CreateInput(Point location, int width, float fontSize = 11)
         => new()
         {
             Location = location,
@@ -32,18 +32,18 @@ public abstract class BaseCrudForm : AntdUI.Window
             Font = new Font("Segoe UI", fontSize)
         };
 
-    protected static TextBox CreatePasswordBox(Point location, int width, float fontSize = 11)
+    protected static AntdUI.Input CreatePasswordBox(Point location, int width, float fontSize = 11)
         => new()
         {
             Location = location,
             Width = width,
             Font = new Font("Segoe UI", fontSize),
-            PasswordChar = '\u25cf'
+            UseSystemPasswordChar = true
         };
 
-    protected static Button CreatePrimaryButton(string text, Point location, Size size, Color backColor)
+    protected static AntdUI.Button CreatePrimaryButton(string text, Point location, Size size, Color backColor)
     {
-        var button = new Button
+        var button = new AntdUI.Button
         {
             Text = text,
             Location = location,
@@ -51,28 +51,24 @@ public abstract class BaseCrudForm : AntdUI.Window
             BackColor = backColor,
             ForeColor = Color.White,
             Font = new Font("Segoe UI", 10, FontStyle.Bold),
-            FlatStyle = FlatStyle.Flat,
-            Cursor = Cursors.Hand
+            Cursor = Cursors.Hand,
         };
 
-        button.FlatAppearance.BorderSize = 0;
         return button;
     }
 
-    protected static Button CreateCancelButton(Point location)
+    protected static AntdUI.Button CreateCancelButton(Point location)
     {
-        var button = new Button
+        var button = new AntdUI.Button
         {
             Text = "HỦY",
             Location = location,
             Size = new Size(70, 32),
             BackColor = Color.Silver,
             Font = new Font("Segoe UI", 10, FontStyle.Bold),
-            FlatStyle = FlatStyle.Flat,
             Cursor = Cursors.Hand
         };
 
-        button.FlatAppearance.BorderSize = 0;
         return button;
     }
 
