@@ -63,14 +63,14 @@ public static class MessageBoxHelper
 
     private static AntdUI.Modal.Config BuildConfig(string title, string message, AntdUI.TType icon, IWin32Window? owner)
     {
+        if (owner is Control control)
+        {
+            owner = control.FindForm();
+        }
+
         if (owner is Form form)
         {
             return new AntdUI.Modal.Config(form, title, message, icon);
-        }
-
-        if (owner is Control control)
-        {
-            return new AntdUI.Modal.Config(new AntdUI.Target(control), title, message, icon);
         }
 
         return new AntdUI.Modal.Config(title, message, icon);
