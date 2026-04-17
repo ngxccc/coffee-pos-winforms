@@ -15,9 +15,8 @@ public partial class UC_Sidebar : UserControl
     public event EventHandler? OnSettingsClicked;
     public event EventHandler? OnLogoutClicked;
 
-    public UC_Sidebar(IUserSession session)
+    public UC_Sidebar()
     {
-        _session = session;
         InitializeComponent();
         Load += OnComponentLoad;
     }
