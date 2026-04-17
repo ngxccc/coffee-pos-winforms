@@ -50,7 +50,8 @@ public partial class LoginForm
             Height = 44,
             Margin = new Padding(0, 0, 0, 20),
             PlaceholderText = "Nhập tên đăng nhập",
-            AllowClear = true
+            AllowClear = true,
+            TabIndex = 1
         };
 
         AntdUI.Label lblPass = new()
@@ -68,7 +69,8 @@ public partial class LoginForm
             UseSystemPasswordChar = true,
             PlaceholderText = "Nhập mật khẩu",
             Dock = DockStyle.Top,
-            Height = 44
+            Height = 44,
+            TabIndex = 2
         };
 
         // WHY: Dock.Top stacks controls in reverse order of addition.
@@ -92,7 +94,8 @@ public partial class LoginForm
             Type = TTypeMini.Primary,
             Shape = TShape.Round,
             Dock = DockStyle.Fill,
-            Cursor = Cursors.Hand
+            Cursor = Cursors.Hand,
+            TabIndex = 3
         };
         _btnLogin.Click += HandleLoginAsync;
 
