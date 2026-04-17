@@ -7,12 +7,12 @@ namespace CoffeePOS.Services;
 
 public class UserService(IUserRepository userRepo) : IUserService
 {
-    public async Task<AuthUserDto?> AuthenticateAsync(string username, string password)
+    public async Task<AuthUserDto?> AuthenticateAsync(string username, string password, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
             throw new ArgumentException("Vui lòng nhập đủ Username và Password!");
 
-        return await userRepo.AuthenticateAsync(username.Trim(), password);
+        return await userRepo.AuthenticateAsync(username.Trim(), password, cancellationToken);
     }
 
     public async Task AddUserAsync(CreateUserDto command)

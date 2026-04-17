@@ -49,21 +49,21 @@ public class UserRepository(NpgsqlDataSource dataSource) : IUserRepository
         return result;
     }
 
-    public async Task<AuthUserDto?> AuthenticateAsync(string username, string password)
+    public async Task<AuthUserDto?> AuthenticateAsync(string username, string password, CancellationToken cancellationToken = default)
     {
-        using var conn = await dataSource.OpenConnectionAsync();
+        using var conn = await dataSource.OpenConnectionAsync(cancellationToken);
         using var cmd = new NpgsqlCommand(SqlAuthenticate, conn);
         cmd.Parameters.AddWithValue("u", username);
 
-        using var reader = await cmd.ExecuteReaderAsync();
-        if (await reader.ReadAsync())
+        using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+        if (await reader.ReadAsync(cancellationToken))
         {
             string dbHash = reader.GetFieldValue<string>(reader.GetOrdinal("password_hash"));
             bool isActive = reader.GetBoolean(reader.GetOrdinal("is_active"));
 
             // HACK: Synchronous BCrypt verify inside Async method.
-            // Consider Task.Run for high-throughput if CPU bound.
-            if (BCrypt.Net.BCrypt.Verify(password, dbHash))
+            // It takes ~300ms. If heavily concurrent, consider Task.Run(() => BCrypt.Verify(...))
+            if (await Task.Run(() => BCrypt.Net.BCrypt.Verify(password, dbHash)))
             {
                 if (!isActive)
                     throw new InvalidOperationException("Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.");
