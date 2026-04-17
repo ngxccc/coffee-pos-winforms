@@ -6,13 +6,20 @@ public class UiFactory(IServiceProvider serviceProvider) : IUiFactory
 {
     private readonly IServiceProvider _serviceProvider = serviceProvider;
 
-    public TForm CreateForm<TForm>() where TForm : Form
+    // PERF: Supports dynamic runtime parameters alongside DI services
+    public TForm CreateForm<TForm>(params object[] parameters) where TForm : Form
     {
+        if (parameters.Length > 0)
+            return ActivatorUtilities.CreateInstance<TForm>(_serviceProvider, parameters);
+
         return _serviceProvider.GetRequiredService<TForm>();
     }
 
-    public TControl CreateControl<TControl>() where TControl : UserControl
+    public TControl CreateControl<TControl>(params object[] parameters) where TControl : UserControl
     {
+        if (parameters.Length > 0)
+            return ActivatorUtilities.CreateInstance<TControl>(_serviceProvider, parameters);
+
         return _serviceProvider.GetRequiredService<TControl>();
     }
 }
