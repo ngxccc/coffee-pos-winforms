@@ -12,7 +12,7 @@ public partial class UC_Sidebar : UserControl
     public event Action<string>? OnNavigate;
     public event EventHandler? OnHomeClicked;
     public event EventHandler? OnBillHistoryClicked;
-    public event EventHandler? OnSettingsClicked;
+    public event EventHandler? OnProfilesClicked;
     public event EventHandler? OnLogoutClicked;
 
     public UC_Sidebar(IUserSession session)
@@ -71,7 +71,7 @@ public partial class UC_Sidebar : UserControl
             AddMenuItem("Nhân sự", "ManageUsers", SvgAssets.Users);
         }
 
-        AddMenuItem("Cài đặt", "Settings", SvgAssets.Setting);
+        AddMenuItem("Cá nhân", "Profiles", SvgAssets.User);
         AddMenuItem("Đăng xuất", "Logout", SvgAssets.Logout);
 
         if (_menuMain.Items.Count > 0)
@@ -110,8 +110,8 @@ public partial class UC_Sidebar : UserControl
             case "BillHistory":
                 OnBillHistoryClicked?.Invoke(this, EventArgs.Empty);
                 break;
-            case "Settings":
-                OnSettingsClicked?.Invoke(this, EventArgs.Empty);
+            case "Profiles":
+                OnProfilesClicked?.Invoke(this, EventArgs.Empty);
                 break;
             case "Logout":
                 OnLogoutClicked?.Invoke(this, EventArgs.Empty);

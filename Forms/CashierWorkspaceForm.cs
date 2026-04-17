@@ -95,10 +95,10 @@ public partial class CashierWorkspaceForm : AntdUI.Window
             _ucBillHistory.BringToFront();
         };
 
-        _ucSidebar.OnSettingsClicked += async (s, e) =>
+        _ucSidebar.OnProfilesClicked += async (s, e) =>
         {
-            var settingsControl = _formFactory.CreateControl<UC_Settings>();
-            using var shell = new DynamicModalShell<ChangePasswordPayload>("CÀI ĐẶT TÀI KHOẢN", settingsControl, new Size(450, 550), saveButtonText: "CẬP NHẬT");
+            var profilesControl = _formFactory.CreateControl<UC_Profiles>();
+            using var shell = new DynamicModalShell<ChangePasswordPayload>("THÔNG TIN CÁ NHÂN", profilesControl, new Size(450, 550), saveButtonText: "CẬP NHẬT");
 
             if (shell.ShowDialog(this) != DialogResult.OK) return;
 

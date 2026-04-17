@@ -50,7 +50,7 @@ public static class DependencyInjectionSetup
         // QUY TẮC C: UserControls (Transient để mỗi lần render lấy instance mới)
         services.AddTransient<UC_Sidebar>();
         services.AddTransient<UC_ShiftReportFields>();
-        services.AddTransient<UC_Settings>();
+        services.AddTransient<UC_Profiles>();
 
         services.AddTransient<UC_Menu>();
         services.AddTransient<UC_ProductItem>();

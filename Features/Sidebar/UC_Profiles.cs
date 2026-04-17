@@ -8,11 +8,11 @@ namespace CoffeePOS.Features.Sidebar;
 
 public record ChangePasswordPayload(string CurrentPassword, string NewPassword, string ConfirmPassword);
 
-public partial class UC_Settings : UserControl, IValidatableComponent<ChangePasswordPayload>
+public partial class UC_Profiles : UserControl, IValidatableComponent<ChangePasswordPayload>
 {
     private readonly IUserSession _session;
 
-    public UC_Settings(IUserSession session)
+    public UC_Profiles(IUserSession session)
     {
         _session = session;
         InitializeComponent();

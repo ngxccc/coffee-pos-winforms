@@ -3,7 +3,7 @@ using System.Windows.Forms;
 
 namespace CoffeePOS.Features.Sidebar;
 
-partial class UC_Settings
+partial class UC_Profiles
 {
     private System.ComponentModel.IContainer components = null!;
     private AntdUI.Input _txtOldPass = null!;
@@ -25,7 +25,7 @@ partial class UC_Settings
         components = new System.ComponentModel.Container();
         Dock = DockStyle.Fill;
         BackColor = Color.White;
-        Name = "UC_Settings";
+        Name = "UC_Profiles";
         Size = new Size(600, 800);
 
         AntdUI.Panel pnlMain = new()
