@@ -7,7 +7,7 @@ namespace CoffeePOS.Features.Sidebar;
 
 public partial class UC_Sidebar : UserControl
 {
-    private IUserSession? _session;
+    private readonly IUserSession _session;
 
     public event Action<string>? OnNavigate;
     public event EventHandler? OnHomeClicked;
@@ -15,16 +15,13 @@ public partial class UC_Sidebar : UserControl
     public event EventHandler? OnSettingsClicked;
     public event EventHandler? OnLogoutClicked;
 
-    public UC_Sidebar()
+    public UC_Sidebar(IUserSession session)
     {
+        _session = session;
         InitializeComponent();
         Load += OnComponentLoad;
         _btnToggle.Click += OnToggleClicked;
-    }
 
-    public void Setup(IUserSession session)
-    {
-        _session = session;
         RenderNavigationTree();
     }
 
