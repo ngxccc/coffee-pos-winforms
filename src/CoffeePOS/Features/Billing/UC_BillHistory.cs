@@ -1,96 +1,102 @@
+using AntdUI;
 using CoffeePOS.Shared.Dtos;
 using CoffeePOS.Shared.Helpers;
 
 namespace CoffeePOS.Features.Billing;
 
-public class UC_BillHistory : UserControl
+public partial class UC_BillHistory : UserControl
 {
-    private DataGridView _dgvBills = null!;
-
     public event EventHandler<BillHistoryDto>? OnReprintClicked;
     public event EventHandler<BillHistoryDto>? OnDetailsRequested;
 
     public UC_BillHistory()
     {
-        InitializeUI();
+        InitializeComponent();
+        SetupTable();
     }
 
-    private void InitializeUI()
+    private void SetupTable()
     {
-        Dock = DockStyle.Fill;
-        BackColor = Color.White;
-        Padding = new Padding(20);
-        Visible = false;
+        _tableBills.Columns =
+        [
+            new Column(nameof(BillHistoryViewModel.Id), DtoInfo.GetName<BillHistoryDto>(nameof(BillHistoryDto.Id)))
+            {
+                Width = "100",
+                Align = ColumnAlign.Center
+            },
+            new Column(nameof(BillHistoryViewModel.CreatedAt), DtoInfo.GetName<BillHistoryDto>(nameof(BillHistoryDto.CreatedAt)))
+            {
+                Width = "120",
+                DisplayFormat = "HH:mm:ss",
+                Align = ColumnAlign.Center
+            },
+            new Column(nameof(BillHistoryViewModel.TotalAmount), DtoInfo.GetName<BillHistoryDto>(nameof(BillHistoryDto.TotalAmount)))
+            {
+                Width = "150",
+                Align = ColumnAlign.Right,
+                DisplayFormat = "N0"
+            },
+            new Column("Actions", "Thao tác")
+            {
+                Width = "180",
+                Align = ColumnAlign.Center
+            }
+        ];
 
-        Label lblTitle = new()
-        {
-            Text = "LỊCH SỬ HÓA ĐƠN TRONG NGÀY",
-            Font = new Font("Segoe UI", 16, FontStyle.Bold),
-            ForeColor = Color.FromArgb(0, 122, 204),
-            Dock = DockStyle.Top,
-            Height = 50
-        };
-
-        _dgvBills = new DataGridView
-        {
-            Dock = DockStyle.Fill
-        };
-        _dgvBills.ApplyStandardAdminStyle();
-        _dgvBills.CellClick += DgvBills_CellClick;
-        _dgvBills.CellDoubleClick += DgvBills_CellDoubleClick;
-
-        Controls.Add(_dgvBills);
-        Controls.Add(lblTitle);
+        _tableBills.CellButtonClick += TableBills_CellButtonClick;
     }
 
     public void BindData(List<BillHistoryDto> bills)
     {
-        _dgvBills.DataSource = null;
-        _dgvBills.Columns.Clear();
+        // PERF: Mapping O(N). Nếu N > 10,000 cần cân nhắc Virtualization thay vì init toàn bộ mảng CellButton.
+        var viewModels = bills.Select(b => new BillHistoryViewModel(b)).ToList();
 
-        _dgvBills.DataSource = bills;
+        _tableBills.DataSource = viewModels;
 
-        _dgvBills.Columns[nameof(BillHistoryDto.TotalAmount)].DefaultCellStyle.Format = "N0";
-        _dgvBills.Columns[nameof(BillHistoryDto.CreatedAt)].DefaultCellStyle.Format = "HH:mm:ss";
-
-        DataGridViewButtonColumn btnReprint = new()
+        // HACK: Tận dụng Dictionary để render Summary row ở bottom grid theo key của Column
+        _tableBills.Summary = new Dictionary<string, object>
         {
-            Name = "ReprintCol",
-            HeaderText = "Thao tác",
-            Text = "🖨️ In lại",
-            UseColumnTextForButtonValue = true,
-            FlatStyle = FlatStyle.Flat
+            { nameof(BillHistoryViewModel.Id), $"Tổng: {bills.Count} đơn" },
+            { nameof(BillHistoryViewModel.TotalAmount), bills.Sum(x => x.TotalAmount) }
         };
-        _dgvBills.Columns.Add(btnReprint);
     }
 
-    private void DgvBills_CellClick(object? sender, DataGridViewCellEventArgs e)
+    private void TableBills_CellButtonClick(object? sender, TableButtonEventArgs e)
     {
-        if (e.RowIndex >= 0 && e.ColumnIndex >= 0)
+        if (e.Record is not BillHistoryViewModel vm) return;
+
+        switch (e.Btn.Id)
         {
-            if (_dgvBills.Columns[e.ColumnIndex].Name == "ReprintCol")
-            {
-                var selectedBill = (BillHistoryDto)_dgvBills.Rows[e.RowIndex].DataBoundItem;
-                OnReprintClicked?.Invoke(this, selectedBill);
-            }
+            case "btnReprint":
+                OnReprintClicked?.Invoke(this, vm.OriginalDto);
+                break;
+            case "btnView":
+                OnDetailsRequested?.Invoke(this, vm.OriginalDto);
+                break;
         }
     }
 
-    private void DgvBills_CellDoubleClick(object? sender, DataGridViewCellEventArgs e)
+    // WHY: DTO là record bất biến, không được chứa UI Logic.
+    // ViewModel này đóng vai trò cầu nối để cung cấp AntdUI.CellLink[] cho Column "Actions"
+    private class BillHistoryViewModel : NotifyProperty
     {
-        if (e.RowIndex < 0)
+        public BillHistoryDto OriginalDto { get; }
+
+        public BillHistoryViewModel(BillHistoryDto dto)
         {
-            return;
+            OriginalDto = dto;
+
+            Actions =
+            [
+                new CellButton("btnView", "Xem", TTypeMini.Primary) { Radius = 4 },
+                new CellButton("btnReprint", "In lại", TTypeMini.Default) { Radius = 4 }
+            ];
         }
 
-        if (e.ColumnIndex >= 0 && _dgvBills.Columns[e.ColumnIndex].Name == "ReprintCol")
-        {
-            return;
-        }
+        public int Id => OriginalDto.Id;
+        public DateTime CreatedAt => OriginalDto.CreatedAt;
+        public decimal TotalAmount => OriginalDto.TotalAmount;
 
-        if (_dgvBills.Rows[e.RowIndex].DataBoundItem is BillHistoryDto selectedBill)
-        {
-            OnDetailsRequested?.Invoke(this, selectedBill);
-        }
+        public CellLink[] Actions { get; set; }
     }
 }
