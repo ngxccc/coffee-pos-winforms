@@ -26,6 +26,7 @@ public partial class CashierWorkspaceForm
             ShowButton = true,
             ShowIcon = false,
             DividerShow = true,
+            BackColor = UiTheme.Surface
         };
 
         _lblUserInfo = new AntdUI.Label
