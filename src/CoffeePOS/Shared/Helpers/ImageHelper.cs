@@ -6,45 +6,69 @@ namespace CoffeePOS.Shared.Helpers;
 public static class ImageHelper
 {
     private static readonly HttpClient HttpClient = new();
-
-    // PERF: Thread-safe In-Memory Cache O(1) lookup to prevent redundant I/O and flickering
     private static readonly ConcurrentDictionary<string, byte[]> _byteCache = new();
 
     public static async Task LoadImageAsync(AntdUI.Avatar avatar, string? imageIdentifier, string fallbackName, int colorSeed)
     {
         if (avatar.IsDisposed) return;
 
-        // WHY: Use built-in Loading state instead of manual "..." bitmaps
-        avatar.Loading = true;
+        SafeInvoke(avatar, () => avatar.Loading = true);
 
         try
         {
-            Bitmap? realImage = await TryFetchImageSafeAsync(imageIdentifier);
+            // PERF: Dùng ConfigureAwait(false) để dứt khoát giải phóng UI Thread trong lúc chờ I/O mạng
+            Bitmap? realImage = await TryFetchImageSafeAsync(imageIdentifier).ConfigureAwait(false);
 
-            if (avatar.IsDisposed)
+            SafeInvoke(avatar, () =>
             {
-                realImage?.Dispose();
-                return;
-            }
+                if (avatar.IsDisposed)
+                {
+                    realImage?.Dispose();
+                    return;
+                }
 
-            if (realImage != null)
-            {
-                var oldImage = avatar.Image;
-                avatar.Image = realImage;
-                oldImage?.Dispose();
-            }
-            else
-            {
-                ApplyPlaceholder(avatar, fallbackName, colorSeed);
-            }
+                if (realImage != null)
+                {
+                    var oldImage = avatar.Image;
+                    avatar.Image = realImage;
+                    oldImage?.Dispose();
+                }
+                else
+                {
+                    ApplyPlaceholder(avatar, fallbackName, colorSeed);
+                }
+
+                avatar.Loading = false;
+
+                avatar.Refresh();
+            });
         }
         catch
         {
-            ApplyPlaceholder(avatar, fallbackName, colorSeed);
+            SafeInvoke(avatar, () =>
+            {
+                if (!avatar.IsDisposed)
+                {
+                    ApplyPlaceholder(avatar, fallbackName, colorSeed);
+                    avatar.Loading = false;
+                }
+            });
         }
-        finally
+    }
+
+    // WHY: Hàm Helper thần thánh đảm bảo mọi thao tác UI bắt buộc phải được nắn về luồng chính (Main UI Thread).
+    private static void SafeInvoke(Control control, Action action)
+    {
+        // Tránh lỗi văng app nếu Form đã bị tắt trước khi ảnh tải xong
+        if (control.IsDisposed || !control.IsHandleCreated) return;
+
+        if (control.InvokeRequired)
         {
-            if (!avatar.IsDisposed) avatar.Loading = false;
+            control.BeginInvoke(action);
+        }
+        else
+        {
+            action();
         }
     }
 
@@ -57,7 +81,6 @@ public static class ImageHelper
 
     public static Bitmap CreatePlaceholderImage(string text, int colorSeed)
     {
-        // WHY: Standard square size, AntdUI.Avatar will handle the Radius/Circle clipping
         Bitmap placeholder = new(100, 100);
         using Graphics g = Graphics.FromImage(placeholder);
 
@@ -87,6 +110,7 @@ public static class ImageHelper
             byte[] imageBytes;
             if (!_byteCache.TryGetValue(url, out byte[]? cachedBytes))
             {
+                // Gọi API lấy mảng Byte
                 imageBytes = await HttpClient.GetByteArrayAsync(url);
                 _byteCache.TryAdd(url, imageBytes);
             }
@@ -95,7 +119,6 @@ public static class ImageHelper
                 imageBytes = cachedBytes;
             }
 
-            // WHY: Convert to Bitmap in a GDI+ safe way via MemoryStream
             using var ms = new MemoryStream(imageBytes);
             using var originalImage = Image.FromStream(ms);
             return new Bitmap(originalImage);

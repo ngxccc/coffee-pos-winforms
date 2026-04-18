@@ -29,7 +29,7 @@ public partial class UC_Menu : UserControl
         InitializeComponent();
         WireEvents();
 
-        _ = LoadDataFromDatabaseAsync();
+        Load += async (s, e) => await LoadDataFromDatabaseAsync();
     }
 
     private void WireEvents()
@@ -146,8 +146,9 @@ public partial class UC_Menu : UserControl
             pItem.OnProductClicked += (s, e) =>
                 OnProductSelected?.Invoke(p.Id, p.Name, p.Price, p.ImageUrl);
 
-            pItem.LoadImageAsync();
             _flowProducts.Controls.Add(pItem);
+
+            _ = pItem.LoadImageAsync();
         }
 
         _flowProducts.ResumeLayout();

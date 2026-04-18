@@ -1,3 +1,4 @@
+using AntdUI;
 using CoffeePOS.Core;
 using CoffeePOS.Features.Billing;
 using CoffeePOS.Features.Products;
@@ -11,7 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace CoffeePOS.Forms;
 
-public partial class CashierWorkspaceForm : AntdUI.Window
+public partial class CashierWorkspaceForm : Window
 {
     // DEPENDENCIES
     private readonly IBillService _billService;
@@ -52,17 +53,14 @@ public partial class CashierWorkspaceForm : AntdUI.Window
         _pdfQueue = pdfQueue;
         _formFactory = formFactory;
 
-        // 1. Resolve ruột UI từ DI Container
         _ucSidebar = _serviceProvider.GetRequiredService<UC_Sidebar>();
         _ucBilling = _serviceProvider.GetRequiredService<UC_Billing>();
         _ucMenu = _serviceProvider.GetRequiredService<UC_Menu>();
         _ucBillHistory = _serviceProvider.GetRequiredService<UC_BillHistory>();
 
-        // 2. Gọi file Designer để dựng khung sườn và lắp ráp
         InitializeComponent();
         AssembleLayout(_ucSidebar, _ucBilling, _ucBillHistory, _ucMenu);
 
-        // 3. Khởi tạo dữ liệu và luồng sự kiện
         BindInitialData();
         SetupSidebarEvents();
         SetupBillingEvents();
@@ -180,22 +178,38 @@ public partial class CashierWorkspaceForm : AntdUI.Window
 
         _ucBilling.OnEditCartItem += async (s, cartItem) =>
         {
-            var productQueryService = _serviceProvider.GetRequiredService<IProductQueryService>();
-            var product = await productQueryService.GetProductByIdAsync(cartItem.ProductId);
-
-            if (product == null)
+            try
             {
-                MessageBoxHelper.Error("Không tìm thấy thông tin sản phẩm!", owner: this);
-                return;
+                var productQueryService = _serviceProvider.GetRequiredService<IProductQueryService>();
+                var product = await productQueryService.GetProductByIdAsync(cartItem.ProductId);
+
+                if (product == null)
+                {
+                    MessageBoxHelper.Error("Không tìm thấy thông tin sản phẩm!", owner: this);
+                    return;
+                }
+
+                var hostForm = FindForm();
+                if (hostForm == null) return;
+
+                var customizationControl = new UC_ProductCustomization(cartItem, product, productQueryService);
+                var drawerShell = new DynamicDrawerShell<CartItemDto>($"SỬA: {product.Name.ToUpper()}", customizationControl, 480);
+
+                drawerShell.OnSaved += (updatedItem) =>
+                {
+                    _ucBilling.UpdateCustomizedItem(cartItem, updatedItem);
+                };
+
+                Drawer.open(new Drawer.Config(hostForm, drawerShell)
+                {
+                    Align = TAlignMini.Right,
+                    MaskClosable = true,
+                    Padding = 0
+                });
             }
-
-            var customizationControl = new UC_ProductCustomization(cartItem, product, productQueryService);
-            using var shell = new DynamicModalShell<CartItemDto>($"TUỲ CHỈNH - {product.Name}", customizationControl, new Size(500, 750), saveButtonText: "LƯU");
-
-            if (shell.ShowDialog(this) == DialogResult.OK)
+            catch (Exception ex)
             {
-                var updatedItem = shell.ExtractData();
-                _ucBilling.UpdateCustomizedItem(cartItem, updatedItem);
+                MessageBoxHelper.Error($"Lỗi tải tuỳ chỉnh: {ex.Message}", owner: this);
             }
         };
     }
@@ -265,22 +279,43 @@ public partial class CashierWorkspaceForm : AntdUI.Window
     {
         _ucMenu.OnProductSelected += async (prodId, prodName, price, imageIdentifier) =>
         {
-            var productQueryService = _serviceProvider.GetRequiredService<IProductQueryService>();
-            var product = await productQueryService.GetProductByIdAsync(prodId);
-
-            if (product == null)
+            try
             {
-                MessageBoxHelper.Error("Không tìm thấy thông tin sản phẩm!", owner: this);
-                return;
+                var productQueryService = _serviceProvider.GetRequiredService<IProductQueryService>();
+                var product = await productQueryService.GetProductByIdAsync(prodId);
+
+                if (product == null)
+                {
+                    MessageBoxHelper.Error("Không tìm thấy thông tin sản phẩm!", owner: this);
+                    return;
+                }
+
+                var hostForm = FindForm();
+                if (hostForm == null) return;
+
+                var customizationControl = new UC_ProductCustomization(product, productQueryService);
+
+                var drawerShell = new DynamicDrawerShell<CartItemDto>(
+                    $"TÙY CHỈNH: {product.Name.ToUpper()}",
+                    customizationControl,
+                    width: 480
+                );
+
+                drawerShell.OnSaved += (cartItemPayload) =>
+                {
+                    _ucBilling.AddCustomizedItemToBill(cartItemPayload);
+                };
+
+                Drawer.open(new Drawer.Config(hostForm, drawerShell)
+                {
+                    Align = TAlignMini.Right,
+                    MaskClosable = true,
+                    Padding = 0
+                });
             }
-
-            var customizationControl = new UC_ProductCustomization(product, productQueryService);
-            using var shell = new DynamicModalShell<CartItemDto>($"TUỲ CHỈNH - {product.Name}", customizationControl, new Size(500, 750), saveButtonText: "LƯU");
-
-            if (shell.ShowDialog(this) == DialogResult.OK)
+            catch (Exception ex)
             {
-                var cartItem = shell.ExtractData();
-                _ucBilling.AddCustomizedItemToBill(cartItem);
+                MessageBoxHelper.Error($"Lỗi mở tuỳ chỉnh món: {ex.Message}", owner: this);
             }
         };
     }
