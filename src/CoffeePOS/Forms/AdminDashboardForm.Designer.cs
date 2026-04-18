@@ -48,6 +48,7 @@ public partial class AdminDashboardForm
             Width = 260,
             ForeColor = UiTheme.BrandPrimary,
             Font = new Font("Segoe UI", 10, FontStyle.Bold),
+            BackColor = Color.Transparent,
             TextAlign = ContentAlignment.MiddleRight,
             Padding = new Padding(0, 0, 8, 0)
         };
@@ -61,6 +62,7 @@ public partial class AdminDashboardForm
             DragMove = false,
             ForeColor = UiTheme.BrandPrimary,
             Font = new Font("Segoe UI", 10, FontStyle.Bold),
+            BackColor = Color.Transparent,
             Padding = new Padding(0, 2, 8, 2)
         };
 
