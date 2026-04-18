@@ -57,6 +57,7 @@ public sealed class DynamicModalShell<T> : Window
             Dock = DockStyle.Bottom,
             Thickness = 1F,
             Size = new Size(modalSize.Width, 1),
+            Margin = new Padding(0)
         };
 
         // WHY: Use StackPanel to mock Web Flexbox behavior. Prevents coordinates from breaking when DPI scale > 100%.
@@ -92,7 +93,6 @@ public sealed class DynamicModalShell<T> : Window
             Cursor = Cursors.Hand,
         };
 
-
         CancelButton = _btnCancel;
         stackActions.Controls.Add(_btnCancel);
         if (showSaveButton)
@@ -100,7 +100,6 @@ public sealed class DynamicModalShell<T> : Window
             AcceptButton = _btnSave;
             stackActions.Controls.Add(_btnSave);
         }
-
 
         pnlActions.Controls.Add(stackActions);
 
