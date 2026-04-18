@@ -37,18 +37,6 @@ public partial class UC_ProductItem : UserControl
         _picImage.Click += HandleClick;
         _lblName.Click += HandleClick;
         _lblPrice.Click += HandleClick;
-
-        // _pnlCard.MouseEnter += (s, e) =>
-        // {
-        //     _pnlCard.Shadow = 12;
-        //     _pnlCard.BorderWidth = 1;
-        //     _pnlCard.BorderColor = UiTheme.BrandPrimary;
-        // };
-        // _pnlCard.MouseLeave += (s, e) =>
-        // {
-        //     _pnlCard.Shadow = 6;
-        //     _pnlCard.BorderWidth = 0;
-        // };
     }
 
     private void HandleClick(object? sender, EventArgs e)
