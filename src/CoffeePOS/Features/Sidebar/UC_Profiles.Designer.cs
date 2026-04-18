@@ -31,7 +31,7 @@ partial class UC_Profiles
         AntdUI.Panel pnlMain = new()
         {
             Dock = DockStyle.Fill,
-            Padding = new Padding(30),
+            Padding = new Padding(20, 10, 20, 20),
             Radius = 0,
             Back = Color.White
         };
