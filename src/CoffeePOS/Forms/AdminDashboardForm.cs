@@ -1,154 +1,107 @@
 using CoffeePOS.Core;
 using CoffeePOS.Features.Admin;
+using CoffeePOS.Features.Sidebar;
+using CoffeePOS.Forms.Core;
+using CoffeePOS.Services.Contracts.Commands;
 using CoffeePOS.Shared.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CoffeePOS.Forms;
 
-public class AdminDashboardForm : AntdUI.Window
+public partial class AdminDashboardForm : AntdUI.Window
 {
     private readonly IUserSession _session;
     private readonly IServiceProvider _serviceProvider;
     private readonly Dictionary<string, UserControl> _viewCache = [];
 
-    // UI COMPONENTS
-    private AntdUI.Panel pnlSidebar = null!;
-    private AntdUI.Panel pnlHeader = null!;
-    private AntdUI.Panel pnlContent = null!;
-
-    private AntdUI.Label lblPlaceholder = null!;
+    private readonly UC_Sidebar _ucSidebar;
 
     public AdminDashboardForm(IServiceProvider serviceProvider, IUserSession session)
     {
         _session = session;
         _serviceProvider = serviceProvider;
 
-        InitializeUI();
+        _ucSidebar = _serviceProvider.GetRequiredService<UC_Sidebar>();
 
-        SetupSidebarMenu();
+        InitializeComponent();
+        AssembleLayout(_ucSidebar);
 
-        NavigateTo<UC_Dashboard>("DASHBOARD");
+        BindData();
+        WireEvents();
+
+        NavigateTo<UC_Dashboard>("Dashboard");
     }
 
-    private void InitializeUI()
+    private void BindData()
     {
-        Text = "Hệ Thống Quản Trị - CoffeePOS Admin";
-        ClientSize = new Size(1366, 768);
-        StartPosition = FormStartPosition.CenterScreen;
-        BackColor = UiTheme.Surface;
-
-        pnlSidebar = new AntdUI.Panel
-        {
-            Dock = DockStyle.Left,
-            Width = 220,
-            Radius = 0,
-            Back = UiTheme.TextPrimary
-        };
-        pnlHeader = new AntdUI.Panel
-        {
-            Dock = DockStyle.Top,
-            Height = 30,
-            Radius = 0,
-            Back = UiTheme.Surface
-        };
-        pnlContent = new AntdUI.Panel
-        {
-            Dock = DockStyle.Fill,
-            Radius = 0,
-            Back = UiTheme.Surface,
-            Padding = new Padding(20)
-        };
-
-        AntdUI.Label lblUserInfo = new()
-        {
-            Text = $"Quản trị viên: {_session.CurrentUser?.FullName} | Đăng nhập: {_session.LoginTime:HH:mm}",
-            Font = new Font("Segoe UI", 12, FontStyle.Bold),
-            ForeColor = UiTheme.BrandPrimary,
-            Dock = DockStyle.Right,
-            AutoSize = false,
-            Width = 500,
-            TextAlign = ContentAlignment.MiddleRight,
-            Padding = new Padding(0, 0, 20, 0)
-        };
-        pnlHeader.Controls.Add(lblUserInfo);
-
-        lblPlaceholder = new AntdUI.Label
-        {
-            Text = "CHÀO MỪNG ADMIN!\nHãy chọn một chức năng bên Menu.",
-            Font = new Font("Segoe UI", 24, FontStyle.Bold),
-            ForeColor = Color.Silver,
-            Dock = DockStyle.Fill,
-            TextAlign = ContentAlignment.MiddleCenter
-        };
-        pnlContent.Controls.Add(lblPlaceholder);
-
-        Controls.Add(pnlContent); // Giữa
-        Controls.Add(pnlHeader);  // Trên
-        Controls.Add(pnlSidebar); // Trái
+        lblUserInfo.Text = $"Quản trị viên: {_session.CurrentUser?.FullName ?? "N/A"}";
     }
 
-    private void SetupSidebarMenu()
+    private void WireEvents()
     {
-        AntdUI.Label lblLogo = new()
+        _ucSidebar.OnNavigate += (routeTag) =>
         {
-            Text = "QUẢN TRỊ",
-            Font = new Font("Segoe UI", 18, FontStyle.Bold),
-            ForeColor = Color.White,
-            Dock = DockStyle.Top,
-            Height = 80,
-            TextAlign = ContentAlignment.MiddleCenter
+            switch (routeTag)
+            {
+                case "Dashboard":
+                    NavigateTo<UC_Dashboard>(routeTag);
+                    break;
+                case "ManageProducts":
+                    NavigateTo<UC_ManageProducts>(routeTag);
+                    break;
+                case "ManageCategories":
+                    NavigateTo<UC_ManageCategories>(routeTag);
+                    break;
+                case "ManageUsers":
+                    NavigateTo<UC_ManageUsers>(routeTag);
+                    break;
+                case "ManageBills":
+                    NavigateTo<UC_ManageBills>(routeTag);
+                    break;
+            }
         };
 
-        pnlSidebar.Controls.Add(CreateMenuButton("Đăng xuất", BtnLogout_Click));
-        pnlSidebar.Controls.Add(CreateMenuButton("Hóa đơn & Báo cáo", (s, e) => NavigateTo<UC_ManageBills>("BILLS")));
-        pnlSidebar.Controls.Add(CreateMenuButton("Nhân sự", (s, e) => NavigateTo<UC_ManageUsers>("USERS")));
-        pnlSidebar.Controls.Add(CreateMenuButton("Danh mục", (s, e) => NavigateTo<UC_ManageCategories>("CATEGORIES")));
-        pnlSidebar.Controls.Add(CreateMenuButton("Sản phẩm", (s, e) => NavigateTo<UC_ManageProducts>("PRODUCTS")));
-        pnlSidebar.Controls.Add(CreateMenuButton("Tổng quan", (s, e) => NavigateTo<UC_Dashboard>("DASHBOARD")));
-
-        pnlSidebar.Controls.Add(lblLogo);
-    }
-
-    private static AntdUI.Button CreateMenuButton(string text, EventHandler clickEvent)
-    {
-        AntdUI.Button btn = new()
+        _ucSidebar.OnProfilesClicked += async (s, e) =>
         {
-            Text = text,
-            ForeColor = Color.Gainsboro,
-            Font = new Font("Segoe UI", 11, FontStyle.Regular),
-            Type = AntdUI.TTypeMini.Default,
-            Radius = 0,
-            Dock = DockStyle.Top,
-            Height = 60,
-            TextAlign = ContentAlignment.MiddleLeft,
-            Padding = new Padding(10, 0, 0, 0),
-            Cursor = Cursors.Hand
+            var uiFactory = _serviceProvider.GetRequiredService<IUiFactory>();
+            var profilesControl = uiFactory.CreateControl<UC_Profiles>();
+            using var shell = new DynamicModalShell<ChangePasswordPayload>("THÔNG TIN CÁ NHÂN", profilesControl, new Size(450, 550), saveButtonText: "CẬP NHẬT");
+
+            if (shell.ShowDialog(this) != DialogResult.OK) return;
+
+            try
+            {
+                var payload = shell.ExtractData();
+                var userService = _serviceProvider.GetRequiredService<IUserService>();
+
+                await userService.ChangePasswordAsync(
+                    userId: _session.CurrentUser!.Id,
+                    username: _session.CurrentUser.Username,
+                    currentPassword: payload.CurrentPassword,
+                    newPassword: payload.NewPassword,
+                    confirmPassword: payload.ConfirmPassword
+                );
+
+                MessageBoxHelper.Info("Đổi mật khẩu thành công! Vui lòng đăng nhập lại.", "Thành công", this);
+                _session.Logout();
+                DialogResult = DialogResult.Abort;
+                Close();
+            }
+            catch (ArgumentException ex) // Bắt lỗi validation (pass ngắn, không khớp)
+            {
+                MessageBoxHelper.Warning(ex.Message, owner: this);
+            }
+            catch (InvalidOperationException ex) // Bắt lỗi sai pass hiện tại
+            {
+                MessageBoxHelper.Error(ex.Message, owner: this);
+            }
+            catch (Exception ex) // Bắt lỗi DB/Network
+            {
+                MessageBoxHelper.Error($"Lỗi hệ thống: {ex.Message}", owner: this);
+            }
         };
 
-        btn.MouseEnter += (s, e) =>
-        {
-            btn.BackColor = Color.FromArgb(41, 40, 78); btn.ForeColor = Color.White;
-        };
-        btn.MouseLeave += (s, e) =>
-        {
-            btn.BackColor = Color.Transparent; btn.ForeColor = Color.Gainsboro;
-        };
-
-        btn.Click += clickEvent;
-        return btn;
-    }
-
-    private void ShowPlaceholder(string moduleName)
-    {
-        foreach (var view in _viewCache.Values)
-        {
-            view.Visible = false;
-        }
-
-        lblPlaceholder.Text = $"{moduleName}\n\nĐang được các Kỹ sư xây dựng...";
-        lblPlaceholder.ForeColor = Color.FromArgb(0, 122, 204);
-        lblPlaceholder.Visible = true;
-        lblPlaceholder.BringToFront();
+        _ucSidebar.OnLogoutClicked += BtnLogout_Click;
     }
 
     private void BtnLogout_Click(object? sender, EventArgs e)
