@@ -55,10 +55,9 @@ public partial class UC_Sidebar : UserControl
 
         var currentRole = _session?.CurrentUser?.Role ?? UserRole.Cashier;
 
-        AddMenuItem("Bán hàng", "Billing", SvgAssets.Cart);
-
         if (currentRole == UserRole.Cashier)
         {
+            AddMenuItem("Bán hàng", "Billing", SvgAssets.Cart);
             AddMenuItem("Lịch sử hóa đơn", "BillHistory", SvgAssets.FileText);
         }
 
