@@ -10,7 +10,7 @@ public class UC_BillItem : Panel
     private Label _lblPrice = null!;
     private Label _lblNote = null!;
     private Label _lblName = null!;
-    private PictureBox _picFood = null!;
+    private AntdUI.Avatar _picFood = null!;
 
     // DATA FIELDS
     private int _quantity;
@@ -66,11 +66,10 @@ public class UC_BillItem : Panel
         _ = ImageHelper.LoadImageAsync(_picFood, ImageIdentifier, foodName, ProductId);
     }
 
-    private static PictureBox BuildImagePanel()
+    private static AntdUI.Avatar BuildImagePanel()
     {
-        return new PictureBox
+        return new AntdUI.Avatar
         {
-            SizeMode = PictureBoxSizeMode.CenterImage,
             Size = new Size(90, 90),
             Dock = DockStyle.Left,
             Cursor = Cursors.Hand,

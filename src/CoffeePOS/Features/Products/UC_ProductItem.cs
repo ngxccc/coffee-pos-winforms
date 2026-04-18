@@ -1,22 +1,13 @@
 using CoffeePOS.Shared.Helpers;
-using Serilog;
 
 namespace CoffeePOS.Features.Products;
 
-public class UC_ProductItem : UserControl
+public partial class UC_ProductItem : UserControl
 {
-    // UI Components
-    private PictureBox _iconFood = null!;
-    private Label _lblName = null!;
-    private Label _lblPrice = null!;
-
-    // Data
     public int ProductId { get; private set; }
     public new string ProductName { get; private set; }
     public decimal Price { get; private set; }
     public string? ImageIdentifier { get; private set; }
-
-    private static readonly HttpClient HttpClient = new();
 
     public event EventHandler? OnProductClicked;
 
@@ -27,72 +18,60 @@ public class UC_ProductItem : UserControl
         Price = price;
         ImageIdentifier = imageIdentifier;
 
-        InitializeUI();
-
-        BindClickRecursive(this);
+        InitializeComponent();
+        BindData();
+        WireEvents();
     }
 
-    private void InitializeUI()
+    private void BindData()
     {
-        Size = new Size(130, 180);
-        BackColor = Color.White;
-        Cursor = Cursors.Hand;
-        BorderStyle = BorderStyle.FixedSingle;
-
-        _iconFood = BuildFoodIcon();
-        _lblName = BuildNameLabel(ProductName);
-        _lblPrice = BuildPriceLabel(Price);
-
-        Controls.Add(_lblName);
-        Controls.Add(_iconFood);
-        Controls.Add(_lblPrice);
+        _lblName.Text = ProductName;
+        _lblPrice.Text = $"{Price:N0} đ";
     }
 
-    private static Label BuildNameLabel(string name)
+    private void WireEvents()
     {
-        return new()
-        {
-            Text = name,
-            Dock = DockStyle.Top,
-            Height = 40,
-            TextAlign = ContentAlignment.MiddleCenter,
-            Font = new Font("Segoe UI", 10, FontStyle.Bold),
-            AutoEllipsis = true,
-        };
+        // PERF: Chuyển toàn bộ sự kiện click của các con về item chính
+        // AntdUI Panel và Avatar bắt sự kiện rất nhạy
+        _pnlCard.Click += HandleClick;
+        _picImage.Click += HandleClick;
+        _lblName.Click += HandleClick;
+        _lblPrice.Click += HandleClick;
+
+        // _pnlCard.MouseEnter += (s, e) =>
+        // {
+        //     _pnlCard.Shadow = 12;
+        //     _pnlCard.BorderWidth = 1;
+        //     _pnlCard.BorderColor = UiTheme.BrandPrimary;
+        // };
+        // _pnlCard.MouseLeave += (s, e) =>
+        // {
+        //     _pnlCard.Shadow = 6;
+        //     _pnlCard.BorderWidth = 0;
+        // };
     }
 
-    private static Label BuildPriceLabel(decimal price)
+    private void HandleClick(object? sender, EventArgs e)
     {
-        return new()
-        {
-            Text = $"{price:N0} đ",
-            Dock = DockStyle.Bottom,
-            Height = 30,
-            TextAlign = ContentAlignment.MiddleCenter,
-            Font = new Font("Segoe UI", 10, FontStyle.Bold),
-            ForeColor = Color.FromArgb(231, 76, 60)
-        };
-    }
-
-    private static PictureBox BuildFoodIcon()
-    {
-        return new PictureBox
-        {
-            Dock = DockStyle.Top,
-            Height = 100,
-            BackColor = Color.FromArgb(245, 245, 245),
-            SizeMode = PictureBoxSizeMode.CenterImage
-        };
+        OnProductClicked?.Invoke(this, EventArgs.Empty);
     }
 
     public async void LoadImageAsync()
     {
-        _ = ImageHelper.LoadImageAsync(_iconFood, ImageIdentifier, ProductName, ProductId);
-    }
+        if (string.IsNullOrEmpty(ImageIdentifier))
+        {
+            // Nếu không có ảnh, Avatar sẽ tự hiển thị ký tự đầu của tên
+            _picImage.Text = ProductName[..1].ToUpper();
+            return;
+        }
 
-    private void BindClickRecursive(Control ctrl)
-    {
-        ctrl.Click += (s, e) => OnProductClicked?.Invoke(this, EventArgs.Empty);
-        foreach (Control child in ctrl.Controls) BindClickRecursive(child);
+        try
+        {
+            await ImageHelper.LoadImageAsync(_picImage, ImageIdentifier, ProductName, ProductId);
+        }
+        catch
+        {
+            _picImage.Text = "!";
+        }
     }
 }

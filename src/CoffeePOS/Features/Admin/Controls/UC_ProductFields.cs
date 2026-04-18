@@ -12,7 +12,7 @@ public class UC_ProductFields : UserControl, IValidatableComponent<ProductPayloa
     private readonly NumericUpDown _nudPrice;
     private readonly ComboBox _cboCategory;
     private readonly AntdUI.Input _txtImageUrl;
-    private readonly PictureBox _picImage;
+    private readonly AntdUI.Avatar _picImage;
     private readonly AntdUI.Button _btnChooseImage;
 
     public UC_ProductFields(IReadOnlyList<CategoryOptionDto> categories, ProductDetailDto? existingProduct = null)
@@ -101,12 +101,10 @@ public class UC_ProductFields : UserControl, IValidatableComponent<ProductPayloa
         _btnChooseImage.Click += HandleLocalImageUploadAsync;
         Controls.Add(_btnChooseImage);
 
-        _picImage = new PictureBox
+        _picImage = new AntdUI.Avatar
         {
             Location = new Point(20, 220),
             Size = new Size(150, 150),
-            BorderStyle = BorderStyle.FixedSingle,
-            SizeMode = PictureBoxSizeMode.Zoom
         };
         Controls.Add(_picImage);
 
