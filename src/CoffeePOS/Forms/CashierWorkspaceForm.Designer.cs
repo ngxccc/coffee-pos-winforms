@@ -34,7 +34,7 @@ public partial class CashierWorkspaceForm
             Dock = DockStyle.Right,
             Width = 260,
             Font = new Font("Segoe UI", 10, FontStyle.Bold),
-            ForeColor = UiTheme.TextPrimary,
+            ForeColor = UiTheme.BrandPrimary,
             TextAlign = ContentAlignment.MiddleRight,
             Padding = new Padding(0, 0, 8, 0)
         };
@@ -46,7 +46,7 @@ public partial class CashierWorkspaceForm
             ShowTime = true,
             AutoWidth = false,
             DragMove = false,
-            ForeColor = UiTheme.TextPrimary,
+            ForeColor = UiTheme.BrandPrimary,
             Font = new Font("Segoe UI", 10, FontStyle.Bold),
             Padding = new Padding(0, 2, 8, 2)
         };
