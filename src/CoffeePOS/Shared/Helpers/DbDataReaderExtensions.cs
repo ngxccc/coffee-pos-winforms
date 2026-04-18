@@ -79,11 +79,17 @@ public static class DbDataReaderExtensions
     public static DateTime GetDateOnlyAsDateTime(this DbDataReader reader, string columnName)
     {
         object value = reader[columnName];
+
         return value switch
         {
             DateOnly dateOnly => dateOnly.ToDateTime(TimeOnly.MinValue),
-            DateTime dateTime => dateTime,
+
+            DateTime dateTime => dateTime.Kind == DateTimeKind.Utc
+                ? dateTime.ToLocalTime()
+                : dateTime,
+
             DBNull => throw new InvalidOperationException($"Column '{columnName}' cannot be null."),
+
             _ => Convert.ToDateTime(value)
         };
     }
