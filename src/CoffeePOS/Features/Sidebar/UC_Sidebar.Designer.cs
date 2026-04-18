@@ -48,7 +48,8 @@ partial class UC_Sidebar
             Dock = DockStyle.Right,
             Size = new Size(1, 1000),
             Thickness = 1F,
-            Vertical = true
+            Vertical = true,
+            Margin = new Padding(0)
         };
 
         _btnToggle = new()
