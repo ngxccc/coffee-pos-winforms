@@ -58,7 +58,6 @@ public partial class LoginForm
             Dock = DockStyle.Fill,
             Height = 44,
             PlaceholderText = "Nhập tên đăng nhập",
-            AllowClear = true,
             TabIndex = 1,
             Margin = new Padding(0, 0, 0, 10) // Tạo gap lớn giữa 2 cụm User/Pass
         };
