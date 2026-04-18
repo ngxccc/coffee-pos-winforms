@@ -62,15 +62,16 @@ public sealed class DynamicModalShell<T> : Window
         StackPanel stackActions = new()
         {
             Dock = DockStyle.Right,
-            Width = 230,
+            Width = modalSize.Width,
             Margin = new Padding(10),
-            Gap = 10
+            Gap = 10,
+            RightToLeft = RightToLeft.Yes
         };
 
         _btnSave = new()
         {
             Text = saveButtonText,
-            Size = new Size(100, 40),
+            AutoSize = true,
             Font = new Font("Segoe UI", 12, FontStyle.Bold),
             Type = TTypeMini.Primary,
             Visible = showSaveButton,
@@ -82,7 +83,7 @@ public sealed class DynamicModalShell<T> : Window
         _btnCancel = new()
         {
             Text = cancelButtonText,
-            Size = new Size(100, 40),
+            AutoSize = true,
             Font = new Font("Segoe UI", 12, FontStyle.Bold),
             Type = TTypeMini.Default,
             DialogResult = DialogResult.Cancel,
@@ -90,18 +91,15 @@ public sealed class DynamicModalShell<T> : Window
             Cursor = Cursors.Hand,
         };
 
+
+        CancelButton = _btnCancel;
+        stackActions.Controls.Add(_btnCancel);
         if (showSaveButton)
         {
             AcceptButton = _btnSave;
-        }
-
-        CancelButton = _btnCancel;
-
-        if (showSaveButton)
-        {
             stackActions.Controls.Add(_btnSave);
         }
-        stackActions.Controls.Add(_btnCancel);
+
 
         pnlActions.Controls.Add(stackActions);
 
