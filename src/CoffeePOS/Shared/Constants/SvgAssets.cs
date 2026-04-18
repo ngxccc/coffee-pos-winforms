@@ -13,4 +13,5 @@ public readonly struct SvgAssets
     public const string Logout = "LogoutOutlined";
     public const string MenuFoldOutlined = "MenuFoldOutlined";
     public const string MenuUnfoldOutlined = "MenuUnfoldOutlined";
+    public const string Search = "SearchOutlined";
 }

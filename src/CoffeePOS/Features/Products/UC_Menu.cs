@@ -1,27 +1,24 @@
+using AntdUI;
 using CoffeePOS.Services.Contracts.Queries;
 using CoffeePOS.Shared.Dtos;
 using CoffeePOS.Shared.Helpers;
 
 namespace CoffeePOS.Features.Products;
 
-public class UC_Menu : UserControl
+public partial class UC_Menu : UserControl
 {
-    // UI Components
-    private FlowLayoutPanel _flowProducts = null!;
-    private FlowLayoutPanel _flowCategories = null!;
-    private List<ProductDetailDto> _currentFilteredList = [];
-    private int _currentPage = 0;
-    private const int PAGE_SIZE = 20;
-    private bool _isLoading = false;
-
     private readonly IProductQueryService _productQueryService;
     private readonly ICategoryQueryService _categoryQueryService;
 
-    // Data Cache
     private List<ProductDetailDto> _allProducts = [];
     private List<CategoryOptionDto> _allCategories = [];
+    private List<ProductDetailDto> _currentFilteredList = [];
 
-    // Events
+    private int _currentPage = 0;
+    private const int PAGE_SIZE = 20;
+    private bool _isLoading = false;
+    private int _currentCatId = 0;
+
     public event Action<int, string, decimal, string>? OnProductSelected;
 
     public UC_Menu(IProductQueryService productQueryService, ICategoryQueryService categoryQueryService)
@@ -29,144 +26,127 @@ public class UC_Menu : UserControl
         _productQueryService = productQueryService;
         _categoryQueryService = categoryQueryService;
 
-        InitializeUI();
-    }
+        InitializeComponent();
+        WireEvents();
 
-    private void InitializeUI()
-    {
-        Dock = DockStyle.Fill;
-        BackColor = Color.FromArgb(245, 245, 245);
-
-        InitializeComponents();
         _ = LoadDataFromDatabaseAsync();
-
-        RenderCategories();
-        FilterProducts(0);
     }
 
-    private void InitializeComponents()
+    private void WireEvents()
     {
-        // Panel pnlHeader = BuildHeaderPanel();
+        _txtSearch.TextChanged += TxtSearch_TextChanged;
 
-        _flowCategories = new()
+        _menuCategories.SelectChanged += (s, e) =>
         {
-            Dock = DockStyle.Top,
-            Height = 60,
-            BackColor = Color.White,
-            Padding = new Padding(10, 5, 10, 5),
-            AutoScroll = true,
-            WrapContents = false
+            if (e.Value.Tag is int categoryId)
+            {
+                _txtSearch.Text = "";
+                FilterProducts(categoryId);
+                _currentCatId = categoryId;
+            }
         };
 
-        _flowProducts = new()
-        {
-            Dock = DockStyle.Fill,
-            AutoScroll = true,
-            Padding = new Padding(20, 0, 0, 0),
-            BackColor = Color.FromArgb(245, 245, 245),
-        };
-
-        _flowProducts.Scroll += (s, e) => CheckScrollBottom();
         _flowProducts.MouseWheel += (s, e) => CheckScrollBottom();
-
-        Controls.Add(_flowProducts);    // Fill
-        Controls.Add(_flowCategories);  // Top 2
+        _flowProducts.Scroll += (s, e) =>
+        {
+            if (e.ScrollOrientation == ScrollOrientation.VerticalScroll)
+            {
+                CheckScrollBottom();
+            }
+        };
     }
 
     private async Task LoadDataFromDatabaseAsync()
     {
         try
         {
-            _allCategories = await _categoryQueryService.GetAllCategoriesAsync();
-            _allProducts = await _productQueryService.GetAllProductsAsync();
+            var categoryTask = _categoryQueryService.GetSelectableCategoriesAsync();
+            var productTask = _productQueryService.GetAllProductsAsync();
+
+            await Task.WhenAll(categoryTask, productTask);
+
+            _allCategories = categoryTask.Result;
+            _allProducts = productTask.Result;
 
             RenderCategories();
-            FilterProducts(1);
         }
         catch (Exception ex)
         {
-            MessageBoxHelper.Error("Lỗi kết nối CSDL: " + ex.Message, owner: this);
-            _allCategories = [];
-            _allProducts = [];
+            MessageBoxHelper.Error($"Lỗi nạp thực đơn: {ex.Message}", owner: this);
         }
     }
 
     private void RenderCategories()
     {
-        _flowCategories.Controls.Clear();
+        _menuCategories.Items.Clear();
+
+        _menuCategories.Items.Add(new MenuItem { Text = "TẤT CẢ", Tag = 0 });
 
         foreach (var cat in _allCategories)
         {
-            Button btnCat = new()
-            {
-                Text = cat.Name,
-                Width = 120,
-                Height = 40,
-                FlatStyle = FlatStyle.Flat,
-                BackColor = (cat.Id == 0) ? Color.FromArgb(0, 122, 204) : Color.WhiteSmoke,
-                ForeColor = (cat.Id == 0) ? Color.White : Color.Black,
-                Cursor = Cursors.Hand,
-                Tag = cat.Id,
-                Margin = new Padding(0, 0, 10, 0)
-            };
-            btnCat.FlatAppearance.BorderSize = 0;
+            _menuCategories.Items.Add(new MenuItem { Text = cat.Name.ToUpper(), Tag = cat.Id });
+        }
 
-            btnCat.Click += (s, e) =>
-            {
-                HighlightCategoryButton(btnCat);
-
-                FilterProducts(cat.Id);
-            };
-
-            _flowCategories.Controls.Add(btnCat);
+        if (_menuCategories.Items.Count > 0)
+        {
+            _menuCategories.SelectIndex(0);
         }
     }
 
     private void FilterProducts(int categoryId)
     {
         if (categoryId == 0)
-            _currentFilteredList = _allProducts;
+        {
+            _currentFilteredList = [.. _allProducts];
+        }
         else
+        {
             _currentFilteredList = [.. _allProducts.Where(p => p.CategoryId == categoryId)];
+        }
 
         _currentPage = 0;
-        _flowProducts.VerticalScroll.Value = 0;
         _flowProducts.Controls.Clear();
-        _flowProducts.PerformLayout(); // Force layout update
+        LoadNextPage();
+    }
 
+    private void TxtSearch_TextChanged(object? sender, EventArgs e)
+    {
+        string keyword = _txtSearch.Text.Trim().ToLower();
+
+        if (string.IsNullOrEmpty(keyword))
+        {
+            FilterProducts(_currentCatId);
+            return;
+        }
+
+        _currentFilteredList = [.. _allProducts.Where(p => p.Name.Contains(keyword, StringComparison.CurrentCultureIgnoreCase) || p.Price.ToString().Contains(keyword))];
+
+        _currentPage = 0;
+        _flowProducts.Controls.Clear();
         LoadNextPage();
     }
 
     private void LoadNextPage()
     {
         if (_isLoading) return;
+
+        int totalItems = _currentFilteredList.Count;
+        int startIndex = _currentPage * PAGE_SIZE;
+
+        if (startIndex >= totalItems) return;
+
         _isLoading = true;
+        _flowProducts.SuspendLayout();
 
-        // Tính toán: Lấy từ đâu, lấy bao nhiêu
-        // Skip: Bỏ qua những thằng đã load
-        // Take: Lấy 20 thằng tiếp theo
-        var productsToRender = _currentFilteredList
-                                .Skip(_currentPage * PAGE_SIZE)
-                                .Take(PAGE_SIZE)
-                                .ToList();
+        var pageItems = _currentFilteredList.Skip(startIndex).Take(PAGE_SIZE).ToList();
 
-        // Nếu hết hàng để lấy thì thôi
-        if (productsToRender.Count == 0)
-        {
-            _isLoading = false;
-            return;
-        }
-
-        _flowProducts.SuspendLayout(); // Tạm dừng vẽ để đỡ giật
-
-        foreach (var p in productsToRender)
+        foreach (var p in pageItems)
         {
             var pItem = new UC_ProductItem(p.Id, p.Name, p.Price, p.ImageUrl);
             pItem.OnProductClicked += (s, e) =>
                 OnProductSelected?.Invoke(p.Id, p.Name, p.Price, p.ImageUrl);
 
             pItem.LoadImageAsync();
-
             _flowProducts.Controls.Add(pItem);
         }
 
@@ -177,35 +157,9 @@ public class UC_Menu : UserControl
 
     private void CheckScrollBottom()
     {
-        // Công thức kiểm tra đã cuộn xuống đáy chưa
-        // VerticalScroll.Value: Vị trí hiện tại của thanh cuộn
-        // ClientSize.Height: Chiều cao vùng nhìn thấy
-        // VerticalScroll.Maximum: Tổng chiều cao thực tế của nội dung
-
-        // Hack: Cộng thêm 50px dung sai (buffer) để load sớm hơn xíu cho mượt
         if (_flowProducts.VerticalScroll.Value + _flowProducts.ClientSize.Height >= _flowProducts.VerticalScroll.Maximum - 100)
         {
             LoadNextPage();
-        }
-    }
-
-    private void HighlightCategoryButton(Button activeBtn)
-    {
-        foreach (Control c in _flowCategories.Controls)
-        {
-            if (c is Button btn)
-            {
-                if (btn == activeBtn)
-                {
-                    btn.BackColor = Color.FromArgb(0, 122, 204); // Xanh dương
-                    btn.ForeColor = Color.White;
-                }
-                else
-                {
-                    btn.BackColor = Color.WhiteSmoke;
-                    btn.ForeColor = Color.Black;
-                }
-            }
         }
     }
 }
