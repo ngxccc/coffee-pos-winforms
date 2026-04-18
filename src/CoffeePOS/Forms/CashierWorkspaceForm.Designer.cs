@@ -1,4 +1,5 @@
 using AntdUI;
+using CoffeePOS.Shared.Helpers;
 
 namespace CoffeePOS.Forms;
 
@@ -15,7 +16,7 @@ public partial class CashierWorkspaceForm
         AutoScaleMode = AutoScaleMode.Font;
         ClientSize = new Size(1280, 800);
         StartPosition = FormStartPosition.CenterScreen;
-        BackColor = Color.White;
+        BackColor = UiTheme.Surface;
 
         _windowBar = new PageHeader
         {
@@ -31,8 +32,8 @@ public partial class CashierWorkspaceForm
         {
             Dock = DockStyle.Right,
             Width = 260,
-            ForeColor = Color.FromArgb(0, 122, 204),
             Font = new Font("Segoe UI", 10, FontStyle.Bold),
+            ForeColor = UiTheme.TextPrimary,
             TextAlign = ContentAlignment.MiddleRight,
             Padding = new Padding(0, 0, 8, 0)
         };
@@ -44,7 +45,7 @@ public partial class CashierWorkspaceForm
             ShowTime = true,
             AutoWidth = false,
             DragMove = false,
-            ForeColor = Color.FromArgb(0, 122, 204),
+            ForeColor = UiTheme.TextPrimary,
             Font = new Font("Segoe UI", 10, FontStyle.Bold),
             Padding = new Padding(0, 2, 8, 2)
         };
