@@ -130,7 +130,6 @@ public partial class AdminDashboardForm : AntdUI.Window
             view.Visible = false;
         }
 
-        lblPlaceholder.Visible = false;
         value.Visible = true;
         value.BringToFront();
     }

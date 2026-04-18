@@ -12,7 +12,6 @@ public partial class AdminDashboardForm
     // UI COMPONENTS
     private PageHeader windowBar = null!;
     private AntdUI.Panel pnlContent = null!;
-    private AntdUI.Label lblPlaceholder = null!;
     private AntdUI.Label lblUserInfo = null!;
     private LabelTime lblTime = null!;
 
@@ -73,7 +72,6 @@ public partial class AdminDashboardForm
             Dock = DockStyle.Fill,
             Radius = 0,
             Back = UiTheme.Surface,
-            Padding = new Padding(20)
         };
     }
 
