@@ -113,6 +113,7 @@ public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
             list.Add(new BillHistoryDto(
                 reader.GetRequiredInt("id"),
                 reader.GetRequiredInt("buzzer_number"),
+                reader.GetRequiredInt("total_items"),
                 reader.GetRequiredDecimal("total_amount"),
                 reader.GetDateOnlyAsDateTime("created_at")));
         }

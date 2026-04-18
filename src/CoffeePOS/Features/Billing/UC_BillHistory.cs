@@ -1,4 +1,5 @@
 using AntdUI;
+using CoffeePOS.Features.Billing.ViewModels;
 using CoffeePOS.Shared.Dtos;
 using CoffeePOS.Shared.Helpers;
 
@@ -22,6 +23,11 @@ public partial class UC_BillHistory : UserControl
             new Column(nameof(BillHistoryViewModel.Id), DtoInfo.GetName<BillHistoryDto>(nameof(BillHistoryDto.Id)))
             {
                 Width = "100",
+                Align = ColumnAlign.Center
+            },
+            new Column(nameof(BillHistoryViewModel.TotalItems), DtoInfo.GetName<BillHistoryDto>(nameof(BillHistoryDto.TotalItems)))
+            {
+                Width = "120",
                 Align = ColumnAlign.Center
             },
             new Column(nameof(BillHistoryViewModel.CreatedAt), DtoInfo.GetName<BillHistoryDto>(nameof(BillHistoryDto.CreatedAt)))
@@ -74,29 +80,5 @@ public partial class UC_BillHistory : UserControl
                 OnDetailsRequested?.Invoke(this, vm.OriginalDto);
                 break;
         }
-    }
-
-    // WHY: DTO là record bất biến, không được chứa UI Logic.
-    // ViewModel này đóng vai trò cầu nối để cung cấp AntdUI.CellLink[] cho Column "Actions"
-    private class BillHistoryViewModel : NotifyProperty
-    {
-        public BillHistoryDto OriginalDto { get; }
-
-        public BillHistoryViewModel(BillHistoryDto dto)
-        {
-            OriginalDto = dto;
-
-            Actions =
-            [
-                new CellButton("btnView", "Xem", TTypeMini.Primary) { Radius = 4 },
-                new CellButton("btnReprint", "In lại", TTypeMini.Default) { Radius = 4 }
-            ];
-        }
-
-        public int Id => OriginalDto.Id;
-        public DateTime CreatedAt => OriginalDto.CreatedAt;
-        public decimal TotalAmount => OriginalDto.TotalAmount;
-
-        public CellLink[] Actions { get; set; }
     }
 }
