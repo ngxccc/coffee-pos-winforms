@@ -7,15 +7,10 @@ namespace CoffeePOS.Features.Sidebar;
 
 public record ShiftReportPayload(DateTime EndTime, int TotalBills, decimal ExpectedCash, decimal ActualCash, decimal Variance, string Note);
 
-public class UC_ShiftReportFields : UserControl, IValidatableComponent<ShiftReportPayload>
+public partial class UC_ShiftReportFields : UserControl, IValidatableComponent<ShiftReportPayload>
 {
     private readonly IUserSession _session;
     private readonly IShiftReportQueryService _shiftReportQueryService;
-
-    private AntdUI.Label _lblTotalBills = null!;
-    private AntdUI.Label _lblExpectedCash = null!;
-    private AntdUI.Input _txtActualCash = null!;
-    private AntdUI.Input _txtNote = null!;
 
     private int _totalBills;
     private decimal _expectedCash;
@@ -28,7 +23,10 @@ public class UC_ShiftReportFields : UserControl, IValidatableComponent<ShiftRepo
         _shiftReportQueryService = shiftReportQueryService;
         _endTime = DateTime.Now;
 
-        InitializeUI();
+        InitializeComponent();
+
+        // WHY: Bind dynamic session data after the UI DOM is constructed
+        _lblHeader.Text = $"Nhân viên: {_session.CurrentUser?.FullName}";
     }
 
     protected override async void OnLoad(EventArgs e)
@@ -41,98 +39,6 @@ public class UC_ShiftReportFields : UserControl, IValidatableComponent<ShiftRepo
 
         _loaded = true;
         await LoadDataAsync();
-    }
-
-    private void InitializeUI()
-    {
-        Dock = DockStyle.Fill;
-        BackColor = Color.White;
-
-        var layout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 1,
-            RowCount = 7,
-            Padding = new Padding(20)
-        };
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-
-        var lblHeader = new AntdUI.Label
-        {
-            Text = $"Nhân viên: {_session.CurrentUser?.FullName}",
-            Font = new Font("Segoe UI", 12, FontStyle.Bold),
-            ForeColor = Color.FromArgb(0, 122, 204),
-            AutoSize = true,
-            Margin = new Padding(0, 0, 0, 20)
-        };
-
-        _lblTotalBills = new AntdUI.Label
-        {
-            Text = "Tổng hoá đơn: Đang tải...",
-            Font = new Font("Segoe UI", 11),
-            AutoSize = true,
-            Margin = new Padding(0, 0, 0, 5)
-        };
-
-        _lblExpectedCash = new AntdUI.Label
-        {
-            Text = "Tiền trên hệ thống: [ĐÃ ẨN]",
-            Font = new Font("Segoe UI", 11),
-            AutoSize = true,
-            Margin = new Padding(0, 0, 0, 20)
-        };
-
-        var lblInputTitle = new AntdUI.Label
-        {
-            Text = "Nhập số tiền mặt thực tế trong két:",
-            Font = new Font("Segoe UI", 10, FontStyle.Bold),
-            AutoSize = true,
-            Margin = new Padding(0, 0, 0, 5)
-        };
-
-        _txtActualCash = new AntdUI.Input
-        {
-            Font = new Font("Segoe UI", 13),
-            Margin = new Padding(0, 0, 0, 10),
-            PlaceholderText = "VD: 2500000",
-            AllowClear = true,
-            Dock = DockStyle.Fill
-        };
-
-        var lblNote = new AntdUI.Label
-        {
-            Text = "Ghi chú (lý do lệch tiền nếu có):",
-            Font = new Font("Segoe UI", 10),
-            AutoSize = true,
-            Margin = new Padding(0, 5, 0, 5)
-        };
-
-        _txtNote = new AntdUI.Input
-        {
-            Multiline = true,
-            Font = new Font("Segoe UI", 10),
-            Dock = DockStyle.Fill,
-            AllowClear = true,
-            Margin = new Padding(0)
-        };
-
-        layout.Controls.Add(lblHeader, 0, 0);
-        layout.Controls.Add(_lblTotalBills, 0, 1);
-        layout.Controls.Add(_lblExpectedCash, 0, 2);
-        layout.Controls.Add(lblInputTitle, 0, 3);
-        layout.Controls.Add(_txtActualCash, 0, 4);
-        layout.Controls.Add(lblNote, 0, 5);
-        layout.Controls.Add(_txtNote, 0, 6);
-
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-
-        Controls.Add(layout);
     }
 
     public bool ValidateInput()

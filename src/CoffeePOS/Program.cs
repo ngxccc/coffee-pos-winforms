@@ -17,15 +17,13 @@ static class Program
     {
         ApplicationConfiguration.Initialize();
 
-        // WHY: GDI+ text rendering optimization for High-DPI screens
-        AntdUI.Config.TextRenderingHighQuality = true;
-        AntdUI.Config.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
-        AntdUI.Config.Theme().Dark("#000", "#fff").Light("#fff", "#000").FormBorderColor();
-
         var bootstrapConfig = new ConfigurationBuilder()
             .SetBasePath(AppContext.BaseDirectory)
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
             .Build();
+
+        UiTheme.LoadFromConfig(bootstrapConfig);
+        UiTheme.ApplyTheme();
 
         Log.Logger = new LoggerConfiguration()
             .ReadFrom.Configuration(bootstrapConfig)

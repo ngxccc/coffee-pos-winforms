@@ -1,6 +1,7 @@
 using System.Drawing;
 using System.Windows.Forms;
 using AntdUI;
+using CoffeePOS.Shared.Helpers;
 
 namespace CoffeePOS.Forms;
 
@@ -17,6 +18,7 @@ public partial class LoginForm
         Text = "CoffeePOS - Đăng Nhập";
         ClientSize = new Size(400, 350);
         StartPosition = FormStartPosition.CenterScreen;
+        BackColor = UiTheme.Surface;
 
         SuspendLayout();
 
@@ -46,6 +48,7 @@ public partial class LoginForm
         {
             Text = "Tên đăng nhập:",
             Font = new Font("Segoe UI", 10, FontStyle.Bold),
+            ForeColor = UiTheme.TextPrimary,
             Dock = DockStyle.Fill,
             Height = 30,
             TextAlign = ContentAlignment.BottomLeft,
@@ -66,10 +69,10 @@ public partial class LoginForm
         {
             Text = "Mật khẩu:",
             Font = new Font("Segoe UI", 10, FontStyle.Bold),
+            ForeColor = UiTheme.TextPrimary,
             Dock = DockStyle.Fill,
             Height = 30,
             TextAlign = ContentAlignment.BottomLeft,
-            ForeColor = Color.FromArgb(31, 30, 68),
             Margin = new Padding(0, 0, 0, 5)
         };
 
