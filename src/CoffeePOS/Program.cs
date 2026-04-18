@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using CoffeePOS.Core;
 using CoffeePOS.Extensions;
 using CoffeePOS.Shared.Enums;
@@ -37,24 +36,16 @@ static class Program
         try
         {
             Log.Information("=== KHỞI ĐỘNG PHẦN MỀM COFFEE POS ===");
-            var startupTimer = Stopwatch.StartNew();
 
             SqlFileLoader.ValidateAllSqlKeys();
-            Log.Information("Startup phase SqlFileLoader.ValidateAllSqlKeys: {ElapsedMs} ms", startupTimer.ElapsedMilliseconds);
 
             string connStr = bootstrapConfig.GetConnectionString("DefaultConnection")
                              ?? throw new Exception("Chưa cấu hình ConnectionString!");
-
             host = CreateHostBuilder(connStr).UseSerilog().Build();
-            Log.Information("Startup phase Host.Build: {ElapsedMs} ms", startupTimer.ElapsedMilliseconds);
 
             host.Start();
-            Log.Information("Startup phase host.Start: {ElapsedMs} ms", startupTimer.ElapsedMilliseconds);
 
             var appState = host.Services.GetRequiredService<AppStateManager>();
-            Log.Information("Startup phase Resolve AppStateManager: {ElapsedMs} ms", startupTimer.ElapsedMilliseconds);
-
-            Log.Information("Startup complete - opening first form at {ElapsedMs} ms", startupTimer.ElapsedMilliseconds);
             Application.Run(appState);
         }
         catch (Exception ex)
