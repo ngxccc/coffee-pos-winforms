@@ -32,18 +32,26 @@ partial class UC_Sidebar
         Name = "UC_Sidebar";
         Size = new Size(_sidebarWidthCollaped, 800);
         Dock = DockStyle.Left;
-        Padding = new Padding(5);
         SuspendLayout();
 
-        _panelFooter = new AntdUI.Panel
+        _panelFooter = new()
         {
             Dock = DockStyle.Bottom,
             Name = "panelFooter",
             Size = new Size(_sidebarWidth, 48),
+            Margin = new Padding(5)
         };
         _panelFooter.SuspendLayout();
 
-        _btnToggle = new AntdUI.Button
+        AntdUI.Divider divider1 = new()
+        {
+            Dock = DockStyle.Right,
+            Size = new Size(1, 1000),
+            Thickness = 1F,
+            Vertical = true
+        };
+
+        _btnToggle = new()
         {
             Dock = DockStyle.Fill,
             Name = "btnToggle",
@@ -54,18 +62,19 @@ partial class UC_Sidebar
             IconSize = new Size(20, 20)
         };
 
-        _tooltipToggle = new AntdUI.TooltipComponent();
+        _tooltipToggle = new();
         // HACK: Add to GC container properly since it lacks an (IContainer) constructor
         components.Add(_tooltipToggle);
         _tooltipToggle.SetTip(_btnToggle, "Thu gọn / mở rộng sidebar");
 
-        _menuMain = new Menu
+        _menuMain = new()
         {
             Dock = DockStyle.Fill,
             Font = new Font("Segoe UI", 11F),
             Name = "menuMain",
             TabIndex = 1,
-            Collapsed = true
+            Collapsed = true,
+            Padding = new Padding(5)
         };
 
         _panelFooter.Controls.Add(_btnToggle);
@@ -73,6 +82,7 @@ partial class UC_Sidebar
         // NOTE: Z-order is extremely important for Fill/Dock calculations
         Controls.Add(_menuMain);
         Controls.Add(_panelFooter);
+        Controls.Add(divider1);
 
         _panelFooter.ResumeLayout(false);
         ResumeLayout(false);
