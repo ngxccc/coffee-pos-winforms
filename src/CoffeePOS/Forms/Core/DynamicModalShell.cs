@@ -4,6 +4,7 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 using AntdUI;
+using CoffeePOS.Shared.Helpers;
 
 public sealed class DynamicModalShell<T> : Window
 {
@@ -40,7 +41,7 @@ public sealed class DynamicModalShell<T> : Window
         MinimizeBox = false;
         Resizable = false;
         ShowInTaskbar = false;
-        BackColor = Color.White;
+        BackColor = UiTheme.Surface;
         _showSaveButton = showSaveButton;
         _innerContent = validatableContent;
         _contentControl = contentModule;
