@@ -5,19 +5,18 @@ namespace CoffeePOS.Features.Billing;
 
 public partial class UC_BillItem : UserControl
 {
-    private readonly int _quantity;
-    private readonly decimal _unitPrice;
+    private decimal _unitPrice;
 
     public event EventHandler<decimal>? OnAmountChanged;
     public event EventHandler<UC_BillItem>? OnDeleteRequest;
     public event EventHandler<string>? OnNoteEditRequest;
     public event EventHandler<CartItemDto>? OnEditItemRequest;
 
-    public decimal TotalValue => _quantity * _unitPrice;
+    public decimal TotalValue => LinkedCartItem?.TotalLinePrice ?? ((int)_numQty.Value * _unitPrice);
+    public int Quantity => LinkedCartItem?.Quantity ?? (int)_numQty.Value;
     public int ProductId { get; private set; }
     public string ItemName { get; private set; }
     public string Note { get; private set; }
-    public int Quantity => _quantity;
     public string? ImageIdentifier { get; private set; }
     public CartItemDto? LinkedCartItem { get; set; }
 
@@ -25,16 +24,15 @@ public partial class UC_BillItem : UserControl
     {
         ProductId = id;
         ItemName = foodName;
-        _quantity = count;
         _unitPrice = price;
         Note = note;
         ImageIdentifier = imageIdentifier;
 
         InitializeComponent();
 
+        _numQty.Value = count;
         _lblName.Text = foodName;
         _lblNote.Text = string.IsNullOrEmpty(note) ? "" : note;
-        _numQty.Value = _quantity;
         _lblPrice.Text = $"{TotalValue:N0} đ";
 
         WireEvents();
@@ -67,7 +65,7 @@ public partial class UC_BillItem : UserControl
 
         _lblName.DoubleClick += TriggerEditMode;
         _lblNote.DoubleClick += TriggerEditMode;
-        DoubleClick += TriggerEditMode;
+        _picFood.DoubleClick += TriggerEditMode;
     }
 
     private void TriggerEditMode(object? sender, EventArgs e)
@@ -89,5 +87,10 @@ public partial class UC_BillItem : UserControl
         _lblNote.Text = LinkedCartItem.Note;
         _numQty.Value = LinkedCartItem.Quantity;
         _lblPrice.Text = $"{LinkedCartItem.TotalLinePrice:N0} đ";
+    }
+
+    public void UpdatePrice(decimal newPrice)
+    {
+        _unitPrice = newPrice;
     }
 }

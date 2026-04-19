@@ -9,6 +9,7 @@ public partial class CashierWorkspaceForm
     private PageHeader _windowBar = null!;
     private AntdUI.Label _lblUserInfo = null!;
     private LabelTime _lblTime = null!;
+    private AntdUI.Splitter _mainSplitter = null!;
 
     private void InitializeComponent()
     {
@@ -53,22 +54,40 @@ public partial class CashierWorkspaceForm
             Padding = new Padding(0, 2, 8, 2)
         };
 
+        _mainSplitter = new AntdUI.Splitter
+        {
+            Dock = DockStyle.Fill,
+            Orientation = Orientation.Vertical,
+            FixedPanel = FixedPanel.Panel2,
+            SplitterWidth = 10,
+            Lazy = true,
+            Panel1MinSize = 0,
+            Panel2MinSize = 0,
+            CollapsePanel = AntdUI.Splitter.ADCollapsePanel.Panel2,
+            SplitterDistance = 860,
+            SplitPanelState = false,
+            SplitterSize = 60,
+        };
+
         _windowBar.Controls.Add(_lblUserInfo);
         _windowBar.Controls.Add(_lblTime);
     }
 
-    // PERF: Centralized method to stitch together DI-provided UserControls
     private void AssembleLayout(Control sidebar, Control billing, Control history, Control menu)
     {
         SuspendLayout();
 
-        // WHY: Reverse Z-Order mapping for standard WinForms layout resolution
-        // Adding Top/Left/Right first ensures Fill objects fit perfectly in the remaining center void.
-        Controls.Add(menu);         // Center Fill (Active)
-        Controls.Add(history);      // Center Fill (Hidden by default)
-        Controls.Add(billing);      // Right Dock
-        Controls.Add(sidebar);      // Left Dock
-        Controls.Add(_windowBar);   // Top Dock
+        menu.Dock = DockStyle.Fill;
+        history.Dock = DockStyle.Fill;
+        billing.Dock = DockStyle.Fill;
+
+        _mainSplitter.Panel1.Controls.Add(menu);
+        _mainSplitter.Panel1.Controls.Add(history);
+        _mainSplitter.Panel2.Controls.Add(billing);
+
+        Controls.Add(_mainSplitter);
+        Controls.Add(sidebar);
+        Controls.Add(_windowBar);
 
         menu.BringToFront();
 

@@ -63,11 +63,7 @@ public partial class UC_Billing : UserControl
         }
 
         UC_BillItem billItem = CreateBillItem(cartItem);
-        if (_flowBillItemList.ClientSize.Width > 0)
-        {
-            billItem.Width = _flowBillItemList.ClientSize.Width - 8;
-            billItem.Margin = new Padding(0, 0, 0, 5);
-        }
+        billItem.Dock = DockStyle.Top;
 
         _flowBillItemList.Controls.Add(billItem);
         _billItemsDict.Add(uniqueKey, billItem);
@@ -75,51 +71,60 @@ public partial class UC_Billing : UserControl
 
         billItem.LoadImage();
         UpdateTotal(cartItem.TotalLinePrice);
+        _flowBillItemList.ScrollControlIntoView(billItem);
     }
 
     public void UpdateItem(CartItemDto existingItem, CartItemDto updatedItem)
     {
         if (_flowBillItemList == null) return;
 
-        var oldBillItem = _billItemsDict.Values.FirstOrDefault(x => ReferenceEquals(x.LinkedCartItem, existingItem));
-        if (oldBillItem == null) return;
+        var billItemControl = _billItemsDict.Values.FirstOrDefault(x => ReferenceEquals(x.LinkedCartItem, existingItem));
+        if (billItemControl == null) return;
 
-        string? oldKey = FindKeyByItem(oldBillItem);
-        decimal oldTotal = oldBillItem.TotalValue;
-        int oldIndex = _flowBillItemList.Controls.GetChildIndex(oldBillItem);
+        string oldKey = FindKeyByItem(billItemControl) ?? "";
+        string newKey = BuildItemKey(updatedItem);
 
-        if (oldKey != null) _billItemsDict.Remove(oldKey);
-
-        _flowBillItemList.Controls.Remove(oldBillItem);
-        oldBillItem.Dispose();
+        decimal oldTotal = existingItem.TotalLinePrice;
 
         existingItem.ProductId = updatedItem.ProductId;
         existingItem.ProductName = updatedItem.ProductName;
         existingItem.SizeName = updatedItem.SizeName;
         existingItem.BasePrice = updatedItem.BasePrice;
         existingItem.Quantity = updatedItem.Quantity;
-        existingItem.Toppings = [.. updatedItem.Toppings];
+        existingItem.Toppings = updatedItem.Toppings?.ToList() ?? [];
+        existingItem.Note = updatedItem.Note ?? "";
+        existingItem.ImageUrl = updatedItem.ImageUrl;
 
-        string newKey = BuildItemKey(existingItem);
-        UpdateTotal(-oldTotal);
-
-        if (_billItemsDict.TryGetValue(newKey, out UC_BillItem? mergeTarget))
+        if (oldKey == newKey)
         {
-            mergeTarget.LinkedCartItem!.Quantity += existingItem.Quantity;
-            mergeTarget.SyncUI();
-            UpdateTotal(existingItem.TotalLinePrice);
-
-            _cartItems.Remove(existingItem);
+            billItemControl.SyncUI();
+            UpdateTotal(existingItem.TotalLinePrice - oldTotal);
             return;
         }
 
-        UC_BillItem newBillItem = CreateBillItem(existingItem);
-        _flowBillItemList.Controls.Add(newBillItem);
-        _flowBillItemList.Controls.SetChildIndex(newBillItem, oldIndex);
-        _billItemsDict.Add(newKey, newBillItem);
+        if (_billItemsDict.TryGetValue(newKey, out UC_BillItem? mergeTarget) && mergeTarget != billItemControl)
+        {
+            mergeTarget.LinkedCartItem!.Quantity += existingItem.Quantity;
+            mergeTarget.SyncUI();
 
-        newBillItem.LoadImage();
-        UpdateTotal(newBillItem.TotalValue);
+            _billItemsDict.Remove(oldKey);
+            _flowBillItemList.Controls.Remove(billItemControl);
+            billItemControl.Dispose();
+            _cartItems.Remove(existingItem);
+
+            UpdateTotal(existingItem.TotalLinePrice - oldTotal);
+            return;
+        }
+
+        _billItemsDict.Remove(oldKey);
+        _billItemsDict.Add(newKey, billItemControl);
+
+        billItemControl.UpdatePrice(GetUnitPrice(existingItem));
+
+        billItemControl.SyncUI();
+        billItemControl.LoadImage();
+
+        UpdateTotal(existingItem.TotalLinePrice - oldTotal);
     }
 
     public List<CreateBillItemDto> GetCartItems()

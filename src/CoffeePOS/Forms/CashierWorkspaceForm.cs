@@ -79,7 +79,6 @@ public partial class CashierWorkspaceForm : Window
         _ucSidebar.OnHomeClicked += (s, e) =>
         {
             _ucBilling.ClearOrder();
-            // _ucBillHistory.Visible = false;
             _ucMenu.Visible = true;
             _ucMenu.BringToFront();
         };
@@ -304,6 +303,8 @@ public partial class CashierWorkspaceForm : Window
 
                 drawerShell.OnSaved += (cartItemPayload) =>
                 {
+                    if (_mainSplitter.SplitPanelState == false)
+                        _mainSplitter.SplitPanelState = true;
                     _ucBilling.AddItem(cartItemPayload);
                 };
 

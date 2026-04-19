@@ -9,7 +9,7 @@ public partial class UC_Billing
 {
     private System.ComponentModel.IContainer components = null!;
 
-    private FlowLayoutPanel _flowBillItemList = null!;
+    private AntdUI.StackPanel _flowBillItemList = null!;
     private AntdUI.Label _lblTotalPrice = null!;
     private AntdUI.Button _btnPay = null!;
 
@@ -21,8 +21,7 @@ public partial class UC_Billing
 
     private void InitializeComponent()
     {
-        Width = 420;
-        Dock = DockStyle.Right;
+        Dock = DockStyle.Fill;
         BackColor = UiTheme.Surface;
 
         SuspendLayout();
@@ -50,7 +49,7 @@ public partial class UC_Billing
             Font = new Font("Segoe UI", 12, FontStyle.Bold),
             ForeColor = UiTheme.TextPrimary,
             BackColor = UiTheme.SurfaceAlt,
-            Width = 120,
+            AutoSize = true,
             TextAlign = ContentAlignment.MiddleLeft
         };
 
@@ -61,7 +60,7 @@ public partial class UC_Billing
             Font = new Font("Segoe UI", 18, FontStyle.Bold),
             ForeColor = UiTheme.BrandPrimary,
             BackColor = UiTheme.SurfaceAlt,
-            Width = 200,
+            AutoSize = true,
             TextAlign = ContentAlignment.MiddleRight
         };
 
@@ -84,14 +83,13 @@ public partial class UC_Billing
         pnlFooter.Controls.Add(_btnPay);
         pnlFooter.Controls.Add(pnlTotalInfo);
 
-        _flowBillItemList = new FlowLayoutPanel
+        _flowBillItemList = new()
         {
             Dock = DockStyle.Fill,
             AutoScroll = true,
-            FlowDirection = FlowDirection.TopDown,
-            WrapContents = false,
-            Padding = new Padding(10),
-            BackColor = UiTheme.Surface
+            Gap = 5,
+            BackColor = UiTheme.Surface,
+            Vertical = true,
         };
 
         AntdUI.Divider divider1 = new()

@@ -28,8 +28,7 @@ public partial class UC_BillItem
 
     private void InitializeComponent()
     {
-        Size = new Size(400, 90);
-        MinimumSize = new Size(400, 90);
+        Height = 90;
         BackColor = UiTheme.Surface;
         Margin = new Padding(0, 0, 0, 10);
 
