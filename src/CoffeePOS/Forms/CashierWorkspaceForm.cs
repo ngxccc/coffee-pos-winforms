@@ -198,7 +198,7 @@ public partial class CashierWorkspaceForm : Window
 
                 drawerShell.OnSaved += (updatedItem) =>
                 {
-                    _ucBilling.UpdateCustomizedItem(cartItem, updatedItem);
+                    _ucBilling.UpdateItem(cartItem, updatedItem);
                 };
 
                 Drawer.open(new Drawer.Config(hostForm, drawerShell)
@@ -304,7 +304,7 @@ public partial class CashierWorkspaceForm : Window
 
                 drawerShell.OnSaved += (cartItemPayload) =>
                 {
-                    _ucBilling.AddCustomizedItemToBill(cartItemPayload);
+                    _ucBilling.AddItem(cartItemPayload);
                 };
 
                 Drawer.open(new Drawer.Config(hostForm, drawerShell)

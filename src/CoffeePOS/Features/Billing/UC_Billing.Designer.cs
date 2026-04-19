@@ -11,7 +11,6 @@ public partial class UC_Billing
 
     private FlowLayoutPanel _flowBillItemList = null!;
     private AntdUI.Label _lblTotalPrice = null!;
-    private AntdUI.Label _lblOrderTitle = null!;
     private AntdUI.Button _btnPay = null!;
 
     protected override void Dispose(bool disposing)
@@ -99,7 +98,6 @@ public partial class UC_Billing
         {
             Dock = DockStyle.Left,
             Thickness = 1F,
-            Size = new Size(1, 1000),
             Margin = new Padding(0),
             Vertical = true
         };

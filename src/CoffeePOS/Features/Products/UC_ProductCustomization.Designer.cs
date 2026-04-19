@@ -13,6 +13,7 @@ public partial class UC_ProductCustomization
     private AntdUI.InputNumber _numQuantity = null!;
     private AntdUI.Label _lblTotalPrice = null!;
     private AntdUI.Table _tableToppings = null!;
+    private AntdUI.SelectMultiple _cboNote = null!;
 
     protected override void Dispose(bool disposing)
     {
@@ -31,7 +32,7 @@ public partial class UC_ProductCustomization
         AntdUI.StackPanel mainLayout = new()
         {
             Dock = DockStyle.Fill,
-            Padding = new Padding(20),
+            Padding = new Padding(20, 0, 20, 0),
             Gap = 2,
             Vertical = true
         };
@@ -73,6 +74,27 @@ public partial class UC_ProductCustomization
             MaximumSize = new Size(500, 400)
         };
 
+        var lblNoteTitle = CreateSectionLabel("GHI CHÚ");
+        _cboNote = new AntdUI.SelectMultiple
+        {
+            PlaceholderText = "Chọn hoặc nhập ghi chú (VD: Ít đá...)",
+            Dock = DockStyle.Top,
+            Height = 40,
+            AllowClear = true,
+            Font = new Font("Segoe UI", 11F),
+            Margin = new Padding(0, 0, 0, 10),
+        };
+        _cboNote.Items.AddRange(new object[] {
+            "Ít đá",
+            "Không đá",
+            "Nhiều đá",
+            "Đá riêng",
+            "Ít đường",
+            "Không đường",
+            "Nhiều đường",
+            "Nóng (Không đá)"
+        });
+
         var lblQtyTitle = CreateSectionLabel("SỐ LƯỢNG");
         _numQuantity = new AntdUI.InputNumber
         {
@@ -100,6 +122,8 @@ public partial class UC_ProductCustomization
 
         mainLayout.Controls.Add(_numQuantity);
         mainLayout.Controls.Add(lblQtyTitle);
+        mainLayout.Controls.Add(_cboNote);
+        mainLayout.Controls.Add(lblNoteTitle);
         mainLayout.Controls.Add(_lblTotalPrice);
         mainLayout.Controls.Add(divider1);
         mainLayout.Controls.Add(_tableToppings);

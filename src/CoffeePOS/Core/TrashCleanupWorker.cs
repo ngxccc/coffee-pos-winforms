@@ -31,7 +31,7 @@ public class TrashCleanupWorker(NpgsqlDataSource dataSource) : BackgroundService
                 Log.Error($"[Lỗi Lao Công]: {ex.Message}");
             }
 
-            await Task.Delay(TimeSpan.FromHours(24), stoppingToken);
+            _ = Task.Delay(TimeSpan.FromHours(24), stoppingToken);
         }
     }
 }

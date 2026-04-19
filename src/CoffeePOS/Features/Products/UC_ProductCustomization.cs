@@ -11,7 +11,6 @@ public partial class UC_ProductCustomization : UserControl, IValidatableComponen
     private readonly IProductQueryService _productQueryService;
     private readonly ProductDetailDto _product;
     private readonly CartItemDto? _existingItem;
-    private readonly Dictionary<int, Checkbox> _toppingChecks = [];
 
     private List<ToppingGridDto> _allToppings = [];
     private bool _loaded;
@@ -101,15 +100,20 @@ public partial class UC_ProductCustomization : UserControl, IValidatableComponen
     {
         _allToppings = await _productQueryService.GetAllToppingsAsync();
 
-        _tableToppings.DataSource = _allToppings;
+        foreach (var topping in _allToppings)
+        {
+            topping.IsSelected = false;
+        }
 
         if (_existingItem != null)
         {
             // Nếu là mode sửa món, chọn lại các topping cũ
             var selectedIds = _existingItem.Toppings.Select(t => t.Id).ToHashSet();
+            // Shallow copy
             var rowsToSelect = _allToppings.Where(t => selectedIds.Contains(t.Id)).ToArray();
-            _tableToppings.SetSelected(rowsToSelect);
+            foreach (var topping in rowsToSelect) topping.IsSelected = true;
         }
+        _tableToppings.DataSource = _allToppings;
     }
 
     private void CalculateTotal()
@@ -135,11 +139,12 @@ public partial class UC_ProductCustomization : UserControl, IValidatableComponen
         else if (_existingItem.SizeName == "L") _segSize.SelectIndex = 2;
 
         _numQuantity.Value = _existingItem.Quantity;
-
-        var selectedIds = _existingItem.Toppings.Select(t => t.Id).ToHashSet();
-        foreach (var id in selectedIds)
+        if (!string.IsNullOrWhiteSpace(_existingItem.Note))
         {
-            if (_toppingChecks.TryGetValue(id, out var cb)) cb.Checked = true;
+            _cboNote.SelectedValue = [.. _existingItem.Note
+            .Split([','], StringSplitOptions.RemoveEmptyEntries)
+            .Select(n => n.Trim())
+            .Cast<object>()];
         }
     }
 
@@ -151,6 +156,12 @@ public partial class UC_ProductCustomization : UserControl, IValidatableComponen
         int qty = (int)_numQuantity.Value;
         decimal basePrice = _basePrice + _currentSizeAdjustment;
         var selectedToppings = _allToppings.Where(t => t.IsSelected).ToList();
+        string noteText = "";
+        if (_cboNote.SelectedValue != null)
+        {
+            var notes = _cboNote.SelectedValue.Cast<string>().Where(n => !string.IsNullOrWhiteSpace(n));
+            noteText = string.Join(", ", notes);
+        }
 
         return new CartItemDto
         {
@@ -160,7 +171,8 @@ public partial class UC_ProductCustomization : UserControl, IValidatableComponen
             BasePrice = basePrice,
             ImageUrl = _product.ImageUrl,
             Toppings = selectedToppings,
-            Quantity = qty
+            Quantity = qty,
+            Note = noteText
         };
     }
 }

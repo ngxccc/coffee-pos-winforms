@@ -1,18 +1,16 @@
-using System.ComponentModel;
 using CoffeePOS.Shared.Dtos.Product;
 
 namespace CoffeePOS.Shared.Dtos.Bill;
 
 public record CartItemDto
 {
-    [Browsable(false)] public int ProductId { get; set; }
-    [Browsable(false)] public string ProductName { get; set; } = "";
-    [Browsable(false)] public string SizeName { get; set; } = "M";
-    [Browsable(false)] public decimal BasePrice { get; set; }
-    [Browsable(false)] public string? ImageUrl { get; set; }
-    [Browsable(false)] public List<ToppingGridDto> Toppings { get; set; } = [];
-
-    [DisplayName("Tên Món & Tùy Chọn")]
+    public int ProductId { get; set; }
+    public string ProductName { get; set; } = "";
+    public string SizeName { get; set; } = "M";
+    public decimal BasePrice { get; set; }
+    public string? ImageUrl { get; set; }
+    public List<ToppingGridDto> Toppings { get; set; } = [];
+    public string Note { get; set; } = "";
     public string DisplayName
     {
         get
@@ -26,10 +24,6 @@ public record CartItemDto
             return name;
         }
     }
-
-    [DisplayName("SL")]
     public int Quantity { get; set; } = 1;
-
-    [DisplayName("Thành Tiền")]
     public decimal TotalLinePrice => (BasePrice + Toppings.Sum(t => t.Price)) * Quantity;
 }

@@ -1,4 +1,3 @@
-
 using CoffeePOS.Shared.Dtos.Bill;
 using CoffeePOS.Shared.Helpers;
 
@@ -6,17 +5,14 @@ namespace CoffeePOS.Features.Billing;
 
 public partial class UC_BillItem : UserControl
 {
-    // DATA FIELDS
-    private int _quantity;
+    private readonly int _quantity;
     private readonly decimal _unitPrice;
 
-    // EVENTS
     public event EventHandler<decimal>? OnAmountChanged;
     public event EventHandler<UC_BillItem>? OnDeleteRequest;
     public event EventHandler<string>? OnNoteEditRequest;
     public event EventHandler<CartItemDto>? OnEditItemRequest;
 
-    // PROPERTIES
     public decimal TotalValue => _quantity * _unitPrice;
     public int ProductId { get; private set; }
     public string ItemName { get; private set; }
@@ -38,7 +34,7 @@ public partial class UC_BillItem : UserControl
 
         _lblName.Text = foodName;
         _lblNote.Text = string.IsNullOrEmpty(note) ? "" : note;
-        _lblCount.Text = $"{_quantity}";
+        _numQty.Value = _quantity;
         _lblPrice.Text = $"{TotalValue:N0} đ";
 
         WireEvents();
@@ -51,11 +47,24 @@ public partial class UC_BillItem : UserControl
 
     private void WireEvents()
     {
-        _btnPlus.Click += (s, e) => UpdateQty(1);
-        _btnMinus.Click += (s, e) => UpdateQty(-1);
+        _numQty.ValueChanged += (s, e) =>
+        {
+            if (LinkedCartItem == null) return;
+
+            int newQty = (int)_numQty.Value;
+            int diffQty = newQty - LinkedCartItem.Quantity;
+
+            if (diffQty == 0) return;
+
+            decimal moneyDiff = diffQty * _unitPrice;
+            LinkedCartItem.Quantity = newQty;
+            _lblPrice.Text = $"{LinkedCartItem.TotalLinePrice:N0} đ";
+
+            OnAmountChanged?.Invoke(this, moneyDiff);
+        };
+
         _btnDelete.Click += (s, e) => OnDeleteRequest?.Invoke(this, this);
 
-        // _pnlInfo.DoubleClick += TriggerEditMode;
         _lblName.DoubleClick += TriggerEditMode;
         _lblNote.DoubleClick += TriggerEditMode;
         DoubleClick += TriggerEditMode;
@@ -73,23 +82,12 @@ public partial class UC_BillItem : UserControl
         }
     }
 
-    public void UpdateQty(int delta)
+    public void SyncUI()
     {
-        int oldQty = _quantity;
-        _quantity += delta;
-        if (_quantity < 1) _quantity = 1;
+        if (LinkedCartItem == null) return;
 
-        if (oldQty == _quantity) return;
-
-        _lblCount.Text = $"{_quantity}";
-        _lblPrice.Text = $"{TotalValue:N0} đ";
-
-        OnAmountChanged?.Invoke(this, delta * _unitPrice);
-    }
-
-    public void SetNote(string newNote)
-    {
-        Note = newNote;
-        _lblNote.Text = string.IsNullOrEmpty(newNote) ? "" : newNote;
+        _lblNote.Text = LinkedCartItem.Note;
+        _numQty.Value = LinkedCartItem.Quantity;
+        _lblPrice.Text = $"{LinkedCartItem.TotalLinePrice:N0} đ";
     }
 }
