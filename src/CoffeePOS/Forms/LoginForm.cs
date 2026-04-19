@@ -1,11 +1,9 @@
 using AntdUI;
 using CoffeePOS.Core;
-using CoffeePOS.Data;
 using CoffeePOS.Services.Contracts.Commands;
 using CoffeePOS.Shared.Helpers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Npgsql;
 
 namespace CoffeePOS.Forms;
 
@@ -14,16 +12,14 @@ public partial class LoginForm : Window
     private readonly IUserService _userService;
     private readonly IUserSession _session;
     private readonly IServiceProvider _serviceProvider;
-    private readonly NpgsqlDataSource _dataSource;
     private CancellationTokenSource? _cts;
     private bool _isSystemReady = false;
 
-    public LoginForm(IServiceProvider serviceProvider, IUserService userService, IUserSession session, NpgsqlDataSource dataSource)
+    public LoginForm(IServiceProvider serviceProvider, IUserService userService, IUserSession session)
     {
         _serviceProvider = serviceProvider;
         _userService = userService;
         _session = session;
-        _dataSource = dataSource;
 
         InitializeComponent();
 
@@ -95,7 +91,7 @@ public partial class LoginForm : Window
 
         if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
         {
-            MessageBoxHelper.Warning("Vui lòng nhập đủ Username và Password!", owner: this);
+            AntdUI.Message.warn(this, "Vui lòng nhập đủ Username và Password!");
             return;
         }
 
@@ -119,7 +115,7 @@ public partial class LoginForm : Window
             }
             else
             {
-                MessageBoxHelper.Warning("Sai tài khoản hoặc mật khẩu!", owner: this);
+                AntdUI.Message.error(this, "Sai tài khoản hoặc mật khẩu!");
             }
         }
         catch (OperationCanceledException)
@@ -128,7 +124,7 @@ public partial class LoginForm : Window
         }
         catch (InvalidOperationException ex)
         {
-            MessageBoxHelper.Warning(ex.Message, "Tài khoản của bạn đã bị khóa!\nMọi thắc mắc xin liên hệ quản trị viên.", this);
+            AntdUI.Message.error(this, $"Tài khoản của bạn đã bị khóa!\nMọi thắc mắc xin liên hệ quản trị viên.\n{ex.Message}");
         }
         catch (Exception ex)
         {
