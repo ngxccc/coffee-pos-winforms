@@ -13,7 +13,7 @@ public partial class UC_Menu
     private AntdUI.Menu _menuCategories = null!;
     private AntdUI.Input _txtSearch = null!;
     private AntdUI.Panel _pnlBody = null!;
-    private FlowLayoutPanel _flowProducts = null!;
+    private AntdUI.FlowPanel _flowProducts = null!;
 
     protected override void Dispose(bool disposing)
     {
@@ -73,8 +73,6 @@ public partial class UC_Menu
         _flowProducts = new()
         {
             Dock = DockStyle.Fill,
-            FlowDirection = FlowDirection.LeftToRight,
-            WrapContents = true,
             AutoScroll = true,
             BackColor = Color.Transparent
         };

@@ -141,6 +141,7 @@ public partial class UC_ProductCustomization : UserControl, IValidatableComponen
             ProductName = _product.Name,
             SizeName = size,
             BasePrice = _product.Price,
+            ImageUrl = _product.ImageUrl,
             Toppings = selectedToppings,
             Quantity = qty
         };

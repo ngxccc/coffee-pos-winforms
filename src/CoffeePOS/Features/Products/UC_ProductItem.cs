@@ -56,11 +56,6 @@ public partial class UC_ProductItem : UserControl
         try
         {
             await ImageHelper.LoadImageAsync(_picImage, ImageIdentifier, ProductName, ProductId);
-
-            // BUGFIX: Invalidate parent FlowLayoutPanel to trigger repaint after image loads
-            // Without this, images don't display until the parent container is explicitly refreshed
-            // (e.g., by switching forms). Setting Refresh() on the avatar alone isn't enough.
-            Parent?.Invalidate(true);
         }
         catch
         {

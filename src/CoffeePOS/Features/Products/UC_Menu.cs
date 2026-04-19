@@ -14,10 +14,8 @@ public partial class UC_Menu : UserControl
     private List<CategoryOptionDto> _allCategories = [];
     private List<ProductDetailDto> _currentFilteredList = [];
 
-    private int _currentPage = 0;
-    private const int PAGE_SIZE = 20;
-    private bool _isLoading = false;
     private int _currentCatId = 0;
+    private bool _isChangingCategory = false;
 
     public event Action<int, string, decimal, string>? OnProductSelected;
 
@@ -28,8 +26,12 @@ public partial class UC_Menu : UserControl
 
         InitializeComponent();
         WireEvents();
+    }
 
-        Load += async (s, e) => await LoadDataFromDatabaseAsync();
+    protected override async void OnLoad(EventArgs e)
+    {
+        base.OnLoad(e);
+        await LoadDataFromDatabaseAsync();
     }
 
     private void WireEvents()
@@ -40,18 +42,16 @@ public partial class UC_Menu : UserControl
         {
             if (e.Value.Tag is int categoryId)
             {
-                _txtSearch.Text = "";
-                FilterProducts(categoryId);
+                _isChangingCategory = true;
                 _currentCatId = categoryId;
-            }
-        };
 
-        _flowProducts.MouseWheel += (s, e) => CheckScrollBottom();
-        _flowProducts.Scroll += (s, e) =>
-        {
-            if (e.ScrollOrientation == ScrollOrientation.VerticalScroll)
-            {
-                CheckScrollBottom();
+                if (!string.IsNullOrEmpty(_txtSearch.Text))
+                {
+                    _txtSearch.Text = "";
+                }
+
+                FilterProducts(categoryId);
+                _isChangingCategory = false;
             }
         };
     }
@@ -104,13 +104,14 @@ public partial class UC_Menu : UserControl
             _currentFilteredList = [.. _allProducts.Where(p => p.CategoryId == categoryId)];
         }
 
-        _currentPage = 0;
-        _flowProducts.Controls.Clear();
-        LoadNextPage();
+        ClearProductFlow();
+        RenderProducts();
     }
 
     private void TxtSearch_TextChanged(object? sender, EventArgs e)
     {
+        if (_isChangingCategory) return;
+
         string keyword = _txtSearch.Text.Trim().ToLower();
 
         if (string.IsNullOrEmpty(keyword))
@@ -121,46 +122,56 @@ public partial class UC_Menu : UserControl
 
         _currentFilteredList = [.. _allProducts.Where(p => p.Name.Contains(keyword, StringComparison.CurrentCultureIgnoreCase) || p.Price.ToString().Contains(keyword))];
 
-        _currentPage = 0;
-        _flowProducts.Controls.Clear();
-        LoadNextPage();
+        ClearProductFlow();
+        RenderProducts();
     }
 
-    private void LoadNextPage()
+    private void RenderProducts()
     {
-        if (_isLoading) return;
+        if (_currentFilteredList.Count == 0) return;
 
-        int totalItems = _currentFilteredList.Count;
-        int startIndex = _currentPage * PAGE_SIZE;
+        var itemsToLoad = new List<UC_ProductItem>(_currentFilteredList.Count);
 
-        if (startIndex >= totalItems) return;
-
-        _isLoading = true;
-        _flowProducts.SuspendLayout();
-
-        var pageItems = _currentFilteredList.Skip(startIndex).Take(PAGE_SIZE).ToList();
-
-        foreach (var p in pageItems)
+        foreach (var p in _currentFilteredList)
         {
             var pItem = new UC_ProductItem(p.Id, p.Name, p.Price, p.ImageUrl);
             pItem.OnProductClicked += (s, e) =>
                 OnProductSelected?.Invoke(p.Id, p.Name, p.Price, p.ImageUrl);
 
-            _flowProducts.Controls.Add(pItem);
+            itemsToLoad.Add(pItem);
+        }
 
+        _flowProducts.Visible = false;
+
+        _flowProducts.Controls.AddRange([.. itemsToLoad]);
+
+        _flowProducts.Visible = true;
+
+        foreach (var pItem in itemsToLoad)
+        {
             _ = pItem.LoadImageAsync();
         }
-
-        _flowProducts.ResumeLayout();
-        _currentPage++;
-        _isLoading = false;
     }
 
-    private void CheckScrollBottom()
+    private void ClearProductFlow()
     {
-        if (_flowProducts.VerticalScroll.Value + _flowProducts.ClientSize.Height >= _flowProducts.VerticalScroll.Maximum - 100)
+        _flowProducts.SuspendLayout();
+
+        var controlsToDispose = _flowProducts.Controls.Cast<Control>().ToArray();
+
+        _flowProducts.Visible = false;
+
+        _flowProducts.Controls.Clear();
+
+        _flowProducts.Visible = true;
+
+        foreach (var c in controlsToDispose)
         {
-            LoadNextPage();
+            c.Dispose();
         }
+
+        _flowProducts.ResumeLayout(true);
+        PerformLayout();
+        _flowProducts.Refresh();
     }
 }

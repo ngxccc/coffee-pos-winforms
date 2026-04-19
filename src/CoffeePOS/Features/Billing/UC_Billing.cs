@@ -48,7 +48,7 @@ public partial class UC_Billing : UserControl
 
     public void AddItemToBill(int productId, string name, int qty, decimal price, string? imageIdentifier = null)
     {
-        if (_flowBillItemList == null) return;
+        if (_flowBillItemList == null) throw new InvalidOperationException("_flowBillItemList is null!");
 
         string uniqueKey = BuildLegacyKey(productId, string.Empty);
 
@@ -60,9 +60,16 @@ public partial class UC_Billing : UserControl
         }
 
         UC_BillItem billItem = CreateBillItem(productId, name, qty, price, imageIdentifier);
+        if (_flowBillItemList.ClientSize.Width > 0)
+        {
+            billItem.Width = _flowBillItemList.ClientSize.Width - 8;
+            billItem.Margin = new Padding(0, 0, 0, 5);
+        }
+
         _flowBillItemList.Controls.Add(billItem);
         _billItemsDict.Add(uniqueKey, billItem);
 
+        billItem.LoadImage();
         UpdateTotal(qty * price);
     }
 
@@ -80,11 +87,17 @@ public partial class UC_Billing : UserControl
         }
 
         UC_BillItem billItem = CreateCustomizedBillItem(cartItem);
+        if (_flowBillItemList.ClientSize.Width > 0)
+        {
+            billItem.Width = _flowBillItemList.ClientSize.Width - 8;
+            billItem.Margin = new Padding(0, 0, 0, 5);
+        }
 
         _flowBillItemList.Controls.Add(billItem);
         _billItemsDict.Add(uniqueKey, billItem);
         _cartItems.Add(cartItem);
 
+        billItem.LoadImage();
         UpdateTotal(cartItem.TotalLinePrice);
     }
 
@@ -126,6 +139,7 @@ public partial class UC_Billing : UserControl
         _flowBillItemList.Controls.SetChildIndex(newBillItem, oldIndex);
         _billItemsDict.Add(newKey, newBillItem);
 
+        newBillItem.LoadImage();
         UpdateTotal(newBillItem.TotalValue);
     }
 
@@ -150,7 +164,7 @@ public partial class UC_Billing : UserControl
     {
         decimal unitPrice = GetCustomizedUnitPrice(cartItem);
 
-        UC_BillItem billItem = CreateBillItem(cartItem.ProductId, cartItem.DisplayName, cartItem.Quantity, unitPrice, string.Empty);
+        UC_BillItem billItem = CreateBillItem(cartItem.ProductId, cartItem.DisplayName, cartItem.Quantity, unitPrice, cartItem.ImageUrl);
         billItem.LinkedCartItem = cartItem;
 
         billItem.OnEditItemRequest += async (s, item) => await HandleEditCartItemAsync(item);

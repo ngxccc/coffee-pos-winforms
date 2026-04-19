@@ -110,8 +110,22 @@ public static class ImageHelper
             byte[] imageBytes;
             if (!_byteCache.TryGetValue(url, out byte[]? cachedBytes))
             {
-                // Gọi API lấy mảng Byte
-                imageBytes = await HttpClient.GetByteArrayAsync(url);
+                // FIX: Phân loại Link Web và Link File máy tính cục bộ
+                if (url.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                {
+                    imageBytes = await HttpClient.GetByteArrayAsync(url);
+                }
+                else if (File.Exists(url))
+                {
+                    // Nếu là file trong máy (ví dụ: C:\images\product1.png)
+                    imageBytes = await File.ReadAllBytesAsync(url);
+                }
+                else
+                {
+                    // Đường dẫn sai hoặc file không tồn tại
+                    return null;
+                }
+
                 _byteCache.TryAdd(url, imageBytes);
             }
             else
