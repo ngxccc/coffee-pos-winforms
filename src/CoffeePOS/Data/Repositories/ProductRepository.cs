@@ -19,7 +19,7 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
 
     public async Task<List<ProductDetailDto>> GetAllProductsAsync()
     {
-        var list = new List<ProductDetailDto>();
+        var dict = new Dictionary<int, ProductDetailDto>();
         using var conn = await dataSource.OpenConnectionAsync();
 
         using var cmd = new NpgsqlCommand(SqlGetAll, conn);
@@ -27,9 +27,15 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
 
         while (await reader.ReadAsync())
         {
-            list.Add(MapProductFromReader(reader));
+            int id = reader.GetRequiredInt("id");
+            if (!dict.TryGetValue(id, out var product))
+            {
+                product = MapProductFromReader(reader);
+                dict.Add(id, product);
+            }
+            MapAndAddSize(reader, product);
         }
-        return list;
+        return [.. dict.Values];
     }
 
     public async Task<ProductDetailDto?> GetProductByIdAsync(int productId)
@@ -40,7 +46,14 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
         cmd.Parameters.AddWithValue("id", productId);
 
         using var reader = await cmd.ExecuteReaderAsync();
-        return await reader.ReadAsync() ? MapProductFromReader(reader) : null;
+        ProductDetailDto? product = null;
+
+        while (await reader.ReadAsync())
+        {
+            product ??= MapProductFromReader(reader);
+            MapAndAddSize(reader, product);
+        }
+        return product;
     }
 
     public async Task AddProductAsync(UpsertProductDto command)
@@ -50,8 +63,8 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
         using var cmd = new NpgsqlCommand(SqlInsert, conn);
         cmd.Parameters.AddWithValue("name", command.Name);
         cmd.Parameters.AddWithValue("price", command.Price);
-        cmd.Parameters.AddWithValue("categoryId", command.CategoryId > 0 ? command.CategoryId : DBNull.Value);
-        cmd.Parameters.AddWithValue("imageUrl", (object?)command.ImageUrl ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("categoryId", command.CategoryId);
+        cmd.Parameters.AddWithValue("imageUrl", command.ImageUrl ?? string.Empty);
 
         await cmd.ExecuteNonQueryAsync();
     }
@@ -64,8 +77,8 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
         cmd.Parameters.AddWithValue("id", command.Id);
         cmd.Parameters.AddWithValue("name", command.Name);
         cmd.Parameters.AddWithValue("price", command.Price);
-        cmd.Parameters.AddWithValue("categoryId", command.CategoryId > 0 ? command.CategoryId : DBNull.Value);
-        cmd.Parameters.AddWithValue("imageUrl", (object?)command.ImageUrl ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("categoryId", command.CategoryId);
+        cmd.Parameters.AddWithValue("imageUrl", command.ImageUrl ?? string.Empty);
 
         await cmd.ExecuteNonQueryAsync();
     }
@@ -77,13 +90,12 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
         using var cmd = new NpgsqlCommand(SqlSoftDelete, conn);
         cmd.Parameters.AddWithValue("id", productId);
 
-        int rowsAffected = await cmd.ExecuteNonQueryAsync();
-        return rowsAffected > 0;
+        return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
     public async Task<List<ProductDetailDto>> GetDeletedProductsAsync()
     {
-        var list = new List<ProductDetailDto>();
+        var dict = new Dictionary<int, ProductDetailDto>();
         using var conn = await dataSource.OpenConnectionAsync();
 
         using var cmd = new NpgsqlCommand(SqlGetDeleted, conn);
@@ -91,9 +103,15 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
 
         while (await reader.ReadAsync())
         {
-            list.Add(MapProductFromReader(reader));
+            int id = reader.GetRequiredInt("id");
+            if (!dict.TryGetValue(id, out var product))
+            {
+                product = MapProductFromReader(reader);
+                dict.Add(id, product);
+            }
+            MapAndAddSize(reader, product);
         }
-        return list;
+        return [.. dict.Values];
     }
 
     public async Task<ProductDetailDto?> GetDeletedProductByIdAsync(int productId)
@@ -104,18 +122,25 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
         cmd.Parameters.AddWithValue("id", productId);
 
         using var reader = await cmd.ExecuteReaderAsync();
-        return await reader.ReadAsync() ? MapProductFromReader(reader) : null;
+        ProductDetailDto? product = null;
+
+        while (await reader.ReadAsync())
+        {
+            product ??= MapProductFromReader(reader);
+            MapAndAddSize(reader, product);
+        }
+        return product;
     }
 
     public async Task<bool> RestoreProductAsync(int productId)
     {
         using var conn = await dataSource.OpenConnectionAsync();
-
         using var cmd = new NpgsqlCommand(SqlRestore, conn);
         cmd.Parameters.AddWithValue("id", productId);
-
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
+
+    #region Helpers
 
     private static ProductDetailDto MapProductFromReader(DbDataReader reader)
     {
@@ -124,6 +149,44 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
             reader.GetRequiredString("name"),
             reader.GetRequiredDecimal("price"),
             reader["category_id"] is DBNull ? 0 : reader.GetRequiredInt("category_id"),
-            reader["image_url"] is DBNull ? string.Empty : reader.GetRequiredString("image_url"));
+            reader["image_url"] is DBNull ? string.Empty : reader.GetRequiredString("image_url"),
+            []
+        );
     }
+
+    private static void MapAndAddSize(DbDataReader reader, ProductDetailDto product)
+    {
+        if (product.Sizes == null)
+            return;
+
+        // Tránh throw exception nếu câu SQL không Select cột size_name
+        if (!HasColumn(reader, "size_name") || reader["size_name"] is DBNull)
+            return;
+
+        string sizeName = reader.GetRequiredString("size_name");
+
+        // Tránh lặp size nếu câu truy vấn SQL bị nổ số lượng dòng
+        if (!product.Sizes.Any(s => s.SizeName == sizeName))
+        {
+            product.Sizes.Add(new ProductSizeDto
+            (
+                product.Id,
+                sizeName,
+                reader.GetRequiredDecimal("price_adjustment")
+            ));
+        }
+    }
+
+    // Tool hỗ trợ check cột tồn tại trong DataReader an toàn
+    private static bool HasColumn(DbDataReader reader, string columnName)
+    {
+        for (int i = 0; i < reader.FieldCount; i++)
+        {
+            if (reader.GetName(i).Equals(columnName, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        return false;
+    }
+
+    #endregion
 }

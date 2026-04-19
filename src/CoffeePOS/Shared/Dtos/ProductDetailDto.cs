@@ -5,5 +5,6 @@ public record ProductDetailDto(
     string Name,
     decimal Price,
     int CategoryId,
-    string ImageUrl
+    string ImageUrl,
+    List<ProductSizeDto>? Sizes = null
 );

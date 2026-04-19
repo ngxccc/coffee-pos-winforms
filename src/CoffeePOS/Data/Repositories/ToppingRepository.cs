@@ -20,11 +20,13 @@ public class ToppingRepository(NpgsqlDataSource dataSource) : IToppingRepository
 
         while (await reader.ReadAsync())
         {
-            list.Add(new ToppingGridDto(
-                Id: reader.GetInt32(0),
-                Name: reader.GetString(1),
-                Price: reader.GetDecimal(2)
-            ));
+            list.Add(new ToppingGridDto
+            {
+                Id = reader.GetInt32(0),
+                Name = reader.GetString(1),
+                Price = reader.GetDecimal(2),
+                IsSelected = false
+            });
         }
         return list;
     }

@@ -1,7 +1,7 @@
+using AntdUI;
 using CoffeePOS.Forms.Core;
 using CoffeePOS.Services.Contracts.Queries;
 using CoffeePOS.Shared.Dtos;
-using CoffeePOS.Shared.Helpers;
 
 namespace CoffeePOS.Features.Products;
 
@@ -10,19 +10,23 @@ public partial class UC_ProductCustomization : UserControl, IValidatableComponen
     private readonly IProductQueryService _productQueryService;
     private readonly ProductDetailDto _product;
     private readonly CartItemDto? _existingItem;
-    private readonly Dictionary<int, AntdUI.Checkbox> _toppingChecks = [];
+    private readonly Dictionary<int, Checkbox> _toppingChecks = [];
 
     private List<ToppingGridDto> _allToppings = [];
     private bool _loaded;
+    private readonly decimal _basePrice;
+    private decimal _currentSizeAdjustment = 0;
 
     public UC_ProductCustomization(ProductDetailDto product, IProductQueryService productQueryService)
     {
         _product = product;
+        _basePrice = product.Price;
         _productQueryService = productQueryService;
         _existingItem = null;
 
         InitializeComponent();
 
+        BindSizes();
         WireEvents();
     }
 
@@ -32,10 +36,51 @@ public partial class UC_ProductCustomization : UserControl, IValidatableComponen
         _existingItem = existingItem;
     }
 
+    private void BindSizes()
+    {
+        _segSize.Items.Clear();
+
+        if (_product.Sizes == null || _product.Sizes.Count == 0)
+        {
+            // HACK: Nếu món không có size (ví dụ: Bánh ngọt), ẩn luôn thanh Segmented
+            // _segSize.Items.Add(new SegmentedItem { ID = "S", Text = "Size S", Tag = 0m });
+            // _currentSizeAdjustment = 0m;
+            // _segSize.SelectIndex = 0;
+            return;
+        }
+
+        foreach (var size in _product.Sizes)
+        {
+            // Format UI: L (+10,000đ)
+            string displayText = $"{size.SizeName} (+{size.PriceAdjustment:N0}đ)";
+
+            _segSize.Items.Add(new SegmentedItem
+            {
+                ID = size.SizeName,
+                Text = displayText,
+                Tag = size.PriceAdjustment
+            });
+        }
+
+        _segSize.SelectIndex = 0;
+        _currentSizeAdjustment = _product.Sizes[0].PriceAdjustment;
+    }
+
     private void WireEvents()
     {
-        _segSize.SelectIndexChanged += (s, e) => UpdateTotalPrice();
-        _numQuantity.ValueChanged += (s, e) => UpdateTotalPrice();
+        _segSize.ItemClick += (s, e) => CalculateTotal();
+        _numQuantity.ValueChanged += (s, e) => CalculateTotal();
+
+        _tableToppings.Columns =
+        [
+            new ColumnCheck("IsSelected").SetFixed(),
+            new Column("Name", "Tên Topping", ColumnAlign.Left) { Width = "70%" },
+            new Column("Price", "Giá", ColumnAlign.Right) {
+                Width = "30%",
+                DisplayFormat = "{0:N0} đ"
+            }
+        ];
+        _tableToppings.CheckedChanged += (s, e) => CalculateTotal();
     }
 
     protected override async void OnLoad(EventArgs e)
@@ -48,61 +93,35 @@ public partial class UC_ProductCustomization : UserControl, IValidatableComponen
 
         if (_existingItem != null) LoadState();
 
-        // BUGFIX: Calculate initial total price after all UI values are set
-        // Without this, the price stays at 0 until user changes a value
-        UpdateTotalPrice();
+        CalculateTotal();
     }
 
     private async Task LoadToppingsAsync()
     {
-        try
+        _allToppings = await _productQueryService.GetAllToppingsAsync();
+
+        _tableToppings.DataSource = _allToppings;
+
+        if (_existingItem != null)
         {
-            _allToppings = await _productQueryService.GetAllToppingsAsync();
-            _pnlToppings.Controls.Clear();
-            _toppingChecks.Clear();
-
-            foreach (var topping in _allToppings)
-            {
-                var cb = new AntdUI.Checkbox
-                {
-                    Text = $"{topping.Name} (+{topping.Price:N0} đ)",
-                    Tag = topping.Id,
-                    Margin = new Padding(0, 4, 0, 4),
-                    Height = 30,
-                    Width = 180
-                };
-
-                cb.CheckedChanged += (s, e) => UpdateTotalPrice();
-
-                _toppingChecks[topping.Id] = cb;
-                _pnlToppings.Controls.Add(cb);
-            }
-        }
-        catch (Exception ex)
-        {
-            MessageBoxHelper.Error($"Lỗi nạp topping: {ex.Message}", owner: this);
+            // Nếu là mode sửa món, chọn lại các topping cũ
+            var selectedIds = _existingItem.Toppings.Select(t => t.Id).ToHashSet();
+            var rowsToSelect = _allToppings.Where(t => selectedIds.Contains(t.Id)).ToArray();
+            _tableToppings.SetSelected(rowsToSelect);
         }
     }
 
-    private void UpdateTotalPrice()
+    private void CalculateTotal()
     {
         if (!_loaded) return;
 
-        decimal toppingTotal = 0;
-        foreach (var topping in _allToppings)
-        {
-            if (_toppingChecks.TryGetValue(topping.Id, out var cb) && cb.Checked)
-            {
-                toppingTotal += topping.Price;
-            }
-        }
+        _currentSizeAdjustment = _product.Sizes![_segSize.SelectIndex].PriceAdjustment;
+        var selectedToppings = _allToppings.Where(t => t.IsSelected).ToList();
 
-        // Tương lai nếu Size M, L có giá khác thì sẽ check _rbM.Checked, _rbL.Checked ở đây
-        decimal basePrice = _product.Price;
+        decimal toppingTotal = selectedToppings.Sum(t => t.Price);
+        decimal total = (_basePrice + _currentSizeAdjustment + toppingTotal) * (int)_numQuantity.Value;
 
-        decimal finalPrice = (basePrice + toppingTotal) * _numQuantity.Value;
-
-        _lblTotalPrice.Text = $"Tổng: {finalPrice:N0} đ";
+        _lblTotalPrice.Text = $"Tổng: {total:N0} đ";
     }
 
     private void LoadState()
@@ -116,7 +135,7 @@ public partial class UC_ProductCustomization : UserControl, IValidatableComponen
 
         _numQuantity.Value = _existingItem.Quantity;
 
-        var selectedIds = _existingItem.Toppings.Select(t => t.ToppingId).ToHashSet();
+        var selectedIds = _existingItem.Toppings.Select(t => t.Id).ToHashSet();
         foreach (var id in selectedIds)
         {
             if (_toppingChecks.TryGetValue(id, out var cb)) cb.Checked = true;
@@ -129,18 +148,15 @@ public partial class UC_ProductCustomization : UserControl, IValidatableComponen
     {
         string size = _segSize?.Items[_segSize.SelectIndex]?.ID ?? "M";
         int qty = (int)_numQuantity.Value;
-
-        var selectedToppings = _allToppings
-            .Where(t => _toppingChecks.TryGetValue(t.Id, out var cb) && cb.Checked)
-            .Select(t => new CartToppingDto(t.Id, t.Name, t.Price))
-            .ToList();
+        decimal basePrice = _basePrice + _currentSizeAdjustment;
+        var selectedToppings = _allToppings.Where(t => t.IsSelected).ToList();
 
         return new CartItemDto
         {
             ProductId = _product.Id,
             ProductName = _product.Name,
             SizeName = size,
-            BasePrice = _product.Price,
+            BasePrice = basePrice,
             ImageUrl = _product.ImageUrl,
             Toppings = selectedToppings,
             Quantity = qty

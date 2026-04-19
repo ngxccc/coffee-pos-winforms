@@ -256,7 +256,7 @@ public partial class UC_Billing : UserControl
 
     private static string BuildCustomizedKey(CartItemDto item)
     {
-        string toppingIds = string.Join(",", item.Toppings.Select(t => t.ToppingId).OrderBy(id => id));
+        string toppingIds = string.Join(",", item.Toppings.Select(t => t.Id).OrderBy(id => id));
         return $"{item.ProductId}_{item.SizeName}_{toppingIds}";
     }
 

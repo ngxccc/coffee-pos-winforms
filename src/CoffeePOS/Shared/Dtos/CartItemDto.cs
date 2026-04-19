@@ -9,7 +9,7 @@ public record CartItemDto
     [Browsable(false)] public string SizeName { get; set; } = "M";
     [Browsable(false)] public decimal BasePrice { get; set; }
     [Browsable(false)] public string? ImageUrl { get; set; }
-    [Browsable(false)] public List<CartToppingDto> Toppings { get; set; } = [];
+    [Browsable(false)] public List<ToppingGridDto> Toppings { get; set; } = [];
 
     [DisplayName("Tên Món & Tùy Chọn")]
     public string DisplayName
@@ -19,7 +19,7 @@ public record CartItemDto
             string name = $"{ProductName} ({SizeName})";
             if (Toppings.Count > 0)
             {
-                string toppingStr = string.Join(" + ", Toppings.Select(t => t.ToppingName));
+                string toppingStr = string.Join(" + ", Toppings.Select(t => t.Name));
                 name += $" + {toppingStr}";
             }
             return name;

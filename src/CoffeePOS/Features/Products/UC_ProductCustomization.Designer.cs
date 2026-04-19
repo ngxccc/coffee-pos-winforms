@@ -10,9 +10,9 @@ public partial class UC_ProductCustomization
     private System.ComponentModel.IContainer components = null!;
 
     private AntdUI.Segmented _segSize = null!;
-    private AntdUI.FlowPanel _pnlToppings = null!;
     private AntdUI.InputNumber _numQuantity = null!;
     private AntdUI.Label _lblTotalPrice = null!;
+    private AntdUI.Table _tableToppings = null!;
 
     protected override void Dispose(bool disposing)
     {
@@ -56,35 +56,22 @@ public partial class UC_ProductCustomization
             Radius = 8,
             Full = false,
             Gap = 10,
-            Items =
-            {
-                new SegmentedItem { ID = "S", Text = "Size S" },
-                new SegmentedItem { ID = "M", Text = "Size M" },
-                new SegmentedItem { ID = "L", Text = "Size L" }
-            },
-            SelectIndex = 0
         };
         pnlSizes.Controls.Add(_segSize);
 
         var lblToppingTitle = CreateSectionLabel("THÊM TOPPING");
-        AntdUI.Panel containerTopping = new()
-        {
-            Back = UiTheme.SurfaceAlt,
-            Radius = 8,
-            Height = 220,
-            Padding = new Padding(5),
-            Dock = DockStyle.Top
-        };
 
-        _pnlToppings = new()
+        _tableToppings = new()
         {
             Dock = DockStyle.Fill,
-            Gap = 10,
-            Height = 40,
-            BackColor = UiTheme.SurfaceAlt,
-            AutoScroll = true,
+            Radius = 8,
+            EmptyText = "Không có topping",
+            Bordered = false,
+            Padding = new Padding(0),
+            MultipleRows = true,
+            Height = 300,
+            MaximumSize = new Size(500, 400)
         };
-        containerTopping.Controls.Add(_pnlToppings);
 
         var lblQtyTitle = CreateSectionLabel("SỐ LƯỢNG");
         _numQuantity = new AntdUI.InputNumber
@@ -100,7 +87,6 @@ public partial class UC_ProductCustomization
         {
             Dock = DockStyle.Bottom,
             Thickness = 1F,
-            Size = new Size(1000, 1)
         };
 
         _lblTotalPrice = new()
@@ -116,7 +102,7 @@ public partial class UC_ProductCustomization
         mainLayout.Controls.Add(lblQtyTitle);
         mainLayout.Controls.Add(_lblTotalPrice);
         mainLayout.Controls.Add(divider1);
-        mainLayout.Controls.Add(containerTopping);
+        mainLayout.Controls.Add(_tableToppings);
         mainLayout.Controls.Add(lblToppingTitle);
         mainLayout.Controls.Add(pnlSizes);
         mainLayout.Controls.Add(lblSizeTitle);
