@@ -1,4 +1,5 @@
-using CoffeePOS.Shared.Dtos;
+
+using CoffeePOS.Shared.Dtos.Dashboard;
 
 namespace CoffeePOS.Services.Contracts.Queries;
 

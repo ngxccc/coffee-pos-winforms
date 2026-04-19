@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using CoffeePOS.Shared.Dtos;
+using CoffeePOS.Shared.Dtos.Bill;
 using QuestPDF.Drawing;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;

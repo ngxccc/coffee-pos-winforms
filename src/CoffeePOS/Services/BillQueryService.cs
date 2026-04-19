@@ -1,6 +1,6 @@
 using CoffeePOS.Data.Repositories.Contracts;
 using CoffeePOS.Services.Contracts.Queries;
-using CoffeePOS.Shared.Dtos;
+using CoffeePOS.Shared.Dtos.Bill;
 
 namespace CoffeePOS.Services;
 

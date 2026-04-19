@@ -1,4 +1,5 @@
-using CoffeePOS.Shared.Dtos;
+
+using CoffeePOS.Shared.Dtos.ShiftReport;
 
 namespace CoffeePOS.Services.Contracts.Commands;
 

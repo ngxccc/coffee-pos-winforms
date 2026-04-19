@@ -1,6 +1,6 @@
-namespace CoffeePOS.Shared.Dtos;
+namespace CoffeePOS.Shared.Dtos.Bill;
 
-public record CreateBillItemDto(
+public record BillDetailDto(
     int ProductId,
     string ProductName,
     int Quantity,

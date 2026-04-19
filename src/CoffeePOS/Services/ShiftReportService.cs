@@ -1,6 +1,7 @@
 using CoffeePOS.Data.Repositories.Contracts;
 using CoffeePOS.Services.Contracts.Commands;
-using CoffeePOS.Shared.Dtos;
+
+using CoffeePOS.Shared.Dtos.ShiftReport;
 
 namespace CoffeePOS.Services;
 

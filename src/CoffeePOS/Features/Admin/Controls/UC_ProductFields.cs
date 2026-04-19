@@ -1,5 +1,7 @@
 using CoffeePOS.Forms.Core;
-using CoffeePOS.Shared.Dtos;
+
+using CoffeePOS.Shared.Dtos.Category;
+using CoffeePOS.Shared.Dtos.Product;
 using CoffeePOS.Shared.Helpers;
 
 namespace CoffeePOS.Features.Admin.Controls;

@@ -1,6 +1,7 @@
 using System.ComponentModel;
+using CoffeePOS.Shared.Dtos.Product;
 
-namespace CoffeePOS.Shared.Dtos;
+namespace CoffeePOS.Shared.Dtos.Bill;
 
 public record CartItemDto
 {

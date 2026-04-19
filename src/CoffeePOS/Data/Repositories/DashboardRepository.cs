@@ -1,5 +1,5 @@
 using CoffeePOS.Data.Repositories.Contracts;
-using CoffeePOS.Shared.Dtos;
+using CoffeePOS.Shared.Dtos.Dashboard;
 using CoffeePOS.Shared.Helpers;
 using Npgsql;
 

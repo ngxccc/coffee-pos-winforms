@@ -1,7 +1,7 @@
 namespace CoffeePOS.Data.Repositories;
 
 using CoffeePOS.Data.Repositories.Contracts;
-using CoffeePOS.Shared.Dtos;
+using CoffeePOS.Shared.Dtos.Bill;
 using CoffeePOS.Shared.Helpers;
 using Npgsql;
 

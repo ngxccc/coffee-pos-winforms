@@ -1,4 +1,5 @@
-using CoffeePOS.Shared.Dtos;
+
+using CoffeePOS.Shared.Dtos.Bill;
 using CoffeePOS.Shared.Helpers;
 
 namespace CoffeePOS.Features.Billing;

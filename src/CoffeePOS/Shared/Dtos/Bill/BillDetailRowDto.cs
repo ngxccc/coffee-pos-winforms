@@ -1,6 +1,6 @@
 using System.ComponentModel;
 
-namespace CoffeePOS.Shared.Dtos;
+namespace CoffeePOS.Shared.Dtos.Bill;
 
 public record BillDetailRowDto(
     [property: DisplayName("Tên Món")] string ProductName,

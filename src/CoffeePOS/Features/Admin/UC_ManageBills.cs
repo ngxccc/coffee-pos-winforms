@@ -6,7 +6,8 @@ using CoffeePOS.Features.Billing;
 using CoffeePOS.Forms.Core;
 using CoffeePOS.Services.Contracts.Commands;
 using CoffeePOS.Services.Contracts.Queries;
-using CoffeePOS.Shared.Dtos;
+
+using CoffeePOS.Shared.Dtos.Bill;
 using CoffeePOS.Shared.Helpers;
 using Microsoft.VisualBasic;
 

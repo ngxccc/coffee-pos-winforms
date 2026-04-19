@@ -1,6 +1,6 @@
 using System.ComponentModel;
 
-namespace CoffeePOS.Shared.Dtos;
+namespace CoffeePOS.Shared.Dtos.Bill;
 
 public record BillReportDto(
     [property: DisplayName("Mã Đơn")] int Id,

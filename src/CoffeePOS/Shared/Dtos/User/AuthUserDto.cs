@@ -1,6 +1,6 @@
 using CoffeePOS.Shared.Enums;
 
-namespace CoffeePOS.Shared.Dtos;
+namespace CoffeePOS.Shared.Dtos.User;
 
 public record AuthUserDto(
     int Id,

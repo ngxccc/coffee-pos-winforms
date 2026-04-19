@@ -3,7 +3,8 @@ using CoffeePOS.Features.Admin.Controls;
 using CoffeePOS.Forms.Core;
 using CoffeePOS.Services.Contracts.Commands;
 using CoffeePOS.Services.Contracts.Queries;
-using CoffeePOS.Shared.Dtos;
+
+using CoffeePOS.Shared.Dtos.User;
 using CoffeePOS.Shared.Helpers;
 
 namespace CoffeePOS.Features.Admin;

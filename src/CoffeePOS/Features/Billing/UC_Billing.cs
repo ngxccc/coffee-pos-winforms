@@ -1,5 +1,6 @@
 using System.ComponentModel;
-using CoffeePOS.Shared.Dtos;
+
+using CoffeePOS.Shared.Dtos.Bill;
 using Microsoft.VisualBasic;
 
 namespace CoffeePOS.Features.Billing;

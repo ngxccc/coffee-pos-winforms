@@ -1,4 +1,4 @@
-namespace CoffeePOS.Shared.Dtos;
+namespace CoffeePOS.Shared.Dtos.ShiftReport;
 
 public record SaveShiftReportDto(
     int UserId,

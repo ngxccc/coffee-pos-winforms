@@ -1,4 +1,4 @@
-using CoffeePOS.Shared.Dtos;
+using CoffeePOS.Shared.Dtos.Bill;
 
 namespace CoffeePOS.Core;
 

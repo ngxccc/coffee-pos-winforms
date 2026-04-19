@@ -1,4 +1,4 @@
-namespace CoffeePOS.Shared.Dtos;
+namespace CoffeePOS.Shared.Dtos.Product;
 
 public record UpsertProductDto(
     int Id,

@@ -1,6 +1,7 @@
 using CoffeePOS.Data.Repositories.Contracts;
 using CoffeePOS.Services.Contracts.Queries;
-using CoffeePOS.Shared.Dtos;
+
+using CoffeePOS.Shared.Dtos.Product;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace CoffeePOS.Services;

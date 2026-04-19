@@ -1,4 +1,4 @@
-namespace CoffeePOS.Shared.Dtos;
+namespace CoffeePOS.Shared.Dtos.User;
 
 public record ResetUserPasswordDto(
     int TargetUserId,

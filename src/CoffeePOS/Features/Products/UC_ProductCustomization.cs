@@ -1,7 +1,8 @@
 using AntdUI;
 using CoffeePOS.Forms.Core;
 using CoffeePOS.Services.Contracts.Queries;
-using CoffeePOS.Shared.Dtos;
+using CoffeePOS.Shared.Dtos.Bill;
+using CoffeePOS.Shared.Dtos.Product;
 
 namespace CoffeePOS.Features.Products;
 

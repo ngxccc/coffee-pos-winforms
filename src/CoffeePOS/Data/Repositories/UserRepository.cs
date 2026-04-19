@@ -1,5 +1,6 @@
 using CoffeePOS.Data.Repositories.Contracts;
-using CoffeePOS.Shared.Dtos;
+
+using CoffeePOS.Shared.Dtos.User;
 using CoffeePOS.Shared.Enums;
 using CoffeePOS.Shared.Helpers;
 using Npgsql;

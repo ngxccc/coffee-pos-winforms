@@ -1,5 +1,6 @@
 using AntdUI;
-using CoffeePOS.Shared.Dtos;
+
+using CoffeePOS.Shared.Dtos.Bill;
 
 namespace CoffeePOS.Features.Billing.ViewModels;
 

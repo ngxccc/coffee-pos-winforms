@@ -1,6 +1,7 @@
 using System.Data.Common;
 using CoffeePOS.Data.Repositories.Contracts;
-using CoffeePOS.Shared.Dtos;
+
+using CoffeePOS.Shared.Dtos.Product;
 using CoffeePOS.Shared.Helpers;
 using Npgsql;
 

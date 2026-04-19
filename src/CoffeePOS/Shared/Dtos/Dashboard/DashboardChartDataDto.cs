@@ -1,4 +1,4 @@
-namespace CoffeePOS.Shared.Dtos;
+namespace CoffeePOS.Shared.Dtos.Dashboard;
 
 public record DashboardChartDataDto(
     DateTime Date,

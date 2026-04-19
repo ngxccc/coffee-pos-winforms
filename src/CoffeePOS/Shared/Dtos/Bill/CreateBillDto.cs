@@ -1,4 +1,4 @@
-namespace CoffeePOS.Shared.Dtos;
+namespace CoffeePOS.Shared.Dtos.Bill;
 
 public record CreateBillDto(
     int BuzzerNumber,

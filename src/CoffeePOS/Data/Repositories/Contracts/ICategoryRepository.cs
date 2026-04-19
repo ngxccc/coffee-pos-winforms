@@ -1,4 +1,5 @@
-using CoffeePOS.Shared.Dtos;
+
+using CoffeePOS.Shared.Dtos.Category;
 
 namespace CoffeePOS.Data.Repositories.Contracts;
 
