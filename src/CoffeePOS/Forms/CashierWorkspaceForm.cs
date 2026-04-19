@@ -69,6 +69,12 @@ public partial class CashierWorkspaceForm : Window
         SetupMenuEvents();
     }
 
+    protected override async void OnLoad(EventArgs e)
+    {
+        base.OnLoad(e);
+        AntdUI.Message.info(this, $"Chào mừng {_session.CurrentUser!.FullName} đến với ca làm việc của mình!");
+    }
+
     private void BindInitialData()
     {
         _lblUserInfo.Text = $"Ca trực: {_session.CurrentUser?.FullName ?? "N/A"}";
@@ -174,7 +180,7 @@ public partial class CashierWorkspaceForm : Window
 
     private void SetupBillingEvents()
     {
-        _ucBilling.OnPayClicked += async (s, e) => await ProcessPaymentAsync();
+        _ucBilling.OnPayClicked += async (s, e) => ProcessPaymentAsync();
 
         _ucBilling.OnEditCartItem += async (s, cartItem) =>
         {
@@ -322,7 +328,7 @@ public partial class CashierWorkspaceForm : Window
         };
     }
 
-    private async Task ProcessPaymentAsync()
+    private void ProcessPaymentAsync()
     {
         if (_isProcessingPayment) return;
 
@@ -333,33 +339,67 @@ public partial class CashierWorkspaceForm : Window
             return;
         }
 
-        // HACK: VisualBasic InputBox in a modern AntdUI app. Should be refactored to a native custom modal.
-        string input = Microsoft.VisualBasic.Interaction.InputBox("Nhập số Thẻ Rung / Số thứ tự:", "Xác nhận Order", "1");
-        if (!int.TryParse(input, out int buzzerNumber)) return;
-
         decimal finalAmount = _ucBilling.GrandTotal;
-        if (!MessageBoxHelper.ConfirmYesNo($"Thu của khách {finalAmount:N0} đ?", "Xác nhận", this))
-            return;
+        var confirmControl = new UC_PaymentConfirm(finalAmount);
 
+        // Dùng hàng chuẩn AntdUI Modal
+        var config = new Modal.Config(this, "XÁC NHẬN THANH TOÁN", confirmControl)
+        {
+            OkText = "Xác nhận",
+            CancelText = "Huỷ",
+            OnOk = (cfg) =>
+            {
+                int buzzerNumber = confirmControl.BuzzerNumber;
+
+                // 1. Validation
+                if (buzzerNumber <= 0)
+                {
+                    AntdUI.Message.warn(this, "Số thẻ rung không hợp lệ!");
+                    return false; // Chặn lại, không cho đóng Modal
+                }
+
+                // 2. Pass validation -> Kích hoạt luồng lưu Database ngầm
+                _ = ExecutePaymentTransactionAsync(buzzerNumber, finalAmount, cartItems);
+
+                return true; // Cho phép Modal tự động hủy diệt
+            }
+        };
+
+        AntdUI.Modal.open(config);
+    }
+
+    private async Task ExecutePaymentTransactionAsync(int buzzerNumber, decimal finalAmount, List<CreateBillItemDto> cartItems)
+    {
         try
         {
             _isProcessingPayment = true;
-            var command = new CreateBillDto(buzzerNumber, _session.CurrentUser!.Id, finalAmount, [.. cartItems]);
-            int billId = await _billService.ProcessFullOrderAsync(command);
 
-            await _pdfQueue.EnqueueJobAsync(new BillPrintPayload
+            AntdUI.Message.loading(this, "Đang xử lý đơn hàng...", async config =>
             {
-                BillId = billId,
-                BuzzerNumber = buzzerNumber,
-                TotalAmount = finalAmount,
-                Details = [.. cartItems.Select(i => new BillDetailDto(i.ProductId, i.ProductName, i.Quantity, i.Price, i.Note))]
-            });
+                var command = new CreateBillDto(buzzerNumber, _session.CurrentUser!.Id, finalAmount, cartItems);
+                int billId = await _billService.ProcessFullOrderAsync(command);
 
-            _ucBilling.ClearOrder();
+                config.ID = billId.ToString();
+
+                await _pdfQueue.EnqueueJobAsync(new BillPrintPayload
+                {
+                    BillId = billId,
+                    BuzzerNumber = buzzerNumber,
+                    TotalAmount = finalAmount,
+                    Details = [.. cartItems.Select(i => new BillDetailDto(i.ProductId, i.ProductName, i.Quantity, i.Price, i.Note))]
+                });
+
+                Invoke(new Action(() =>
+                {
+                    _ucBilling.ClearOrder();
+                    AntdUI.Message.close_id(billId.ToString());
+                    AntdUI.Message.success(this, "Thanh toán và tạo hóa đơn thành công!");
+                }));
+            });
         }
         catch (Exception ex)
         {
-            MessageBoxHelper.Error($"Lỗi thanh toán: {ex.Message}", owner: this);
+            AntdUI.Message.error(this, $"Lỗi thanh toán: {ex.Message}");
         }
         finally
         {
