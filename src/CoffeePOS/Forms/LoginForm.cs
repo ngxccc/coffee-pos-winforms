@@ -91,7 +91,7 @@ public partial class LoginForm : Window
 
         if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
         {
-            AntdUI.Message.warn(this, "Vui lòng nhập đủ Username và Password!");
+            MessageBoxHelper.Warning("Vui lòng nhập đủ Username và Password!", type: FeedbackType.Message);
             return;
         }
 
@@ -115,7 +115,7 @@ public partial class LoginForm : Window
             }
             else
             {
-                AntdUI.Message.error(this, "Sai tài khoản hoặc mật khẩu!");
+                MessageBoxHelper.Error("Sai tài khoản hoặc mật khẩu!", type: FeedbackType.Message);
             }
         }
         catch (OperationCanceledException)
@@ -124,7 +124,7 @@ public partial class LoginForm : Window
         }
         catch (InvalidOperationException ex)
         {
-            AntdUI.Message.error(this, $"Tài khoản của bạn đã bị khóa!\nMọi thắc mắc xin liên hệ quản trị viên.\n{ex.Message}");
+            MessageBoxHelper.Error($"Tài khoản của bạn đã bị khóa!\nMọi thắc mắc xin liên hệ quản trị viên.\n{ex.Message}", type: FeedbackType.Message);
         }
         catch (Exception ex)
         {
