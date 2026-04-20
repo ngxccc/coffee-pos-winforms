@@ -71,7 +71,7 @@ public partial class UC_BillDetail
         {
             Font = new Font("Segoe UI", 14, FontStyle.Bold),
             ForeColor = UiTheme.BrandPrimary,
-            Dock = DockStyle.Bottom,
+            Dock = DockStyle.Top,
             Height = 50,
             TextAlign = ContentAlignment.MiddleRight,
             Padding = new Padding(0, 0, 20, 0)
