@@ -279,9 +279,10 @@ private async Task LoadImageAsync(PictureBox pb, string id)
 ## Best Practices Established
 
 ### 1. Theme Consistency
-- **Always use UiTheme constants**: Never hardcode colors (Color.White, Color.Red, etc.)
-- **Single token source**: Update color in UiTheme.cs; all forms automatically reflect change
-- **Token naming**: Use semantic names (BrandError, TextSecondary) not hex values
+- **Always use UiTheme constants**: Never hardcode colors (Color.White, Color.Red, etc.).
+- **Single token source**: Update color in UiTheme.cs; all forms automatically reflect change.
+- **Token naming**: Use semantic names (BrandError, TextSecondary) not hex values.
+- **Avoid using var**: Prefer using `AntdUI.Target target = new(this);` over `var target = new AntdUI.Target(this);`.
 
 ### 2. Control Migration Pattern
 When replacing WinForms with AntdUI:
