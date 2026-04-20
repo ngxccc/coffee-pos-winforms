@@ -28,6 +28,7 @@ public partial class UC_ShiftReportFields
     {
         Dock = DockStyle.Fill;
         BackColor = UiTheme.Surface;
+        Size = LogicalToDeviceUnits(new Size(450, 500));
 
         AntdUI.Divider divTitle = new()
         {

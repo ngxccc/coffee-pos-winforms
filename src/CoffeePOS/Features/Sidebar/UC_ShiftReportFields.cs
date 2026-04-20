@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+using AntdUI;
 using CoffeePOS.Core;
 using CoffeePOS.Forms.Core;
 using CoffeePOS.Services.Contracts.Queries;
@@ -5,7 +7,22 @@ using CoffeePOS.Shared.Helpers;
 
 namespace CoffeePOS.Features.Sidebar;
 
-public record ShiftReportPayload(DateTime EndTime, int TotalBills, decimal ExpectedCash, decimal ActualCash, decimal Variance, string Note);
+public record ShiftReportPayload
+{
+    public DateTime EndTime { get; init; } = DateTime.Now;
+
+    public int TotalBills { get; init; }
+
+    public decimal ExpectedCash { get; init; }
+
+    [Required(ErrorMessage = "Vui lòng nhập số tiền thực tế.")]
+    [Range(0, double.MaxValue, ErrorMessage = "Số tiền thực tế không hợp lệ.")]
+    public decimal ActualCash { get; init; }
+
+    public decimal Variance => ActualCash - ExpectedCash;
+
+    public string Note { get; init; } = string.Empty;
+}
 
 public partial class UC_ShiftReportFields : UserControl, IValidatableComponent<ShiftReportPayload>
 {
@@ -43,22 +60,26 @@ public partial class UC_ShiftReportFields : UserControl, IValidatableComponent<S
 
     public bool ValidateInput()
     {
+        Target target = new(this);
+
         if (!_loaded)
         {
-            MessageBoxHelper.Warning("Dữ liệu chốt ca chưa sẵn sàng, vui lòng đợi thêm.", owner: this);
+            AntdUI.Message.warn(target, "Dữ liệu chốt ca chưa sẵn sàng, vui lòng đợi thêm.");
             return false;
         }
 
-        if (!decimal.TryParse(_txtActualCash.Text, out decimal actualCash))
+        ShiftReportPayload payload = GetPayload();
+
+        if (!ValidationHelper.TryValidate(payload, out string error))
         {
-            MessageBoxHelper.Warning("Vui lòng nhập số tiền thực tế hợp lệ.", owner: this);
+            AntdUI.Message.warn(target, error);
             return false;
         }
 
-        decimal variance = actualCash - _expectedCash;
+        decimal variance = payload.ActualCash - _expectedCash;
         if (variance != 0 && string.IsNullOrWhiteSpace(_txtNote.Text))
         {
-            MessageBoxHelper.Warning("Phát hiện lệch tiền. Bắt buộc nhập ghi chú để quản lý kiểm tra.", owner: this);
+            AntdUI.Message.warn(target, "Phát hiện lệch tiền. Bắt buộc nhập ghi chú để quản lý kiểm tra.");
             _txtNote.Focus();
             return false;
         }
@@ -69,15 +90,15 @@ public partial class UC_ShiftReportFields : UserControl, IValidatableComponent<S
     public ShiftReportPayload GetPayload()
     {
         decimal actualCash = decimal.Parse(_txtActualCash.Text);
-        decimal variance = actualCash - _expectedCash;
 
-        return new ShiftReportPayload(
-            _endTime,
-            _totalBills,
-            _expectedCash,
-            actualCash,
-            variance,
-            _txtNote.Text.Trim());
+        return new ShiftReportPayload
+        {
+            EndTime = _endTime,
+            TotalBills = _totalBills,
+            ExpectedCash = _expectedCash,
+            ActualCash = actualCash,
+            Note = _txtNote.Text.Trim()
+        };
     }
 
     private async Task LoadDataAsync()

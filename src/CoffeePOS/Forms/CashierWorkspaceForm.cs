@@ -75,6 +75,7 @@ public partial class CashierWorkspaceForm : Window
         AntdUI.Message.info(this, $"Chào mừng {_session.CurrentUser!.FullName} đến với ca làm việc của mình!");
     }
 
+    // SETUP
     private void BindInitialData()
     {
         _lblUserInfo.Text = $"Ca trực: {_session.CurrentUser?.FullName ?? "N/A"}";
@@ -82,92 +83,10 @@ public partial class CashierWorkspaceForm : Window
 
     private void SetupSidebarEvents()
     {
-        // HANDLER ON HOME CLICK
-        _ucSidebar.OnHomeClicked += (s, e) => _ucMenu.BringToFront();
-
-        // HANDLER ON BILL HISTORY CLICK
-        _ucSidebar.OnBillHistoryClicked += async (s, e) =>
-        {
-            var todayBills = await _billQueryService.GetTodayBillsByUserAsync(_session.CurrentUser!.Id);
-            _ucBillHistory.BindData(todayBills);
-
-            _ucBillHistory.BringToFront();
-        };
-
-        // HANDLER ON PROFILES CLICK
-        _ucSidebar.OnProfilesClicked += (s, e) =>
-        {
-            var profilesControl = _formFactory.CreateControl<UC_Profiles>();
-
-            var config = new Modal.Config(this, "THÔNG TIN CÁ NHÂN", profilesControl)
-            {
-                OkText = "CẬP NHẬT",
-                CancelText = "HUỶ",
-                BtnHeight = 50,
-
-                OnOk = (cfg) =>
-                {
-                    if (!profilesControl.ValidateInput()) return false;
-
-                    var payload = profilesControl.GetPayload();
-
-                    _ = ExecutePasswordChangeAsync(payload);
-
-                    return _isLoggingOut;
-                }
-            };
-
-            AntdUI.Modal.open(config);
-        };
-
-        _ucSidebar.OnLogoutClicked += async (s, e) =>
-        {
-            if (_ucBilling.HasUnpaidItems)
-            {
-                MessageBoxHelper.Warning("Giỏ hàng đang có món chưa thanh toán!\nVui lòng hoàn tất hoặc xóa giỏ hàng trước khi đăng xuất.", "CẢNH BÁO", this);
-                return;
-            }
-
-            var shiftControl = _formFactory.CreateControl<UC_ShiftReportFields>();
-            using var shell = new DynamicModalShell<ShiftReportPayload>(
-                "CHỐT CA LÀM VIỆC",
-                shiftControl,
-                new Size(450, 500),
-                saveButtonText: "XÁC NHẬN CHỐT CA");
-
-            if (shell.ShowDialog(this) != DialogResult.OK) return;
-
-            try
-            {
-                var payload = shell.ExtractData();
-                var command = new SaveShiftReportDto(
-                    _session.CurrentUser!.Id, _session.LoginTime!.Value, payload.EndTime,
-                    payload.TotalBills, payload.ExpectedCash, payload.ActualCash,
-                    payload.Variance, payload.Note);
-
-                await _shiftReportService.SaveReportAsync(command);
-                await _pdfQueue.EnqueueJobAsync(new ShiftReportPrintPayload
-                {
-                    CashierName = _session.CurrentUser!.FullName,
-                    StartTime = _session.LoginTime!.Value,
-                    EndTime = payload.EndTime,
-                    TotalBills = payload.TotalBills,
-                    ExpectedCash = payload.ExpectedCash,
-                    ActualCash = payload.ActualCash,
-                    Variance = payload.Variance,
-                    Note = payload.Note
-                });
-
-                _session.Logout();
-                DialogResult = DialogResult.Abort;
-                _isLoggingOut = true;
-                Close();
-            }
-            catch (Exception ex)
-            {
-                MessageBoxHelper.Error($"Lỗi chốt ca: {ex.Message}", owner: this);
-            }
-        };
+        _ucSidebar.OnHomeClicked += HandleHomeClicked;
+        _ucSidebar.OnBillHistoryClicked += HandleBillHistoryClickedAsync;
+        _ucSidebar.OnProfilesClicked += HandleProfilesClicked;
+        _ucSidebar.OnLogoutClicked += HandleLogoutClicked;
     }
 
     private void SetupBillingEvents()
@@ -325,6 +244,75 @@ public partial class CashierWorkspaceForm : Window
         };
     }
 
+    // HANDLE
+    private void HandleHomeClicked(object? sender, EventArgs e)
+    {
+        _ucMenu.BringToFront();
+    }
+
+    private async void HandleBillHistoryClickedAsync(object? sender, EventArgs e)
+    {
+        var todayBills = await _billQueryService.GetTodayBillsByUserAsync(_session.CurrentUser!.Id);
+        _ucBillHistory.BindData(todayBills);
+        _ucBillHistory.BringToFront();
+    }
+
+    private void HandleProfilesClicked(object? sender, EventArgs e)
+    {
+        var profilesControl = _formFactory.CreateControl<UC_Profiles>();
+
+        var config = new Modal.Config(this, "THÔNG TIN CÁ NHÂN", profilesControl)
+        {
+            OkText = "CẬP NHẬT",
+            CancelText = "HUỶ",
+            BtnHeight = 45,
+
+            OnOk = (cfg) =>
+            {
+                if (!profilesControl.ValidateInput()) return false;
+
+                var payload = profilesControl.GetPayload();
+
+                _ = ExecutePasswordChangeAsync(payload);
+
+                return false;
+            }
+        };
+
+        AntdUI.Modal.open(config);
+    }
+
+    private void HandleLogoutClicked(object? sender, EventArgs e)
+    {
+        if (_ucBilling.HasUnpaidItems)
+        {
+            MessageBoxHelper.Warning("Giỏ hàng đang có món chưa thanh toán!\nVui lòng hoàn tất hoặc xóa giỏ hàng trước khi đăng xuất.", "CẢNH BÁO", this);
+            return;
+        }
+
+        var shiftControl = _formFactory.CreateControl<UC_ShiftReportFields>();
+
+        var config = new Modal.Config(this, "CHỐT CA LÀM VIỆC", shiftControl)
+        {
+            OkText = "XÁC NHẬN CHỐT CA",
+            CancelText = "HUỶ",
+            BtnHeight = 45,
+
+            OnOk = (cfg) =>
+            {
+                if (!shiftControl.ValidateInput()) return false;
+
+                var payload = shiftControl.GetPayload();
+
+                _ = ExecuteShiftReportAsync(payload);
+
+                return false;
+            }
+        };
+
+        AntdUI.Modal.open(config);
+    }
+
     private void ProcessPaymentAsync()
     {
         if (_isProcessingPayment) return;
@@ -437,6 +425,52 @@ public partial class CashierWorkspaceForm : Window
             {
                 AntdUI.Message.close_id("change_pass");
                 AntdUI.Message.error(this, $"Lỗi đổi mật khẩu: {ex.Message}");
+            }
+        });
+    }
+
+    private async Task ExecuteShiftReportAsync(ShiftReportPayload payload)
+    {
+        AntdUI.Message.loading(this, "Đang xử lý chốt ca và in báo cáo...", async msgConfig =>
+        {
+            msgConfig.ID = "shift_report_process";
+
+            try
+            {
+                var command = new SaveShiftReportDto(
+                    _session.CurrentUser!.Id, _session.LoginTime!.Value, payload.EndTime,
+                    payload.TotalBills, payload.ExpectedCash, payload.ActualCash,
+                    payload.Variance, payload.Note);
+
+                await _shiftReportService.SaveReportAsync(command);
+
+                await _pdfQueue.EnqueueJobAsync(new ShiftReportPrintPayload
+                {
+                    CashierName = _session.CurrentUser!.FullName,
+                    StartTime = _session.LoginTime!.Value,
+                    EndTime = payload.EndTime,
+                    TotalBills = payload.TotalBills,
+                    ExpectedCash = payload.ExpectedCash,
+                    ActualCash = payload.ActualCash,
+                    Variance = payload.Variance,
+                    Note = payload.Note
+                });
+
+                Invoke(() =>
+                {
+                    _session.Logout();
+                    DialogResult = DialogResult.Abort;
+                    _isLoggingOut = true;
+                    Close();
+                });
+            }
+            catch (Exception ex)
+            {
+                Invoke(() => AntdUI.Message.error(this, $"Lỗi chốt ca: {ex.Message}"));
+            }
+            finally
+            {
+                Invoke(() => AntdUI.Message.close_id("shift_report_process"));
             }
         });
     }
