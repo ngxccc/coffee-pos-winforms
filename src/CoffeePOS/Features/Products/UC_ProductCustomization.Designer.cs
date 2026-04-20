@@ -25,7 +25,7 @@ public partial class UC_ProductCustomization
     {
         Dock = DockStyle.Fill;
         BackColor = UiTheme.Surface;
-        Size = new Size(450, 600);
+        Size = LogicalToDeviceUnits(new Size(450, 620));
 
         SuspendLayout();
 

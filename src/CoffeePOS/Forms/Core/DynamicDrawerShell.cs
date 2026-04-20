@@ -3,7 +3,6 @@ using CoffeePOS.Shared.Helpers;
 
 namespace CoffeePOS.Forms.Core;
 
-// WHY: Class Generic <T> để nhận bất kỳ Payload nào (CartItemDto, UserDto...) từ Content
 public class DynamicDrawerShell<T> : UserControl
 {
     private readonly IValidatableComponent<T> _contentComponent;
@@ -28,10 +27,9 @@ public class DynamicDrawerShell<T> : UserControl
 
     private void BuildLayout(string title, Control contentControl)
     {
-        contentControl.Dock = DockStyle.Fill;
-
         SuspendLayout();
 
+        // PANEL HEADER
         AntdUI.Panel pnlHeader = new()
         {
             Dock = DockStyle.Top,
@@ -46,14 +44,14 @@ public class DynamicDrawerShell<T> : UserControl
             Dock = DockStyle.Fill,
             TextAlign = ContentAlignment.MiddleLeft,
         };
+        pnlHeader.Controls.Add(lblTitle);
 
+        // PANEL FOOTER
         AntdUI.Panel pnlFooter = new()
         {
             Dock = DockStyle.Bottom,
-            Height = 80,
-            Padding = new Padding(20),
-            BorderWidth = 1F,
-            BorderColor = UiTheme.SurfaceAlt
+            Height = 60,
+            Padding = new Padding(10),
         };
         pnlFooter.SuspendLayout();
 
@@ -65,7 +63,6 @@ public class DynamicDrawerShell<T> : UserControl
             AutoSize = true,
             Dock = DockStyle.Right,
             Radius = 8,
-            Cursor = Cursors.Hand
         };
         btnSave.Click += BtnSave_Click;
 
@@ -77,19 +74,44 @@ public class DynamicDrawerShell<T> : UserControl
             Font = new Font("Segoe UI", 12F, FontStyle.Bold),
             AutoSize = true,
             Dock = DockStyle.Right,
-            Margin = new Padding(0, 0, 15, 0),
             Radius = 8,
-            Cursor = Cursors.Hand
         };
         btnCancel.Click += BtnCancel_Click;
-
-        pnlHeader.Controls.Add(lblTitle);
 
         pnlFooter.Controls.Add(btnCancel);
         pnlFooter.Controls.Add(btnSave);
 
-        Controls.Add(contentControl);
+        // PANEL BODY
+        AntdUI.Panel pnlBody = new()
+        {
+            Dock = DockStyle.Fill,
+            AutoScroll = true,
+        };
+
+        contentControl.Dock = DockStyle.Top;
+        pnlBody.Controls.Add(contentControl);
+
+        // DIVIDERS
+        Divider dividerTop = new()
+        {
+            Dock = DockStyle.Top,
+            Thickness = 1F,
+            Height = 1,
+            Margin = new Padding(0),
+        };
+
+        Divider dividerBottom = new()
+        {
+            Dock = DockStyle.Bottom,
+            Thickness = 1F,
+            Height = 1,
+            Margin = new Padding(0),
+        };
+
+        Controls.Add(pnlBody);
+        Controls.Add(dividerBottom);
         Controls.Add(pnlFooter);
+        Controls.Add(dividerTop);
         Controls.Add(pnlHeader);
 
         pnlFooter.ResumeLayout(false);
