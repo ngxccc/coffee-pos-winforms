@@ -19,6 +19,7 @@ public partial class LoginForm
         ClientSize = new Size(400, 350);
         StartPosition = FormStartPosition.CenterScreen;
         BackColor = UiTheme.Surface;
+        Resizable = false;
 
         SuspendLayout();
 
