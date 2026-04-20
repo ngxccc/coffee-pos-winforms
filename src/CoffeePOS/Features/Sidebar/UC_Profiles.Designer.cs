@@ -25,7 +25,7 @@ partial class UC_Profiles
         components = new System.ComponentModel.Container();
         Dock = DockStyle.Fill;
         BackColor = Color.White;
-        Size = new Size(400, 400);
+        Size = LogicalToDeviceUnits(new Size(400, 400));
 
         AntdUI.Panel pnlMain = new()
         {
