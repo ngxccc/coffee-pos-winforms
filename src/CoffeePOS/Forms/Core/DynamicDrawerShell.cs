@@ -28,6 +28,8 @@ public class DynamicDrawerShell<T> : UserControl
 
     private void BuildLayout(string title, Control contentControl)
     {
+        contentControl.Dock = DockStyle.Fill;
+
         SuspendLayout();
 
         AntdUI.Panel pnlHeader = new()
@@ -35,8 +37,6 @@ public class DynamicDrawerShell<T> : UserControl
             Dock = DockStyle.Top,
             Height = 60,
             Padding = new Padding(20, 0, 20, 0),
-            BorderWidth = 1F,
-            BorderColor = UiTheme.SurfaceAlt
         };
         AntdUI.Label lblTitle = new()
         {
@@ -44,9 +44,8 @@ public class DynamicDrawerShell<T> : UserControl
             Font = new Font("Segoe UI", 16F, FontStyle.Bold),
             ForeColor = UiTheme.BrandPrimary,
             Dock = DockStyle.Fill,
-            TextAlign = ContentAlignment.MiddleLeft
+            TextAlign = ContentAlignment.MiddleLeft,
         };
-        pnlHeader.Controls.Add(lblTitle);
 
         AntdUI.Panel pnlFooter = new()
         {
@@ -63,7 +62,7 @@ public class DynamicDrawerShell<T> : UserControl
             Text = "XÁC NHẬN",
             Type = TTypeMini.Primary,
             Font = new Font("Segoe UI", 12F, FontStyle.Bold),
-            Size = new Size(160, 45),
+            AutoSize = true,
             Dock = DockStyle.Right,
             Radius = 8,
             Cursor = Cursors.Hand
@@ -76,7 +75,7 @@ public class DynamicDrawerShell<T> : UserControl
             Type = TTypeMini.Default,
             Ghost = true,
             Font = new Font("Segoe UI", 12F, FontStyle.Bold),
-            Size = new Size(100, 45),
+            AutoSize = true,
             Dock = DockStyle.Right,
             Margin = new Padding(0, 0, 15, 0),
             Radius = 8,
@@ -84,10 +83,10 @@ public class DynamicDrawerShell<T> : UserControl
         };
         btnCancel.Click += BtnCancel_Click;
 
+        pnlHeader.Controls.Add(lblTitle);
+
         pnlFooter.Controls.Add(btnCancel);
         pnlFooter.Controls.Add(btnSave);
-
-        contentControl.Dock = DockStyle.Fill;
 
         Controls.Add(contentControl);
         Controls.Add(pnlFooter);

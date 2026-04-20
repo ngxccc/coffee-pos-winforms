@@ -42,6 +42,7 @@ public partial class UC_BillHistory
             BorderWidth = 1F,
             BorderColor = UiTheme.SurfaceAlt,
             Font = new Font("Segoe UI", 10),
+            AutoSizeColumnsMode = AntdUI.ColumnsMode.Fill
         };
 
         Controls.Add(_tableBills);

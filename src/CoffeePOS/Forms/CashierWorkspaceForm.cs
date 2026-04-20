@@ -267,8 +267,13 @@ public partial class CashierWorkspaceForm : Window
                     ?? new BillReportDto(historyBill.Id, historyBill.BuzzerNumber, historyBill.TotalAmount, historyBill.CreatedAt, _session.CurrentUser?.FullName ?? "N/A", false, null);
 
                 var detailControl = new UC_BillDetail(reportBill, details);
-                using var shell = new DynamicModalShell<bool>($"CHI TIẾT HOÁ ĐƠN #{reportBill.Id}", detailControl, new Size(900, 620), showSaveButton: false, cancelButtonText: "ĐÓNG");
-                shell.ShowDialog(this);
+
+                var config = new Modal.Config(this, $"CHI TIẾT HOÁ ĐƠN #{reportBill.Id}", detailControl)
+                {
+                    OkText = "Đóng",
+                    CancelText = null,
+                };
+                AntdUI.Modal.open(config);
             }
             catch (Exception ex)
             {
@@ -342,26 +347,24 @@ public partial class CashierWorkspaceForm : Window
         decimal finalAmount = _ucBilling.GrandTotal;
         var confirmControl = new UC_PaymentConfirm(finalAmount);
 
-        // Dùng hàng chuẩn AntdUI Modal
         var config = new Modal.Config(this, "XÁC NHẬN THANH TOÁN", confirmControl)
         {
             OkText = "Xác nhận",
             CancelText = "Huỷ",
+            MaskClosable = false,
             OnOk = (cfg) =>
             {
                 int buzzerNumber = confirmControl.BuzzerNumber;
 
-                // 1. Validation
                 if (buzzerNumber <= 0)
                 {
                     AntdUI.Message.warn(this, "Số thẻ rung không hợp lệ!");
-                    return false; // Chặn lại, không cho đóng Modal
+                    return false;
                 }
 
-                // 2. Pass validation -> Kích hoạt luồng lưu Database ngầm
                 _ = ExecutePaymentTransactionAsync(buzzerNumber, finalAmount, cartItems);
 
-                return true; // Cho phép Modal tự động hủy diệt
+                return true;
             }
         };
 
