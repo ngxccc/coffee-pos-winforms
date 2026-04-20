@@ -82,50 +82,42 @@ public partial class CashierWorkspaceForm : Window
 
     private void SetupSidebarEvents()
     {
-        _ucSidebar.OnHomeClicked += (s, e) =>
-        {
-            _ucBilling.ClearOrder();
-            _ucMenu.Visible = true;
-            _ucMenu.BringToFront();
-        };
+        // HANDLER ON HOME CLICK
+        _ucSidebar.OnHomeClicked += (s, e) => _ucMenu.BringToFront();
 
+        // HANDLER ON BILL HISTORY CLICK
         _ucSidebar.OnBillHistoryClicked += async (s, e) =>
         {
             var todayBills = await _billQueryService.GetTodayBillsByUserAsync(_session.CurrentUser!.Id);
             _ucBillHistory.BindData(todayBills);
 
-            _ucMenu.Visible = false;
-            _ucBillHistory.Visible = true;
             _ucBillHistory.BringToFront();
         };
 
-        _ucSidebar.OnProfilesClicked += async (s, e) =>
+        // HANDLER ON PROFILES CLICK
+        _ucSidebar.OnProfilesClicked += (s, e) =>
         {
             var profilesControl = _formFactory.CreateControl<UC_Profiles>();
-            using var shell = new DynamicModalShell<ChangePasswordPayload>("THÔNG TIN CÁ NHÂN", profilesControl, new Size(450, 550), saveButtonText: "CẬP NHẬT");
 
-            if (shell.ShowDialog(this) != DialogResult.OK) return;
-
-            try
+            var config = new Modal.Config(this, "THÔNG TIN CÁ NHÂN", profilesControl)
             {
-                var payload = shell.ExtractData();
-                await _userService.ChangePasswordAsync(
-                    _session.CurrentUser!.Id,
-                    _session.CurrentUser.Username,
-                    payload.CurrentPassword,
-                    payload.NewPassword,
-                    payload.ConfirmPassword);
+                OkText = "CẬP NHẬT",
+                CancelText = "HUỶ",
+                BtnHeight = 50,
 
-                MessageBoxHelper.Info("Đổi mật khẩu thành công!", "Thành công", this);
-                _session.Logout();
-                DialogResult = DialogResult.Abort;
-                _isLoggingOut = true;
-                Close();
-            }
-            catch (Exception ex)
-            {
-                MessageBoxHelper.Error($"Lỗi đổi mật khẩu: {ex.Message}", owner: this);
-            }
+                OnOk = (cfg) =>
+                {
+                    if (!profilesControl.ValidateInput()) return false;
+
+                    var payload = profilesControl.GetPayload();
+
+                    _ = ExecutePasswordChangeAsync(payload);
+
+                    return _isLoggingOut;
+                }
+            };
+
+            AntdUI.Modal.open(config);
         };
 
         _ucSidebar.OnLogoutClicked += async (s, e) =>
@@ -414,6 +406,42 @@ public partial class CashierWorkspaceForm : Window
         {
             _isProcessingPayment = false;
         }
+    }
+
+    private async Task ExecutePasswordChangeAsync(ChangePasswordPayload payload)
+    {
+        AntdUI.Message.loading(this, "Đang đổi mật khẩu...", async config =>
+        {
+            config.ID = "change_pass";
+
+            try
+            {
+                await _userService.ChangePasswordAsync(
+                _session.CurrentUser!.Id,
+                _session.CurrentUser.Username,
+                payload.CurrentPassword,
+                payload.NewPassword,
+                payload.ConfirmPassword);
+
+
+                Invoke(new Action(() =>
+                {
+                    _session.Logout();
+                    _isLoggingOut = true;
+                    _ucBilling.ClearOrder();
+                    AntdUI.Message.success(this, "Đổi mật khẩu thành công! Hệ thống sẽ đăng xuất.");
+                    Close();
+                }));
+            }
+            catch (Exception ex)
+            {
+                AntdUI.Message.error(this, $"Lỗi đổi mật khẩu: {ex.Message}");
+            }
+            finally
+            {
+                AntdUI.Message.close_id("change_pass");
+            }
+        });
     }
 
     protected override void OnFormClosing(FormClosingEventArgs e)
