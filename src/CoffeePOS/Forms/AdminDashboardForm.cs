@@ -75,11 +75,9 @@ public partial class AdminDashboardForm : AntdUI.Window
                 var userService = _serviceProvider.GetRequiredService<IUserService>();
 
                 await userService.ChangePasswordAsync(
-                    userId: _session.CurrentUser!.Id,
-                    username: _session.CurrentUser.Username,
-                    currentPassword: payload.CurrentPassword,
-                    newPassword: payload.NewPassword,
-                    confirmPassword: payload.ConfirmPassword
+                    _session.CurrentUser!.Id,
+                    _session.CurrentUser.Username,
+                    payload
                 );
 
                 MessageBoxHelper.Info("Đổi mật khẩu thành công! Vui lòng đăng nhập lại.", "Thành công", this);
@@ -87,15 +85,11 @@ public partial class AdminDashboardForm : AntdUI.Window
                 DialogResult = DialogResult.Abort;
                 Close();
             }
-            catch (ArgumentException ex) // Bắt lỗi validation (pass ngắn, không khớp)
-            {
-                MessageBoxHelper.Warning(ex.Message, owner: this);
-            }
-            catch (InvalidOperationException ex) // Bắt lỗi sai pass hiện tại
+            catch (ArgumentException ex)
             {
                 MessageBoxHelper.Error(ex.Message, owner: this);
             }
-            catch (Exception ex) // Bắt lỗi DB/Network
+            catch (Exception ex)
             {
                 MessageBoxHelper.Error($"Lỗi hệ thống: {ex.Message}", owner: this);
             }

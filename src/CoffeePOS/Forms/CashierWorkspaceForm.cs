@@ -417,29 +417,26 @@ public partial class CashierWorkspaceForm : Window
             try
             {
                 await _userService.ChangePasswordAsync(
-                _session.CurrentUser!.Id,
-                _session.CurrentUser.Username,
-                payload.CurrentPassword,
-                payload.NewPassword,
-                payload.ConfirmPassword);
-
+                    _session.CurrentUser!.Id,
+                    _session.CurrentUser.Username,
+                    payload
+                );
 
                 Invoke(new Action(() =>
                 {
                     _session.Logout();
+                    DialogResult = DialogResult.Abort;
                     _isLoggingOut = true;
                     _ucBilling.ClearOrder();
-                    AntdUI.Message.success(this, "Đổi mật khẩu thành công! Hệ thống sẽ đăng xuất.");
+                    AntdUI.Message.close_id("change_pass");
+                    MessageBoxHelper.Info("Đổi mật khẩu thành công! Hệ thống sẽ đăng xuất.");
                     Close();
                 }));
             }
             catch (Exception ex)
             {
-                AntdUI.Message.error(this, $"Lỗi đổi mật khẩu: {ex.Message}");
-            }
-            finally
-            {
                 AntdUI.Message.close_id("change_pass");
+                AntdUI.Message.error(this, $"Lỗi đổi mật khẩu: {ex.Message}");
             }
         });
     }

@@ -1,7 +1,9 @@
 using CoffeePOS.Data.Repositories.Contracts;
+using CoffeePOS.Features.Sidebar;
 using CoffeePOS.Services.Contracts.Commands;
 using CoffeePOS.Shared.Dtos.User;
 using CoffeePOS.Shared.Enums;
+using CoffeePOS.Shared.Helpers;
 
 namespace CoffeePOS.Services;
 
@@ -36,19 +38,16 @@ public class UserService(IUserRepository userRepo) : IUserService
         await userRepo.InsertUserAsync(username, fullName, command.Role, passwordHash);
     }
 
-    public async Task ChangePasswordAsync(int userId, string username, string currentPassword, string newPassword, string confirmPassword)
+    public async Task ChangePasswordAsync(int userId, string username, ChangePasswordPayload payload)
     {
-        if (string.IsNullOrWhiteSpace(currentPassword) || string.IsNullOrWhiteSpace(newPassword) || string.IsNullOrWhiteSpace(confirmPassword))
-            throw new ArgumentException("Vui lòng nhập đầy đủ các trường mật khẩu!");
+        if (!ValidationHelper.TryValidate(payload, out string error))
+            throw new ArgumentException(error);
 
-        if (newPassword != confirmPassword)
-            throw new ArgumentException("Mật khẩu mới và Xác nhận không khớp!");
+        // if (payload.CurrentPassword == payload.NewPassword)
+        //     throw new ArgumentException("Mật khẩu mới phải khác mật khẩu cũ");
 
-        if (newPassword.Length < 6)
-            throw new ArgumentException("Mật khẩu mới phải có ít nhất 6 ký tự!");
-
-        _ = await userRepo.AuthenticateAsync(username, currentPassword) ?? throw new InvalidOperationException("Mật khẩu hiện tại không chính xác!");
-        string newHash = BCrypt.Net.BCrypt.HashPassword(newPassword, workFactor: 11);
+        _ = await userRepo.AuthenticateAsync(username, payload.CurrentPassword) ?? throw new InvalidOperationException("Mật khẩu hiện tại không chính xác!");
+        string newHash = BCrypt.Net.BCrypt.HashPassword(payload.NewPassword, workFactor: 11);
         await userRepo.UpdatePasswordAsync(userId, newHash);
     }
 

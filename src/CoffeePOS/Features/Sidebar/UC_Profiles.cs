@@ -1,12 +1,23 @@
+using System.ComponentModel.DataAnnotations;
 using CoffeePOS.Core;
 using CoffeePOS.Forms.Core;
 using CoffeePOS.Shared.Enums;
 using CoffeePOS.Shared.Helpers;
-using Serilog;
 
 namespace CoffeePOS.Features.Sidebar;
 
-public record ChangePasswordPayload(string CurrentPassword, string NewPassword, string ConfirmPassword);
+public record ChangePasswordPayload
+{
+    [Required(ErrorMessage = "Vui lòng nhập mật khẩu hiện tại.")]
+    public string CurrentPassword { get; init; } = string.Empty;
+
+    [Required(ErrorMessage = "Vui lòng nhập mật khẩu mới.")]
+    [MinLength(6, ErrorMessage = "Mật khẩu mới phải có ít nhất 6 ký tự!")]
+    public string NewPassword { get; init; } = string.Empty;
+
+    [Compare(nameof(NewPassword), ErrorMessage = "Mật khẩu xác nhận không khớp.")]
+    public string ConfirmPassword { get; init; } = string.Empty;
+}
 
 public partial class UC_Profiles : UserControl, IValidatableComponent<ChangePasswordPayload>
 {
@@ -27,27 +38,15 @@ public partial class UC_Profiles : UserControl, IValidatableComponent<ChangePass
         _lblUsernameValue.Text = _session?.CurrentUser?.Username ?? "N/A";
     }
 
-    // PERF: O(1) Time Complexity. Simple string comparisons.
     public bool ValidateInput()
     {
-        if (string.IsNullOrWhiteSpace(_txtOldPass.Text))
-        {
-            MessageBoxHelper.Warning("Vui lòng nhập mật khẩu hiện tại.", owner: this);
-            _txtOldPass.Focus();
-            return false;
-        }
+        if (InvokeRequired) return Invoke(new Func<bool>(ValidateInput));
 
-        if (string.IsNullOrWhiteSpace(_txtNewPass.Text))
-        {
-            MessageBoxHelper.Warning("Vui lòng nhập mật khẩu mới.", owner: this);
-            _txtNewPass.Focus();
-            return false;
-        }
+        ChangePasswordPayload payload = GetPayload();
 
-        if (_txtNewPass.Text != _txtConfirmPass.Text)
+        if (!ValidationHelper.TryValidate(payload, out string error))
         {
-            MessageBoxHelper.Warning("Mật khẩu xác nhận không khớp.", owner: this);
-            _txtConfirmPass.Focus();
+            AntdUI.Message.warn(new AntdUI.Target(this), error);
             return false;
         }
 
@@ -55,7 +54,12 @@ public partial class UC_Profiles : UserControl, IValidatableComponent<ChangePass
     }
 
     public ChangePasswordPayload GetPayload()
-        => new(_txtOldPass.Text, _txtNewPass.Text, _txtConfirmPass.Text);
+        => new()
+        {
+            CurrentPassword = _txtCurrPass.Text,
+            NewPassword = _txtNewPass.Text,
+            ConfirmPassword = _txtConfirmPass.Text
+        };
 
     private static string FormatRole(UserRole? role)
         => role switch

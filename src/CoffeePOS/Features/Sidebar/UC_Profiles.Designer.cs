@@ -6,7 +6,7 @@ namespace CoffeePOS.Features.Sidebar;
 partial class UC_Profiles
 {
     private System.ComponentModel.IContainer components = null!;
-    private AntdUI.Input _txtOldPass = null!;
+    private AntdUI.Input _txtCurrPass = null!;
     private AntdUI.Input _txtNewPass = null!;
     private AntdUI.Input _txtConfirmPass = null!;
 
@@ -25,8 +25,7 @@ partial class UC_Profiles
         components = new System.ComponentModel.Container();
         Dock = DockStyle.Fill;
         BackColor = Color.White;
-        Name = "UC_Profiles";
-        Size = new Size(600, 800);
+        Size = new Size(400, 400);
 
         AntdUI.Panel pnlMain = new()
         {
@@ -158,7 +157,7 @@ partial class UC_Profiles
             ForeColor = Color.DimGray,
             TextAlign = ContentAlignment.MiddleLeft
         };
-        _txtOldPass = new AntdUI.Input
+        _txtCurrPass = new AntdUI.Input
         {
             Dock = DockStyle.Fill,
             Font = new Font("Segoe UI", 12F),
@@ -199,7 +198,7 @@ partial class UC_Profiles
         };
 
         tlpPassSection.Controls.Add(lblOldPassKey, 0, 0);
-        tlpPassSection.Controls.Add(_txtOldPass, 1, 0);
+        tlpPassSection.Controls.Add(_txtCurrPass, 1, 0);
         tlpPassSection.Controls.Add(lblNewPassKey, 0, 1);
         tlpPassSection.Controls.Add(_txtNewPass, 1, 1);
         tlpPassSection.Controls.Add(lblConfirmPassKey, 0, 2);
