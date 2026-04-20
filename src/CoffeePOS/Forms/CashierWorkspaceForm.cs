@@ -389,7 +389,13 @@ public partial class CashierWorkspaceForm : Window
                     BillId = billId,
                     BuzzerNumber = buzzerNumber,
                     TotalAmount = finalAmount,
-                    Details = [.. cartItems.Select(i => new BillDetailDto(i.ProductId, i.ProductName, i.Quantity, i.Price, i.Note))]
+                    Details = [.. cartItems.Select(i => new BillDetailDto{
+                        ProductId = i.ProductId,
+                        ProductName = i.ProductName,
+                        Quantity = i.Quantity,
+                        Price = i.Price,
+                        Note = i.Note
+                    })]
                 });
 
                 Invoke(new Action(() =>

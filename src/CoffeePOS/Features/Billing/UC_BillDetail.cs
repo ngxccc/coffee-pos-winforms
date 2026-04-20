@@ -33,6 +33,11 @@ public partial class UC_BillDetail : UserControl
                 Align = AntdUI.ColumnAlign.Right,
                 DisplayFormat = "{0:N0}"
             },
+            new AntdUI.Column(nameof(BillDetailDto.LineTotal), DtoInfo.GetName<BillDetailDto>(nameof(BillDetailDto.LineTotal)))
+            {
+                Align = AntdUI.ColumnAlign.Right,
+                DisplayFormat = "{0:N0}"
+            },
             new AntdUI.Column(nameof(BillDetailDto.Note), DtoInfo.GetName<BillDetailDto>(nameof(BillDetailDto.Note))){
                 Align = AntdUI.ColumnAlign.Left
             },

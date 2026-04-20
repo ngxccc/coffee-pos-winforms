@@ -71,12 +71,14 @@ public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
         using var reader = await cmd.ExecuteReaderAsync();
         while (await reader.ReadAsync())
         {
-            list.Add(new BillDetailDto(
-                reader.GetRequiredInt("product_id"),
-                reader.GetRequiredString("product_name"),
-                reader.GetRequiredInt("quantity"),
-                reader.GetRequiredDecimal("base_price"),
-                reader.GetNullableString("note") ?? string.Empty));
+            list.Add(new BillDetailDto
+            {
+                ProductId = reader.GetRequiredInt("product_id"),
+                ProductName = reader.GetRequiredString("product_name"),
+                Quantity = reader.GetRequiredInt("quantity"),
+                Price = reader.GetRequiredDecimal("base_price"),
+                Note = reader.GetNullableString("note") ?? string.Empty
+            });
         }
 
         return list;
