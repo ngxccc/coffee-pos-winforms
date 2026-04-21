@@ -69,7 +69,7 @@ public partial class CashierWorkspaceForm : Window
         SetupMenuEvents();
     }
 
-    protected override async void OnLoad(EventArgs e)
+    protected override void OnLoad(EventArgs e)
     {
         base.OnLoad(e);
         AntdUI.Message.info(this, $"Chào mừng {_session.CurrentUser!.FullName} đến với ca làm việc của mình!");
@@ -91,7 +91,7 @@ public partial class CashierWorkspaceForm : Window
 
     private void SetupBillingEvents()
     {
-        _ucBilling.OnPayClicked += async (s, e) => ProcessPaymentAsync();
+        _ucBilling.OnPayClicked += (s, e) => ProcessPayment();
 
         _ucBilling.OnEditCartItem += async (s, cartItem) =>
         {
@@ -273,7 +273,7 @@ public partial class CashierWorkspaceForm : Window
 
                 var payload = profilesControl.GetPayload();
 
-                _ = ExecutePasswordChangeAsync(payload);
+                ExecutePasswordChange(payload);
 
                 return false;
             }
@@ -304,7 +304,7 @@ public partial class CashierWorkspaceForm : Window
 
                 var payload = shiftControl.GetPayload();
 
-                _ = ExecuteShiftReportAsync(payload);
+                ExecuteShiftReport(payload);
 
                 return false;
             }
@@ -313,7 +313,7 @@ public partial class CashierWorkspaceForm : Window
         AntdUI.Modal.open(config);
     }
 
-    private void ProcessPaymentAsync()
+    private void ProcessPayment()
     {
         if (_isProcessingPayment) return;
 
@@ -342,7 +342,7 @@ public partial class CashierWorkspaceForm : Window
                     return false;
                 }
 
-                _ = ExecutePaymentTransactionAsync(buzzerNumber, finalAmount, cartItems);
+                ExecutePaymentTransaction(buzzerNumber, finalAmount, cartItems);
 
                 return true;
             }
@@ -351,7 +351,7 @@ public partial class CashierWorkspaceForm : Window
         AntdUI.Modal.open(config);
     }
 
-    private async Task ExecutePaymentTransactionAsync(int buzzerNumber, decimal finalAmount, List<CreateBillItemDto> cartItems)
+    private void ExecutePaymentTransaction(int buzzerNumber, decimal finalAmount, List<CreateBillItemDto> cartItems)
     {
         try
         {
@@ -396,7 +396,7 @@ public partial class CashierWorkspaceForm : Window
         }
     }
 
-    private async Task ExecutePasswordChangeAsync(ChangePasswordPayload payload)
+    private void ExecutePasswordChange(ChangePasswordPayload payload)
     {
         AntdUI.Message.loading(this, "Đang đổi mật khẩu...", async config =>
         {
@@ -429,7 +429,7 @@ public partial class CashierWorkspaceForm : Window
         });
     }
 
-    private async Task ExecuteShiftReportAsync(ShiftReportPayload payload)
+    private void ExecuteShiftReport(ShiftReportPayload payload)
     {
         AntdUI.Message.loading(this, "Đang xử lý chốt ca và in báo cáo...", async msgConfig =>
         {
