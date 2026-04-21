@@ -14,8 +14,8 @@ public partial class UC_Dashboard
     private AntdUI.Label _lblTodayOrders = null!;
     private AntdUI.Label _lblTodayAverageOrder = null!;
 
-    private CartesianChart _chartRevenue = null!;
-    private PieChart _chartTopProducts = null!;
+    private AntdUI.Chart _chartRevenue = null!;
+    private AntdUI.Chart _chartTopProducts = null!;
 
     protected override void Dispose(bool disposing)
     {
@@ -35,10 +35,9 @@ public partial class UC_Dashboard
             Gap = 2,
         };
 
-        // ROW 1: 3 Thẻ KPI
         var kpiGrid = new GridPanel
         {
-            Span = "33.3% 33.3% 33.3%", // 3 cột đều nhau
+            Span = "33.3% 33.3% 33.3%",
             Gap = 20,
             Size = new Size(40, 20)
         };
@@ -47,23 +46,39 @@ public partial class UC_Dashboard
         kpiGrid.Controls.Add(CreateKpiCard("SỐ ĐƠN HÀNG", out _lblTodayOrders));
         kpiGrid.Controls.Add(CreateKpiCard("GIÁ TRỊ TRUNG BÌNH", out _lblTodayAverageOrder));
 
-        // ROW 2: Biểu đồ
         var chartGrid = new GridPanel
         {
-            Span = "65% 35%", // Biểu đồ cột chiếm 65%, Pie chart chiếm 35%
+            Span = "65% 35%",
             Gap = 20,
             Dock = DockStyle.Fill
         };
 
-        _chartRevenue = new CartesianChart
+        _chartRevenue = new AntdUI.Chart
         {
+            ChartType = TChartType.Bar,
+            ShowGrid = true,
+            ShowAxes = true,
+            ShowTooltip = true,
+            EnableAnimation = true,
             Dock = DockStyle.Fill,
-            BackColor = UiTheme.SurfaceAlt
         };
-        _chartTopProducts = new PieChart
+
+        _chartTopProducts = new AntdUI.Chart
         {
             Dock = DockStyle.Fill,
-            BackColor = UiTheme.SurfaceAlt
+            ChartType = TChartType.Doughnut,
+            ShowGrid = false,
+            ShowAxes = false,
+            ShowTooltip = true,
+            EnableAnimation = true,
+            PieColors = new Color[]
+            {
+                Color.FromArgb(35, 137, 255),
+                Color.FromArgb(13, 204, 204),
+                Color.FromArgb(241, 142, 86),
+                Color.FromArgb(215, 135, 255),
+                Color.FromArgb(104, 199, 56)
+            }
         };
 
         chartGrid.Controls.Add(CreateChartCard("Top 5 sản phẩm bán chạy", _chartTopProducts));

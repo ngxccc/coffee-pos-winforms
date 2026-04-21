@@ -1,9 +1,7 @@
 using System.Globalization;
+using AntdUI;
 using CoffeePOS.Services.Contracts.Queries;
 using CoffeePOS.Shared.Helpers;
-using LiveChartsCore.SkiaSharpView;
-using LiveChartsCore.SkiaSharpView.Painting;
-using SkiaSharp;
 
 namespace CoffeePOS.Features.Admin;
 
@@ -17,7 +15,6 @@ public partial class UC_Dashboard : UserControl
 
         InitializeComponent();
 
-        // WHY: Sử dụng Discard để trigger async Task mà không làm block UI Thread lúc init
         _ = LoadDashboardDataAsync();
     }
 
@@ -34,37 +31,35 @@ public partial class UC_Dashboard : UserControl
             var summary = taskSummary.Result;
             var viCulture = CultureInfo.GetCultureInfo("vi-VN");
 
-            // Cập nhật KPI với format tiền tệ chuẩn
             _lblTodayRevenue.Text = $"{summary.Revenue.ToString("N0", viCulture)} đ";
             _lblTodayOrders.Text = $"{summary.OrderCount:N0} đơn";
             _lblTodayAverageOrder.Text = $"{summary.AverageOrder.ToString("N0", viCulture)} đ";
 
-            // Cập nhật Chart doanh thu
+            // REVENUE CHART
             var revData = taskRev.Result;
-            _chartRevenue.Series =
-            [
-                new ColumnSeries<decimal>
-                {
-                    Name = "Doanh thu",
-                    Values = [.. revData.Select(x => x.Revenue)],
-                    Fill = new SolidColorPaint(SKColor.Parse(ColorTranslator.ToHtml(UiTheme.BrandPrimary))),
-                    MaxBarWidth = 35
-                }
-            ];
-
-            _chartRevenue.XAxes =
-            [
-                new Axis { Labels = [.. revData.Select(x => x.Date.ToString("dd/MM"))] }
-            ];
-
-            // Cập nhật Pie Chart sản phẩm
-            var topData = taskTop.Result;
-            _chartTopProducts.Series = [.. topData.Select(item => new PieSeries<int>
+            var revDataset = new ChartDataset("Doanh thu", Color.FromArgb(24, 144, 255))
             {
-                Name = item.ProductName,
-                Values = [item.TotalSold],
-                DataLabelsFormatter = point => $"{point} ly"
-            })];
+                BorderColor = Color.FromArgb(24, 144, 255),
+                BorderWidth = 2,
+                Opacity = 0.8f
+            };
+
+            for (int i = 0; i < revData.Count; ++i)
+            {
+                var item = revData[i];
+                revDataset.AddPoint(item.Date.ToString("dd/MM"), i + 1, (double)item.Revenue);
+            }
+
+            _chartRevenue.AddDataset(revDataset);
+
+            // PRODUCTS PIE CHART
+            var topData = taskTop.Result;
+            var topDataset = new ChartDataset("Sản phẩm bán chạy", Color.FromArgb(250, 173, 20));
+
+            foreach (var item in topData)
+                topDataset.AddPoint(item.ProductName, 0, item.TotalSold);
+
+            _chartTopProducts.AddDataset(topDataset);
         }
         catch (Exception ex)
         {
