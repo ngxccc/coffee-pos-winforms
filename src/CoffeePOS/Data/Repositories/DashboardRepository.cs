@@ -58,11 +58,12 @@ public class DashboardRepository(NpgsqlDataSource dataSource) : IDashboardReposi
         if (limit < 1) throw new ArgumentOutOfRangeException(nameof(limit), "Limit must be greater than 0.");
 
         var list = new List<TopProductDto>();
-        using var conn = await dataSource.OpenConnectionAsync();
+        await using var conn = await dataSource.OpenConnectionAsync();
 
-        using var cmd = new NpgsqlCommand(SqlGetTopProducts, conn);
-        cmd.Parameters.AddWithValue("limit", limit);
-        using var reader = await cmd.ExecuteReaderAsync();
+        await using var cmd = new NpgsqlCommand(SqlGetTopProducts, conn);
+        cmd.Parameters.Add(new NpgsqlParameter<int>("limit", limit));
+
+        await using var reader = await cmd.ExecuteReaderAsync();
         while (await reader.ReadAsync())
         {
             list.Add(new TopProductDto(

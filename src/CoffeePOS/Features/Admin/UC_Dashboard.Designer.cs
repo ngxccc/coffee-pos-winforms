@@ -55,12 +55,14 @@ public partial class UC_Dashboard
 
         _chartRevenue = new AntdUI.Chart
         {
-            ChartType = TChartType.Bar,
+            ChartType = TChartType.Line,
             ShowGrid = true,
             ShowAxes = true,
+            ShowXAxisLabels = false,
             ShowTooltip = true,
             EnableAnimation = true,
             Dock = DockStyle.Fill,
+            YAxisLabelFormat = "N0"
         };
 
         _chartTopProducts = new AntdUI.Chart
