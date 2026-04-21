@@ -7,7 +7,6 @@ namespace CoffeePOS.Forms;
 
 public partial class LoginForm
 {
-    // PERF: Enforce strict nullability context to pass compiler checks
     private Input _txtUsername = null!;
     private Input _txtPassword = null!;
     private AntdUI.Button _btnLogin = null!;
@@ -16,7 +15,7 @@ public partial class LoginForm
     private void InitializeComponent()
     {
         Text = "CoffeePOS - Đăng Nhập";
-        ClientSize = new Size(400, 350);
+        ClientSize = LogicalToDeviceUnits(new Size(400, 350));
         StartPosition = FormStartPosition.CenterScreen;
         BackColor = UiTheme.Surface;
         Resizable = false;
@@ -35,7 +34,6 @@ public partial class LoginForm
             MaximizeBox = false
         };
 
-        // WHY: Deterministic 1D Matrix mapping. Replaces reverse Z-order Stack.
         TableLayoutPanel tlpInputs = new()
         {
             Dock = DockStyle.Fill,
@@ -53,7 +51,7 @@ public partial class LoginForm
             Dock = DockStyle.Fill,
             Height = 30,
             TextAlign = ContentAlignment.BottomLeft,
-            Margin = new Padding(0, 0, 0, 5) // Tạo gap nhỏ giữa Label và Input
+            Margin = new Padding(0, 0, 0, 5)
         };
 
         _txtUsername = new Input
@@ -63,7 +61,7 @@ public partial class LoginForm
             Height = 44,
             PlaceholderText = "Nhập tên đăng nhập",
             TabIndex = 1,
-            Margin = new Padding(0, 0, 0, 10) // Tạo gap lớn giữa 2 cụm User/Pass
+            Margin = new Padding(0, 0, 0, 10)
         };
 
         AntdUI.Label lblPass = new()
@@ -88,7 +86,6 @@ public partial class LoginForm
             Margin = new Padding(0)
         };
 
-        // HACK: Explicit (Control, Column, Row) assignment. Readability restored.
         tlpInputs.Controls.Add(lblUser, 0, 0);
         tlpInputs.Controls.Add(_txtUsername, 0, 1);
         tlpInputs.Controls.Add(lblPass, 0, 2);
@@ -116,7 +113,6 @@ public partial class LoginForm
 
         pnlFooter.Controls.Add(_btnLogin);
 
-        // Nối dây chuẩn thứ tự Z-Order
         Controls.Add(tlpInputs);
         Controls.Add(_windowBar);
         Controls.Add(pnlFooter);

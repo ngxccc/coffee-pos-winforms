@@ -27,7 +27,6 @@ public partial class LoginForm : Window
         KeyDown += HandleGlobalKeyDown;
     }
 
-    // PERF: Trigger async initialization ONLY after the Form handles its first paint event
     protected override async void OnShown(EventArgs e)
     {
         base.OnShown(e);
@@ -40,10 +39,8 @@ public partial class LoginForm : Window
 
         try
         {
-            // PERF: Dependency Injection required for IConfiguration
             var config = _serviceProvider.GetRequiredService<IConfiguration>();
-            // PERF: Maximize throughput by executing Disk I/O (Font) and Network I/O (DB) concurrently.
-            var initPdfTask = Task.Run(() => InvoiceGenerator.Initialize());
+            var initPdfTask = Task.Run(InvoiceGenerator.Initialize);
 
             await initPdfTask;
 
@@ -91,7 +88,7 @@ public partial class LoginForm : Window
 
         if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
         {
-            MessageBoxHelper.Warning("Vui lòng nhập đủ Username và Password!", type: FeedbackType.Message);
+            MessageBoxHelper.Warning("Vui lòng nhập đủ Username và Password!", owner: this, type: FeedbackType.Message);
             return;
         }
 
@@ -115,7 +112,7 @@ public partial class LoginForm : Window
             }
             else
             {
-                MessageBoxHelper.Error("Sai tài khoản hoặc mật khẩu!", type: FeedbackType.Message);
+                MessageBoxHelper.Error("Sai tài khoản hoặc mật khẩu!", owner: this, type: FeedbackType.Message);
             }
         }
         catch (OperationCanceledException)
@@ -124,11 +121,11 @@ public partial class LoginForm : Window
         }
         catch (InvalidOperationException ex)
         {
-            MessageBoxHelper.Error($"Tài khoản của bạn đã bị khóa!\nMọi thắc mắc xin liên hệ quản trị viên.\n{ex.Message}", type: FeedbackType.Message);
+            MessageBoxHelper.Error($"Tài khoản của bạn đã bị khóa!\nMọi thắc mắc xin liên hệ quản trị viên.\n{ex.Message}", owner: this, type: FeedbackType.Message);
         }
         catch (Exception ex)
         {
-            MessageBoxHelper.Error($"Connection Error: {ex.Message}", owner: this);
+            MessageBoxHelper.Error($"Connection Error: {ex.Message}", owner: this, type: FeedbackType.Message);
         }
         finally
         {
