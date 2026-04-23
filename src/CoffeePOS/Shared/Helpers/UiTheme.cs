@@ -4,6 +4,12 @@ namespace CoffeePOS.Shared.Helpers;
 
 public static class UiTheme
 {
+    public const string PrimaryFontFamily = "Segoe UI";
+    public static readonly Font TitleFont = new(PrimaryFontFamily, 16F, FontStyle.Bold);
+    public static readonly Font HeaderFont = new(PrimaryFontFamily, 12F, FontStyle.Bold);
+    public static readonly Font BodyFont = new(PrimaryFontFamily, 11F, FontStyle.Regular);
+    public static readonly Font SmallFont = new(PrimaryFontFamily, 9F, FontStyle.Regular);
+
     public static Color Surface { get; private set; } = Color.White;
     public static Color SurfaceAlt { get; private set; } = Color.WhiteSmoke;
     public static Color BrandPrimary { get; private set; } = Color.FromArgb(0, 122, 204);
@@ -24,13 +30,16 @@ public static class UiTheme
     // PERF: Strict single-pass initialization at Startup blocks continuous overhead during UI repaints.
     public static void LoadFromConfig(IConfiguration config)
     {
-        Surface = ParseColor(config["ThemeSettings:Surface"], Surface);
-        SurfaceAlt = ParseColor(config["ThemeSettings:SurfaceAlt"], SurfaceAlt);
-        BrandPrimary = ParseColor(config["ThemeSettings:BrandPrimary"], BrandPrimary);
-        TextPrimary = ParseColor(config["ThemeSettings:TextPrimary"], TextPrimary);
-        SidebarHover = ParseColor(config["ThemeSettings:SidebarHover"], SidebarHover);
-        SidebarText = ParseColor(config["ThemeSettings:SidebarText"], SidebarText);
-        SidebarTextActive = ParseColor(config["ThemeSettings:SidebarTextActive"], SidebarTextActive);
+        var themeConfig = config.GetSection("ThemeSettings");
+        if (!themeConfig.Exists()) return;
+
+        Surface = ParseColor(themeConfig["Surface"], Surface);
+        SurfaceAlt = ParseColor(themeConfig["SurfaceAlt"], SurfaceAlt);
+        BrandPrimary = ParseColor(themeConfig["BrandPrimary"], BrandPrimary);
+        TextPrimary = ParseColor(themeConfig["TextPrimary"], TextPrimary);
+        SidebarHover = ParseColor(themeConfig["SidebarHover"], SidebarHover);
+        SidebarText = ParseColor(themeConfig["SidebarText"], SidebarText);
+        SidebarTextActive = ParseColor(themeConfig["SidebarTextActive"], SidebarTextActive);
     }
 
     public static void ApplyTheme()
@@ -51,7 +60,7 @@ public static class UiTheme
         if (string.IsNullOrWhiteSpace(hex)) return fallback;
         try
         {
-            return ColorTranslator.FromHtml(hex);
+            return ColorTranslator.FromHtml(hex.Trim());
         }
         catch
         {
