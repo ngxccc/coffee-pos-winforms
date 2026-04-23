@@ -35,32 +35,49 @@ public partial class UC_ManageProducts : UserControl
         [
             new Column(nameof(ProductGridDto.Id), DtoInfo.GetName<ProductGridDto>(nameof(ProductGridDto.Id)))
             {
-                Width = "80",
                 Align = ColumnAlign.Center
             },
-            new Column("Name", "TÊN SẢN PHẨM"),
-            new Column("CategoryName", "DANH MỤC") { Width = "200" },
-            new Column("Price", "ĐƠN GIÁ") { Width = "150", DisplayFormat = "N0", Align = ColumnAlign.Right }
+            new Column(nameof(ProductGridDto.Name), DtoInfo.GetName<ProductGridDto>(nameof(ProductGridDto.Name))),
+            new Column(nameof(ProductGridDto.CategoryName), DtoInfo.GetName<ProductGridDto>(nameof(ProductGridDto.CategoryName))),
+            new Column(nameof(ProductGridDto.Price), DtoInfo.GetName<ProductGridDto>(nameof(ProductGridDto.Price)))
+            {
+                DisplayFormat = "N0",
+                Align = ColumnAlign.Right
+            },
+            new Column("action", "Thao tác")
+            {
+                Align = ColumnAlign.Center,
+                Fixed = true,
+
+                Render = (value, record, rowIndex) => {
+                    return new CellButton[] {
+                        new("edit", "Sửa") {
+                            Type = TTypeMini.Primary,
+                        },
+                        new("delete", "Xoá") {
+                            Type = TTypeMini.Error
+                        }
+                    };
+                }
+            }
         ];
+
+        _tableProducts.CellButtonClick += TableProducts_CellButtonClick;
     }
 
     private void SetupEvents()
     {
-        _toolbar.SearchChanged += ApplyFilterAndSort;
-        _toolbar.AddClicked += HandleAddProduct;
-        _toolbar.EditClicked += HandleEditProduct;
-        _toolbar.DeleteClicked += HandleDeleteProduct;
-        _toolbar.TrashModeChanged += HandleTrashModeChanged;
-
-        _tableProducts.CellDoubleClick += HandleEditProduct;
+        _txtSearch.TextChanged += ApplyFilterAndSort;
+        _switchTrash.CheckedChanged += HandleTrashModeChanged;
+        _btnAdd.Click += HandleAddProduct;
     }
 
     private async Task LoadDataAsync()
     {
         try
         {
-            _allProducts = await _productQueryService.GetProductGridAsync(_toolbar.IsTrashMode);
-            ApplyFilterAndSort();
+            _allProducts = await _productQueryService.GetProductGridAsync(_switchTrash.Checked);
+            ApplyFilterAndSort(this, EventArgs.Empty);
         }
         catch (Exception ex)
         {
@@ -68,9 +85,9 @@ public partial class UC_ManageProducts : UserControl
         }
     }
 
-    private void ApplyFilterAndSort()
+    private void ApplyFilterAndSort(object? sender, EventArgs e)
     {
-        string keyword = _toolbar.SearchText.Trim();
+        string keyword = _txtSearch.Text.Trim();
 
         _filteredProducts = string.IsNullOrEmpty(keyword)
             ? [.. _allProducts]
@@ -79,40 +96,24 @@ public partial class UC_ManageProducts : UserControl
         _tableProducts.DataSource = _filteredProducts;
     }
 
-    private async void HandleTrashModeChanged(object? sender, EventArgs e)
+    private void TableProducts_CellButtonClick(object sender, TableButtonEventArgs e)
     {
-        _tableProducts.BackColor = _toolbar.IsTrashMode ? Color.MistyRose : UiTheme.Surface;
-        await LoadDataAsync();
+        if (e.Record is not ProductGridDto selectedItem) return;
+
+        if (e.Btn.Id == "edit")
+        {
+            HandleEditProduct(selectedItem);
+        }
+        if (e.Btn.Id == "delete")
+        {
+            HandleDeleteProduct(selectedItem);
+        }
     }
 
-    private async void HandleDeleteProduct(object? sender, EventArgs e)
+    private async void HandleTrashModeChanged(object? sender, BoolEventArgs e)
     {
-        if (_tableProducts.SelectedIndexs == null || _tableProducts.SelectedIndexs.Length == 0) return;
-
-        var selectedProduct = _filteredProducts[_tableProducts.SelectedIndexs[0]];
-
-        try
-        {
-            if (_toolbar.IsTrashMode)
-            {
-                if (MessageBoxHelper.ConfirmWarning($"Khôi phục '{selectedProduct.Name}' trở lại Menu bán hàng?", "Xác nhận", this))
-                {
-                    await _productService.RestoreProductAsync(selectedProduct.Id);
-                }
-            }
-            else
-            {
-                if (MessageBoxHelper.ConfirmWarning($"Xóa món '{selectedProduct.Name}' khỏi Menu?\n(Báo cáo cũ vẫn giữ nguyên)", "Xác nhận", this))
-                {
-                    await _productService.DeleteProductAsync(selectedProduct.Id);
-                }
-            }
-            await LoadDataAsync();
-        }
-        catch (Exception ex)
-        {
-            MessageBoxHelper.Warning(ex.Message, "Cảnh báo", this);
-        }
+        _tableProducts.BackColor = _switchTrash.Checked ? Color.MistyRose : UiTheme.Surface;
+        await LoadDataAsync();
     }
 
     private async void HandleAddProduct(object? sender, EventArgs e)
@@ -120,19 +121,19 @@ public partial class UC_ManageProducts : UserControl
         try
         {
             var categories = await _categoryQueryService.GetSelectableCategoriesAsync();
-            var uiFields = new UC_ProductFields(categories);
+            var uiFields = new UC_ProductEditor(categories);
 
-            Target target = new(this);
-            var config = new Modal.Config(target, "THÊM SẢN PHẨM MỚI", uiFields)
+            Form form = FindForm() ?? throw new InvalidOperationException("Lỗi UI: UserControl chưa được gắn vào Form chính.");
+
+            var config = new Modal.Config(form, "THÊM SẢN PHẨM MỚI", uiFields)
             {
                 OkText = "LƯU",
                 CancelText = "HUỶ",
                 OnOk = (cfg) =>
                 {
                     if (!uiFields.ValidateInput()) return false;
-                    var payload = uiFields.GetPayload();
 
-                    _ = ExecuteSaveProductAsync(payload, isUpdate: false, productId: 0);
+                    ExecuteSaveProductAsync(uiFields.GetPayload(), isUpdate: false, productId: 0);
                     return false;
                 }
             };
@@ -144,11 +145,8 @@ public partial class UC_ManageProducts : UserControl
         }
     }
 
-    private async void HandleEditProduct(object? sender, EventArgs e)
+    private async void HandleEditProduct(ProductGridDto selectedItem)
     {
-        if (_tableProducts.SelectedIndexs == null || _tableProducts.SelectedIndexs.Length == 0) return;
-        var selectedItem = _filteredProducts[_tableProducts.SelectedIndexs[0]];
-
         try
         {
             var product = await _productQueryService.GetProductByIdAsync(selectedItem.Id);
@@ -159,19 +157,19 @@ public partial class UC_ManageProducts : UserControl
             }
 
             var categories = await _categoryQueryService.GetSelectableCategoriesAsync();
-            var uiFields = new UC_ProductFields(categories, product);
+            var uiFields = new UC_ProductEditor(categories, product);
 
-            Target target = new(this);
-            var config = new Modal.Config(target, $"CẬP NHẬT: {product.Name}", uiFields)
+            Form form = FindForm() ?? throw new InvalidOperationException("Lỗi UI: UserControl chưa được gắn vào Form chính.");
+
+            var config = new Modal.Config(form, $"CẬP NHẬT: {product.Name}", uiFields)
             {
                 OkText = "CẬP NHẬT",
                 CancelText = "HUỶ",
                 OnOk = (cfg) =>
                 {
                     if (!uiFields.ValidateInput()) return false;
-                    var payload = uiFields.GetPayload();
 
-                    _ = ExecuteSaveProductAsync(payload, isUpdate: true, productId: product.Id, product.ImageUrl);
+                    ExecuteSaveProductAsync(uiFields.GetPayload(), isUpdate: true, productId: product.Id, product.ImageUrl);
                     return false;
                 }
             };
@@ -183,26 +181,51 @@ public partial class UC_ManageProducts : UserControl
         }
     }
 
-    // BACKGROUND TASK (API Call + File I/O)
-    private async Task ExecuteSaveProductAsync(ProductPayload payload, bool isUpdate, int productId, string? oldImageUrl = null)
+    private async void HandleDeleteProduct(ProductGridDto selectedItem)
     {
-        Form form = new Target(this).GetForm ?? new Form();
-        AntdUI.Message.loading(form, "Đang xử lý...", async msg =>
+        //TODO: NEED CLEAR TABLE DATA
+
+        try
+        {
+            if (_switchTrash.Checked)
+            {
+                if (MessageBoxHelper.ConfirmWarning($"Khôi phục '{selectedItem.Name}' trở lại Menu bán hàng?", "Xác nhận", this))
+                {
+                    await _productService.RestoreProductAsync(selectedItem.Id);
+                }
+            }
+            else
+            {
+                if (MessageBoxHelper.ConfirmWarning($"Xóa món '{selectedItem.Name}' khỏi Menu?\n(Báo cáo cũ vẫn giữ nguyên)", "Xác nhận", this))
+                {
+                    await _productService.DeleteProductAsync(selectedItem.Id);
+                }
+            }
+            await LoadDataAsync();
+        }
+        catch (Exception ex)
+        {
+            MessageBoxHelper.Warning(ex.Message, "Cảnh báo", this);
+        }
+    }
+
+    // BACKGROUND TASK (API Call + File I/O)
+    private void ExecuteSaveProductAsync(ProductPayload payload, bool isUpdate, int productId, string? oldImageUrl = null)
+    {
+        Target target = new(this);
+
+        AntdUI.Message.loading(target, "Đang xử lý...", async msg =>
         {
             msg.ID = "save_prod";
             bool isSuccess = false;
 
             try
             {
-                // WHY: File I/O nên đẩy ra background để không block UI thread
                 string finalFileName = await Task.Run(() => SaveSelectedImageAndResolveName(payload.ImageUrl, oldImageUrl ?? string.Empty));
-
                 var dto = new UpsertProductDto(productId, payload.Name, payload.Price, payload.CategoryId, finalFileName);
 
-                if (isUpdate)
-                    await _productService.UpdateProductAsync(dto);
-                else
-                    await _productService.AddProductAsync(dto);
+                if (isUpdate) await _productService.UpdateProductAsync(dto);
+                else await _productService.AddProductAsync(dto);
 
                 if (isUpdate && !string.IsNullOrWhiteSpace(payload.ImageUrl))
                 {
@@ -226,7 +249,7 @@ public partial class UC_ManageProducts : UserControl
                 await Task.Delay(500);
                 Invoke(new Action(() =>
                 {
-                    if (form != null && !form.IsDisposed) form.Close();
+                    if (target.GetForm != null && !target.GetForm.IsDisposed) target.GetForm.Close();
                     _ = LoadDataAsync();
                 }));
             }
