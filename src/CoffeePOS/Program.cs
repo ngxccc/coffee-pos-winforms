@@ -24,6 +24,7 @@ static class Program
 
         UiTheme.LoadFromConfig(bootstrapConfig);
         UiTheme.ApplyTheme();
+        ImgbbHelper.Initialize(bootstrapConfig);
 
         Log.Logger = new LoggerConfiguration()
             .ReadFrom.Configuration(bootstrapConfig)

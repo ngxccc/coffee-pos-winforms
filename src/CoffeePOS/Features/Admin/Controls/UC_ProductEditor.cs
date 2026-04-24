@@ -97,7 +97,7 @@ public partial class UC_ProductEditor : UserControl, IValidatableComponent<Produ
 
         try
         {
-            string cloudUrl = await ImgurHelper.UploadImageAsync(ofd.FileName);
+            string cloudUrl = await ImgbbHelper.UploadImageAsync(ofd.FileName);
             _txtImageUrl.Text = cloudUrl;
         }
         catch (Exception ex)
