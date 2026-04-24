@@ -50,6 +50,11 @@ public partial class UC_ManageProducts : UserControl
                 Fixed = true,
 
                 Render = (value, record, rowIndex) => {
+                    if (_switchTrash.Checked)
+                        return new CellButton("restore", "Khôi phục") {
+                            Type = TTypeMini.Success
+                        };
+
                     return new CellButton[] {
                         new("edit", "Sửa") {
                             Type = TTypeMini.Primary,
@@ -107,6 +112,10 @@ public partial class UC_ManageProducts : UserControl
         if (e.Btn.Id == "delete")
         {
             HandleDeleteProduct(selectedItem);
+        }
+        if (e.Btn.Id == "restore")
+        {
+            HandleRestoreProduct(selectedItem);
         }
     }
 
@@ -188,19 +197,25 @@ public partial class UC_ManageProducts : UserControl
     {
         try
         {
-            if (_switchTrash.Checked)
+            if (MessageBoxHelper.ConfirmWarning($"Xóa món '{selectedItem.Name}' khỏi Menu?\n(Báo cáo cũ vẫn giữ nguyên)", "Xác nhận", this))
             {
-                if (MessageBoxHelper.ConfirmWarning($"Khôi phục '{selectedItem.Name}' trở lại Menu bán hàng?", "Xác nhận", this))
-                {
-                    await _productService.RestoreProductAsync(selectedItem.Id);
-                }
+                await _productService.DeleteProductAsync(selectedItem.Id);
             }
-            else
+            await LoadDataAsync();
+        }
+        catch (Exception ex)
+        {
+            MessageBoxHelper.Warning(ex.Message, "Cảnh báo", this);
+        }
+    }
+
+    private async void HandleRestoreProduct(ProductGridDto selectedItem)
+    {
+        try
+        {
+            if (MessageBoxHelper.ConfirmWarning($"Khôi phục '{selectedItem.Name}' trở lại Menu bán hàng?", "Xác nhận", this))
             {
-                if (MessageBoxHelper.ConfirmWarning($"Xóa món '{selectedItem.Name}' khỏi Menu?\n(Báo cáo cũ vẫn giữ nguyên)", "Xác nhận", this))
-                {
-                    await _productService.DeleteProductAsync(selectedItem.Id);
-                }
+                await _productService.RestoreProductAsync(selectedItem.Id);
             }
             await LoadDataAsync();
         }
