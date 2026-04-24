@@ -6,7 +6,6 @@ namespace CoffeePOS.Features.Sidebar;
 
 public partial class UC_ShiftReportFields
 {
-    // WHY: Required by WinForms designer to manage component lifecycles
     private System.ComponentModel.IContainer components = null!;
 
     private AntdUI.Label _lblHeader = null!;
@@ -28,7 +27,7 @@ public partial class UC_ShiftReportFields
     {
         Dock = DockStyle.Fill;
         BackColor = UiTheme.Surface;
-        Size = LogicalToDeviceUnits(new Size(450, 500));
+        Size = LogicalToDeviceUnits(new Size(400, 400));
 
         AntdUI.Divider divTitle = new()
         {
@@ -46,7 +45,6 @@ public partial class UC_ShiftReportFields
             Dock = DockStyle.Fill,
             ColumnCount = 1,
             RowCount = 8,
-            Padding = new Padding(20, 10, 20, 20)
         };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
 
@@ -98,7 +96,7 @@ public partial class UC_ShiftReportFields
         var lblNote = new AntdUI.Label
         {
             Text = "Ghi chú (lý do lệch tiền nếu có):",
-            Font = new Font("Segoe UI", 10),
+            Font = UiTheme.BodyFont,
             ForeColor = UiTheme.TextPrimary,
             AutoSize = true,
             Margin = new Padding(0, 0, 0, 5)
@@ -107,9 +105,10 @@ public partial class UC_ShiftReportFields
         _txtNote = new AntdUI.Input
         {
             Multiline = true,
-            Font = new Font("Segoe UI", 10),
+            Font = UiTheme.BodyFont,
             Dock = DockStyle.Fill,
-            Margin = new Padding(0)
+            Height = 10,
+            Margin = new Padding(0, 0, 0, 80)
         };
 
         layout.Controls.Add(divTitle, 0, 0);
@@ -128,7 +127,7 @@ public partial class UC_ShiftReportFields
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
         Controls.Add(layout);
     }
