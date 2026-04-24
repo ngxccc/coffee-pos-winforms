@@ -11,6 +11,9 @@ public enum FeedbackType
 
 public static class MessageBoxHelper
 {
+    public static DialogResult Success(string message, string title = "Thành công", IWin32Window? owner = null, FeedbackType type = FeedbackType.Modal)
+        => DispatchFeedback(message, title, TType.Success, owner, type);
+
     public static DialogResult Info(string message, string title = "Thông báo", IWin32Window? owner = null, FeedbackType type = FeedbackType.Modal)
         => DispatchFeedback(message, title, TType.Info, owner, type);
 
@@ -74,6 +77,7 @@ public static class MessageBoxHelper
     {
         switch (icon)
         {
+            case TType.Success: AntdUI.Message.success(target, message); break;
             case TType.Info: AntdUI.Message.info(target, message); break;
             case TType.Warn: AntdUI.Message.warn(target, message); break;
             case TType.Error: AntdUI.Message.error(target, message); break;
