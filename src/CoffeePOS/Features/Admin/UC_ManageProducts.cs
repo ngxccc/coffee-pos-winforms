@@ -81,8 +81,11 @@ public partial class UC_ManageProducts : UserControl
     {
         try
         {
-            _allProducts = await _productQueryService.GetProductGridAsync(_switchTrash.Checked);
-            ApplyFilterAndSort(this, EventArgs.Empty);
+            await Spin.open(_tableProducts, async cfg =>
+            {
+                _allProducts = await _productQueryService.GetProductGridAsync(_switchTrash.Checked);
+                ApplyFilterAndSort(this, EventArgs.Empty);
+            });
         }
         catch (Exception ex)
         {
@@ -98,7 +101,9 @@ public partial class UC_ManageProducts : UserControl
             ? [.. _allProducts]
             : [.. _allProducts.Where(c => c.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase))];
 
+        _tableProducts.SuspendLayout();
         _tableProducts.DataSource = _filteredProducts;
+        _tableProducts.ResumeLayout(true);
     }
 
     private void TableProducts_CellButtonClick(object sender, TableButtonEventArgs e)
