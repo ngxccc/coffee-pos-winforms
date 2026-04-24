@@ -206,12 +206,9 @@ public partial class UC_ManageCategories : UserControl
     {
         try
         {
-            if (_switchTrash.Checked)
+            if (MessageBoxHelper.ConfirmWarning($"Khôi phục '{selectedItem.Name}' trở lại phần mềm?", "Xác nhận", this))
             {
-                if (MessageBoxHelper.ConfirmWarning($"Khôi phục '{selectedItem.Name}' trở lại phần mềm?", "Xác nhận", this))
-                {
-                    await _categoryService.RestoreCategoryAsync(selectedItem.Id);
-                }
+                await _categoryService.RestoreCategoryAsync(selectedItem.Id);
             }
             await LoadDataAsync();
         }
