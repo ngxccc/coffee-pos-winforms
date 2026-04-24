@@ -1,0 +1,193 @@
+using System.Data.Common;
+using CoffeePOS.Data.Repositories.Contracts;
+
+using CoffeePOS.Shared.Dtos.Product;
+using CoffeePOS.Shared.Helpers;
+using Npgsql;
+
+namespace CoffeePOS.Data.Repositories;
+
+public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
+{
+    private static readonly string SqlGetAll = SqlFileLoader.Load(SqlKeys.Product.GetAll);
+    private static readonly string SqlGetById = SqlFileLoader.Load(SqlKeys.Product.GetById);
+    private static readonly string SqlInsert = SqlFileLoader.Load(SqlKeys.Product.Insert);
+    private static readonly string SqlUpdate = SqlFileLoader.Load(SqlKeys.Product.Update);
+    private static readonly string SqlSoftDelete = SqlFileLoader.Load(SqlKeys.Product.SoftDelete);
+    private static readonly string SqlGetDeleted = SqlFileLoader.Load(SqlKeys.Product.GetDeleted);
+    private static readonly string SqlGetDeletedById = SqlFileLoader.Load(SqlKeys.Product.GetDeletedById);
+    private static readonly string SqlRestore = SqlFileLoader.Load(SqlKeys.Product.Restore);
+
+    public async Task<List<ProductDetailDto>> GetAllProductsAsync()
+    {
+        var dict = new Dictionary<int, ProductDetailDto>();
+        using var conn = await dataSource.OpenConnectionAsync();
+
+        using var cmd = new NpgsqlCommand(SqlGetAll, conn);
+        using var reader = await cmd.ExecuteReaderAsync();
+
+        while (await reader.ReadAsync())
+        {
+            int id = reader.GetRequiredInt("id");
+            if (!dict.TryGetValue(id, out var product))
+            {
+                product = MapProductFromReader(reader);
+                dict.Add(id, product);
+            }
+            MapAndAddSize(reader, product);
+        }
+        return [.. dict.Values];
+    }
+
+    public async Task<ProductDetailDto?> GetProductByIdAsync(int productId)
+    {
+        using var conn = await dataSource.OpenConnectionAsync();
+
+        using var cmd = new NpgsqlCommand(SqlGetById, conn);
+        cmd.Parameters.AddWithValue("id", productId);
+
+        using var reader = await cmd.ExecuteReaderAsync();
+        ProductDetailDto? product = null;
+
+        while (await reader.ReadAsync())
+        {
+            product ??= MapProductFromReader(reader);
+            MapAndAddSize(reader, product);
+        }
+        return product;
+    }
+
+    public async Task AddProductAsync(UpsertProductDto command)
+    {
+        using var conn = await dataSource.OpenConnectionAsync();
+
+        using var cmd = new NpgsqlCommand(SqlInsert, conn);
+        cmd.Parameters.AddWithValue("name", command.Name);
+        cmd.Parameters.AddWithValue("price", command.Price);
+        cmd.Parameters.AddWithValue("categoryId", command.CategoryId);
+        cmd.Parameters.AddWithValue("imageUrl", command.ImageUrl ?? string.Empty);
+
+        await cmd.ExecuteNonQueryAsync();
+    }
+
+    public async Task UpdateProductAsync(UpsertProductDto command)
+    {
+        using var conn = await dataSource.OpenConnectionAsync();
+
+        using var cmd = new NpgsqlCommand(SqlUpdate, conn);
+        cmd.Parameters.AddWithValue("id", command.Id);
+        cmd.Parameters.AddWithValue("name", command.Name);
+        cmd.Parameters.AddWithValue("price", command.Price);
+        cmd.Parameters.AddWithValue("categoryId", command.CategoryId);
+        cmd.Parameters.AddWithValue("imageUrl", command.ImageUrl ?? string.Empty);
+
+        await cmd.ExecuteNonQueryAsync();
+    }
+
+    public async Task<bool> DeleteProductAsync(int productId)
+    {
+        using var conn = await dataSource.OpenConnectionAsync();
+
+        using var cmd = new NpgsqlCommand(SqlSoftDelete, conn);
+        cmd.Parameters.AddWithValue("id", productId);
+
+        return await cmd.ExecuteNonQueryAsync() > 0;
+    }
+
+    public async Task<List<ProductDetailDto>> GetDeletedProductsAsync()
+    {
+        var dict = new Dictionary<int, ProductDetailDto>();
+        using var conn = await dataSource.OpenConnectionAsync();
+
+        using var cmd = new NpgsqlCommand(SqlGetDeleted, conn);
+        using var reader = await cmd.ExecuteReaderAsync();
+
+        while (await reader.ReadAsync())
+        {
+            int id = reader.GetRequiredInt("id");
+            if (!dict.TryGetValue(id, out var product))
+            {
+                product = MapProductFromReader(reader);
+                dict.Add(id, product);
+            }
+            MapAndAddSize(reader, product);
+        }
+        return [.. dict.Values];
+    }
+
+    public async Task<ProductDetailDto?> GetDeletedProductByIdAsync(int productId)
+    {
+        using var conn = await dataSource.OpenConnectionAsync();
+
+        using var cmd = new NpgsqlCommand(SqlGetDeletedById, conn);
+        cmd.Parameters.AddWithValue("id", productId);
+
+        using var reader = await cmd.ExecuteReaderAsync();
+        ProductDetailDto? product = null;
+
+        while (await reader.ReadAsync())
+        {
+            product ??= MapProductFromReader(reader);
+            MapAndAddSize(reader, product);
+        }
+        return product;
+    }
+
+    public async Task<bool> RestoreProductAsync(int productId)
+    {
+        using var conn = await dataSource.OpenConnectionAsync();
+        using var cmd = new NpgsqlCommand(SqlRestore, conn);
+        cmd.Parameters.AddWithValue("id", productId);
+        return await cmd.ExecuteNonQueryAsync() > 0;
+    }
+
+    #region Helpers
+
+    private static ProductDetailDto MapProductFromReader(DbDataReader reader)
+    {
+        return new ProductDetailDto(
+            reader.GetRequiredInt("id"),
+            reader.GetRequiredString("name"),
+            reader.GetRequiredDecimal("price"),
+            reader["category_id"] is DBNull ? 0 : reader.GetRequiredInt("category_id"),
+            reader["image_url"] is DBNull ? string.Empty : reader.GetRequiredString("image_url"),
+            []
+        );
+    }
+
+    private static void MapAndAddSize(DbDataReader reader, ProductDetailDto product)
+    {
+        if (product.Sizes == null)
+            return;
+
+        // Tránh throw exception nếu câu SQL không Select cột size_name
+        if (!HasColumn(reader, "size_name") || reader["size_name"] is DBNull)
+            return;
+
+        string sizeName = reader.GetRequiredString("size_name");
+
+        // Tránh lặp size nếu câu truy vấn SQL bị nổ số lượng dòng
+        if (!product.Sizes.Any(s => s.SizeName == sizeName))
+        {
+            product.Sizes.Add(new ProductSizeDto
+            (
+                product.Id,
+                sizeName,
+                reader.GetRequiredDecimal("price_adjustment")
+            ));
+        }
+    }
+
+    // Tool hỗ trợ check cột tồn tại trong DataReader an toàn
+    private static bool HasColumn(DbDataReader reader, string columnName)
+    {
+        for (int i = 0; i < reader.FieldCount; i++)
+        {
+            if (reader.GetName(i).Equals(columnName, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        return false;
+    }
+
+    #endregion
+}
