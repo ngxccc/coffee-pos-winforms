@@ -113,6 +113,7 @@ public partial class UC_ManageProducts : UserControl
     private async void HandleTrashModeChanged(object? sender, BoolEventArgs e)
     {
         _tableProducts.BackColor = _switchTrash.Checked ? Color.MistyRose : UiTheme.Surface;
+        _tableProducts.DataSource = null;
         await LoadDataAsync();
     }
 
@@ -185,8 +186,6 @@ public partial class UC_ManageProducts : UserControl
 
     private async void HandleDeleteProduct(ProductGridDto selectedItem)
     {
-        //TODO: NEED CLEAR TABLE DATA
-
         try
         {
             if (_switchTrash.Checked)
