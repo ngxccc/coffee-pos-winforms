@@ -120,7 +120,11 @@ public partial class UC_ProductCustomization : UserControl, IValidatableComponen
     {
         if (!_loaded) return;
 
-        _currentSizeAdjustment = _product.Sizes![_segSize.SelectIndex].PriceAdjustment;
+        if (!(_product.Sizes?.Count == 0))
+        {
+            _currentSizeAdjustment = _product.Sizes![_segSize.SelectIndex].PriceAdjustment;
+        }
+
         var selectedToppings = _allToppings.Where(t => t.IsSelected).ToList();
 
         decimal toppingTotal = selectedToppings.Sum(t => t.Price);
