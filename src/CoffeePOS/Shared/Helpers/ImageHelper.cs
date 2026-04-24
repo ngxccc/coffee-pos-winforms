@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Drawing.Drawing2D;
 
 namespace CoffeePOS.Shared.Helpers;
@@ -12,63 +13,41 @@ public static class ImageHelper
     {
         if (avatar.IsDisposed) return;
 
-        SafeInvoke(avatar, () => avatar.Loading = true);
+        avatar.Loading = true;
 
         try
         {
-            // PERF: Dùng ConfigureAwait(false) để dứt khoát giải phóng UI Thread trong lúc chờ I/O mạng
-            Bitmap? realImage = await TryFetchImageSafeAsync(imageIdentifier).ConfigureAwait(false);
+            Bitmap? realImage = await Task.Run(async () => await TryFetchImageSafeAsync(imageIdentifier));
 
-            SafeInvoke(avatar, () =>
+            if (avatar.IsDisposed)
             {
-                if (avatar.IsDisposed)
-                {
-                    realImage?.Dispose();
-                    return;
-                }
+                realImage?.Dispose();
+                return;
+            }
 
-                if (realImage != null)
-                {
-                    var oldImage = avatar.Image;
-                    avatar.Image = realImage;
-                    oldImage?.Dispose();
-                }
-                else
-                {
-                    ApplyPlaceholder(avatar, fallbackName, colorSeed);
-                }
-
-                avatar.Loading = false;
-
-                avatar.Refresh();
-            });
+            if (realImage != null)
+            {
+                var oldImage = avatar.Image;
+                avatar.Image = realImage;
+                oldImage?.Dispose();
+            }
+            else
+            {
+                ApplyPlaceholder(avatar, fallbackName, colorSeed);
+            }
         }
         catch
         {
-            SafeInvoke(avatar, () =>
+            if (!avatar.IsDisposed) ApplyPlaceholder(avatar, fallbackName, colorSeed);
+        }
+        finally
+        {
+            if (!avatar.IsDisposed)
             {
-                if (!avatar.IsDisposed)
-                {
-                    ApplyPlaceholder(avatar, fallbackName, colorSeed);
-                    avatar.Loading = false;
-                }
-            });
-        }
-    }
+                avatar.Loading = false;
 
-    // WHY: Hàm Helper thần thánh đảm bảo mọi thao tác UI bắt buộc phải được nắn về luồng chính (Main UI Thread).
-    private static void SafeInvoke(Control control, Action action)
-    {
-        // Tránh lỗi văng app nếu Form đã bị tắt trước khi ảnh tải xong
-        if (control.IsDisposed || !control.IsHandleCreated) return;
-
-        if (control.InvokeRequired)
-        {
-            control.BeginInvoke(action);
-        }
-        else
-        {
-            action();
+                if (avatar.IsHandleCreated) avatar.Refresh();
+            }
         }
     }
 
@@ -108,21 +87,19 @@ public static class ImageHelper
         try
         {
             byte[] imageBytes;
+
             if (!_byteCache.TryGetValue(url, out byte[]? cachedBytes))
             {
-                // FIX: Phân loại Link Web và Link File máy tính cục bộ
                 if (url.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                 {
                     imageBytes = await HttpClient.GetByteArrayAsync(url);
                 }
                 else if (File.Exists(url))
                 {
-                    // Nếu là file trong máy (ví dụ: C:\images\product1.png)
                     imageBytes = await File.ReadAllBytesAsync(url);
                 }
                 else
                 {
-                    // Đường dẫn sai hoặc file không tồn tại
                     return null;
                 }
 
