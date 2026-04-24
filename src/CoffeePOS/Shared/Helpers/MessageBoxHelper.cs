@@ -103,8 +103,11 @@ public static class MessageBoxHelper
     private static Modal.Config BuildConfig(string title, string message, TType icon, IWin32Window? owner)
     {
         if (owner is Control control) owner = control.FindForm();
-        if (owner is Form form) return new Modal.Config(form, title, message, icon);
-        return new Modal.Config(title, message, icon);
+        if (owner is Form form) return new Modal.Config(form, title, message, icon)
+        {
+            Font = UiTheme.BodyFont
+        };
+        return new Modal.Config(title, message, icon) { Font = UiTheme.BodyFont };
     }
 
     private static TTypeMini GetOkType(TType icon) => icon switch
