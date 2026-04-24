@@ -86,6 +86,7 @@ partial class UC_ManageProducts
             Radius = 8,
             Bordered = true,
             EmptyHeader = true,
+            EmptyText = "Chưa có sản phẩm nào",
             AutoSizeColumnsMode = AntdUI.ColumnsMode.Fill,
             Font = UiTheme.BodyFont
         };
