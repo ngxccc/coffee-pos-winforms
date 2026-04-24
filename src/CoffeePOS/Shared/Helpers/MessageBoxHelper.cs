@@ -75,13 +75,14 @@ public static class MessageBoxHelper
 
     private static void ShowMessage(Target target, string message, TType icon)
     {
+        Font font = UiTheme.BodyFont;
         switch (icon)
         {
-            case TType.Success: AntdUI.Message.success(target, message); break;
-            case TType.Info: AntdUI.Message.info(target, message); break;
-            case TType.Warn: AntdUI.Message.warn(target, message); break;
-            case TType.Error: AntdUI.Message.error(target, message); break;
-            default: AntdUI.Message.info(target, message); break;
+            case TType.Success: AntdUI.Message.success(target, message, font); break;
+            case TType.Info: AntdUI.Message.info(target, message, font); break;
+            case TType.Warn: AntdUI.Message.warn(target, message, font); break;
+            case TType.Error: AntdUI.Message.error(target, message, font); break;
+            default: AntdUI.Message.info(target, message, font); break;
         }
     }
 
