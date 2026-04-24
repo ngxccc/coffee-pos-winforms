@@ -1,21 +1,18 @@
+using System.Reflection.Metadata.Ecma335;
+using AntdUI;
 using CoffeePOS.Features.Admin.Controls;
-using CoffeePOS.Forms.Core;
 using CoffeePOS.Services.Contracts.Commands;
 using CoffeePOS.Services.Contracts.Queries;
-
 using CoffeePOS.Shared.Dtos.Category;
 using CoffeePOS.Shared.Helpers;
+using Windows.ApplicationModel.Chat;
 
 namespace CoffeePOS.Features.Admin;
 
-public class UC_ManageCategories : UserControl
+public partial class UC_ManageCategories : UserControl
 {
     private readonly ICategoryService _categoryService;
     private readonly ICategoryQueryService _categoryQueryService;
-
-    private UC_CategoriesHeaderToolbar _toolbar = null!;
-    private DataGridView _dgvCategories = null!;
-    private StatefulSortableGrid<CategoryGridDto> _categoriesGrid = null!;
 
     private List<CategoryGridDto> _allCategories = [];
     private List<CategoryGridDto> _filteredCategories = [];
@@ -24,165 +21,232 @@ public class UC_ManageCategories : UserControl
     {
         _categoryService = categoryService;
         _categoryQueryService = categoryQueryService;
-        InitializeUI();
+
+        InitializeComponent();
+        SetupTable();
+        SetupEvents();
+
         _ = LoadDataAsync();
     }
 
-    private void InitializeUI()
+    private void SetupTable()
     {
-        Dock = DockStyle.Fill;
-        BackColor = UiTheme.Surface;
+        _tableCategories.Columns =
+        [
+            new Column(nameof(CategoryGridDto.Id), DtoInfo.GetName<CategoryGridDto>(nameof(CategoryGridDto.Id)))
+            {
+                Align = ColumnAlign.Center
+            },
+            new Column(nameof(CategoryGridDto.Name), DtoInfo.GetName<CategoryGridDto>(nameof(CategoryGridDto.Name))),
+            new Column("action", "Thao tác")
+            {
+                Align = ColumnAlign.Center,
+                Fixed = true,
 
-        _toolbar = new UC_CategoriesHeaderToolbar();
-        _toolbar.SearchChanged += ApplyFilterAndSort;
-        _toolbar.AddClicked += AddCategoryAsync;
-        _toolbar.EditClicked += EditCategoryAsync;
-        _toolbar.DeleteClicked += DeleteCategoryAsync;
-        _toolbar.TrashModeChanged += ChkTrashMode_CheckedChanged;
+                Render = (value, record, rowIndex) => {
+                    if (_switchTrash.Checked)
+                        return new CellButton("restore", "Khôi phục")
+                        {
+                            Type = TTypeMini.Success
+                        };
+                    return new CellButton[] {
+                        new("edit", "Sửa") {
+                            Type = TTypeMini.Primary,
+                        },
+                        new("delete", "Xoá") {
+                            Type = TTypeMini.Error
+                        }
+                    };
+                }
+            }
+        ];
 
-        _dgvCategories = new DataGridView
-        {
-            Dock = DockStyle.Fill
-        };
-        _dgvCategories.ApplyStandardAdminStyle();
-        _dgvCategories.CellDoubleClick += EditCategoryAsync;
+        _tableCategories.CellButtonClick += TableCategories_CellButtonClick;
+    }
 
-        var hostPanel = new AntdUI.Panel
-        {
-            Dock = DockStyle.Fill,
-            Radius = 8,
-            Back = UiTheme.Surface,
-            Padding = new Padding(UiTheme.BlockGap)
-        };
-        hostPanel.Controls.Add(_dgvCategories);
-
-        _categoriesGrid = new StatefulSortableGrid<CategoryGridDto>(_dgvCategories);
-        _categoriesGrid.AttachSortHandler();
-        _categoriesGrid.SortChanged += ApplyFilterAndSort;
-
-        Controls.Add(hostPanel);
-        Controls.Add(_toolbar);
+    private void SetupEvents()
+    {
+        _txtSearch.TextChanged += ApplyFilterAndSort;
+        _switchTrash.CheckedChanged += HandleTrashModeChanged;
+        _btnAdd.Click += HandleAddCategory;
     }
 
     private async Task LoadDataAsync()
     {
         try
         {
-            _categoriesGrid.CapturePosition();
-
-            _allCategories = await _categoryQueryService.GetCategoryGridAsync(_toolbar.IsTrashMode);
-            ApplyFilterAndSort();
-
-            _categoriesGrid.RestorePosition();
+            _allCategories = await _categoryQueryService.GetCategoryGridAsync(_switchTrash.Checked);
+            ApplyFilterAndSort(this, EventArgs.Empty);
         }
         catch (Exception ex)
         {
-            MessageBoxHelper.Error($"Lỗi tải dữ liệu: {ex.Message}", owner: this);
+            MessageBoxHelper.Error($"Lỗi tải dữ liệu: {ex.Message}", type: FeedbackType.Message);
         }
     }
 
-    private async void ChkTrashMode_CheckedChanged(object? sender, EventArgs e)
+    private void ApplyFilterAndSort(object? sender, EventArgs e)
     {
-        _dgvCategories.BackgroundColor = _toolbar.IsTrashMode ? Color.MistyRose : Color.WhiteSmoke;
-
-        await LoadDataAsync();
-    }
-
-    private async void AddCategoryAsync(object? s, EventArgs e)
-    {
-        var uiFields = new UC_CategoryFields();
-        using var shell = new DynamicModalShell<CategoryPayload>("THÊM DANH MỤC MỚI", uiFields, new Size(420, 220));
-
-        if (shell.ShowDialog(this) != DialogResult.OK)
-        {
-            return;
-        }
-
-        try
-        {
-            var payload = shell.ExtractData();
-            await _categoryService.AddCategoryAsync(new UpsertCategoryDto(0, payload.Name));
-            await LoadDataAsync();
-        }
-        catch (Exception ex)
-        {
-            MessageBoxHelper.Error(ex.Message, owner: this);
-        }
-    }
-
-    private async void EditCategoryAsync(object? s, EventArgs e)
-    {
-        if (_dgvCategories.SelectedRows.Count == 0) return;
-        int id = (int)_dgvCategories.SelectedRows[0].Cells[nameof(CategoryGridDto.Id)].Value;
-        var cat = await _categoryQueryService.GetCategoryByIdAsync(id);
-        if (cat == null) return;
-
-        var uiFields = new UC_CategoryFields(cat.Name);
-        using var shell = new DynamicModalShell<CategoryPayload>($"SỬA DANH MỤC: {cat.Name}", uiFields, new Size(420, 220));
-
-        if (shell.ShowDialog(this) != DialogResult.OK)
-        {
-            return;
-        }
-
-        try
-        {
-            var payload = shell.ExtractData();
-            await _categoryService.UpdateCategoryAsync(new UpsertCategoryDto(cat.Id, payload.Name));
-            await LoadDataAsync();
-        }
-        catch (Exception ex)
-        {
-            MessageBoxHelper.Error(ex.Message, owner: this);
-        }
-    }
-
-    private async void DeleteCategoryAsync(object? s, EventArgs e)
-    {
-        if (_dgvCategories.SelectedRows.Count == 0) return;
-        string name = _dgvCategories.SelectedRows[0].Cells[nameof(CategoryGridDto.Name)].Value.ToString()!;
-        int id = (int)_dgvCategories.SelectedRows[0].Cells[nameof(CategoryGridDto.Id)].Value;
-
-        if (_toolbar.IsTrashMode)
-        {
-            if (MessageBoxHelper.ConfirmWarning($"Khôi phục danh mục '{name}'?", "Xác nhận", this))
-            {
-                try
-                {
-                    await _categoryService.RestoreCategoryAsync(id);
-                    await LoadDataAsync();
-                }
-                catch (Exception ex)
-                {
-                    MessageBoxHelper.Warning(ex.Message, "Cảnh báo", this);
-                }
-            }
-        }
-        else
-        {
-            if (MessageBoxHelper.ConfirmWarning($"Bạn có chắc chắn muốn xóa danh mục '{name}'?", "Xác nhận", this))
-            {
-                try
-                {
-                    await _categoryService.DeleteCategoryAsync(id);
-                    await LoadDataAsync();
-                }
-                catch (Exception ex)
-                {
-                    MessageBoxHelper.Error(ex.Message, owner: this);
-                }
-            }
-        }
-    }
-
-    private void ApplyFilterAndSort()
-    {
-        string keyword = _toolbar.SearchText.Trim();
+        string keyword = _txtSearch.Text.Trim();
 
         _filteredCategories = string.IsNullOrEmpty(keyword)
             ? [.. _allCategories]
             : [.. _allCategories.Where(c => c.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase))];
 
-        _categoriesGrid.Bind(_filteredCategories);
+        _tableCategories.DataSource = _filteredCategories;
+    }
+
+    private void TableCategories_CellButtonClick(object sender, TableButtonEventArgs e)
+    {
+        if (e.Record is not CategoryGridDto selectedItem) return;
+
+        if (e.Btn.Id == "edit")
+        {
+            HandleEditCategory(selectedItem);
+        }
+        if (e.Btn.Id == "delete")
+        {
+            HandleDeleteCategory(selectedItem);
+        }
+        if (e.Btn.Id == "restore")
+        {
+            HandleRestoreCategory(selectedItem);
+        }
+    }
+
+    private async void HandleTrashModeChanged(object? sender, BoolEventArgs e)
+    {
+        _tableCategories.BackColor = _switchTrash.Checked ? Color.MistyRose : UiTheme.Surface;
+        _tableCategories.DataSource = null;
+        await LoadDataAsync();
+    }
+
+    private void HandleAddCategory(object? sender, EventArgs e)
+    {
+        try
+        {
+            var uiFields = new UC_CategoryEditor();
+
+            Form form = FindForm() ?? throw new InvalidOperationException("Lỗi UI: UserControl chưa được gắn vào Form chính.");
+
+            var config = new Modal.Config(form, "THÊM DANH MỤC MỚI", uiFields)
+            {
+                Font = UiTheme.BodyFont,
+                OkText = "Lưu",
+                CancelText = "Huỷ",
+                OnOk = (cfg) =>
+                {
+                    if (!uiFields.ValidateInput()) return false;
+
+                    ExecuteSaveCategoryAsync(uiFields.GetPayload(), isUpdate: false, categoryId: 0);
+                    return true;
+                }
+            };
+            Modal.open(config);
+        }
+        catch (Exception ex)
+        {
+            MessageBoxHelper.Error($"Lỗi mở form: {ex.Message}", owner: this);
+        }
+    }
+
+    private async void HandleEditCategory(CategoryGridDto selectedItem)
+    {
+        try
+        {
+            var cat = await _categoryQueryService.GetCategoryByIdAsync(selectedItem.Id);
+            if (cat == null)
+            {
+                MessageBoxHelper.Error("Không tìm thấy danh mục!", type: FeedbackType.Message);
+                return;
+            }
+
+            var uiFields = new UC_CategoryEditor(cat.Name);
+
+            Form form = FindForm() ?? throw new InvalidOperationException("Lỗi UI: UserControl chưa được gắn vào Form chính.");
+
+            var config = new Modal.Config(form, $"CẬP NHẬT: {cat.Name}", uiFields)
+            {
+                Font = UiTheme.BodyFont,
+                OkText = "Cập nhật",
+                CancelText = "Huỷ",
+                OnOk = (cfg) =>
+                {
+                    if (!uiFields.ValidateInput()) return false;
+
+                    ExecuteSaveCategoryAsync(uiFields.GetPayload(), isUpdate: true, categoryId: cat.Id);
+                    return true;
+                }
+            };
+            Modal.open(config);
+        }
+        catch (Exception ex)
+        {
+            MessageBoxHelper.Error($"Lỗi mở form: {ex.Message}", owner: this);
+        }
+    }
+
+    private async void HandleDeleteCategory(CategoryGridDto selectedItem)
+    {
+        try
+        {
+            if (MessageBoxHelper.ConfirmWarning($"Xóa danh mục '{selectedItem.Name}'?\n(Hành động này sẽ giấu danh mục khỏi Menu)", "Xác nhận", this))
+            {
+                await _categoryService.DeleteCategoryAsync(selectedItem.Id);
+            }
+            await LoadDataAsync();
+        }
+        catch (Exception ex)
+        {
+            MessageBoxHelper.Warning(ex.Message, "Cảnh báo", this);
+        }
+    }
+
+
+    private async void HandleRestoreCategory(CategoryGridDto selectedItem)
+    {
+        try
+        {
+            if (_switchTrash.Checked)
+            {
+                if (MessageBoxHelper.ConfirmWarning($"Khôi phục '{selectedItem.Name}' trở lại phần mềm?", "Xác nhận", this))
+                {
+                    await _categoryService.RestoreCategoryAsync(selectedItem.Id);
+                }
+            }
+            await LoadDataAsync();
+        }
+        catch (Exception ex)
+        {
+            MessageBoxHelper.Warning(ex.Message, "Cảnh báo", this);
+        }
+    }
+
+    private void ExecuteSaveCategoryAsync(CategoryPayload payload, bool isUpdate, int categoryId)
+    {
+        Target target = new(this);
+
+        AntdUI.Message.loading(target, "Đang xử lý...", async msg =>
+        {
+            msg.ID = "save_cat";
+
+            try
+            {
+                var dto = new UpsertCategoryDto(categoryId, payload.Name);
+
+                if (isUpdate) await _categoryService.UpdateCategoryAsync(dto);
+                else await _categoryService.AddCategoryAsync(dto);
+
+                Invoke(() => MessageBoxHelper.Success("Lưu thành công!", owner: this, type: FeedbackType.Message));
+                await LoadDataAsync();
+            }
+            catch (Exception ex)
+            {
+                Invoke(() => MessageBoxHelper.Error(ex.Message, type: FeedbackType.Message));
+            }
+            finally
+            {
+                Invoke(() => AntdUI.Message.close_id("save_cat"));
+            }
+        }, UiTheme.BodyFont);
     }
 }

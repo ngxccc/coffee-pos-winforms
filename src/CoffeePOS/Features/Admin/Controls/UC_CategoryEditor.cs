@@ -5,29 +5,11 @@ namespace CoffeePOS.Features.Admin.Controls;
 
 public record CategoryPayload(string Name);
 
-public class UC_CategoryFields : UserControl, IValidatableComponent<CategoryPayload>
+public partial class UC_CategoryEditor : UserControl, IValidatableComponent<CategoryPayload>
 {
-    private readonly TextBox _txtName;
-
-    public UC_CategoryFields(string? existingName = null)
+    public UC_CategoryEditor(string? existingName = null)
     {
-        Dock = DockStyle.Fill;
-        BackColor = Color.White;
-
-        Controls.Add(new Label
-        {
-            Text = "Tên danh mục",
-            Location = new Point(20, 20),
-            AutoSize = true
-        });
-
-        _txtName = new TextBox
-        {
-            Location = new Point(20, 45),
-            Width = 350,
-            Font = new Font("Segoe UI", 11)
-        };
-        Controls.Add(_txtName);
+        InitializeComponent();
 
         if (!string.IsNullOrWhiteSpace(existingName))
         {
