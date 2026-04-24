@@ -149,6 +149,8 @@ public partial class UC_Menu : UserControl
 
         _flowProducts.Visible = true;
 
+        _flowProducts.PerformLayout();
+
         foreach (var pItem in itemsToLoad)
         {
             _ = pItem.LoadImageAsync();
