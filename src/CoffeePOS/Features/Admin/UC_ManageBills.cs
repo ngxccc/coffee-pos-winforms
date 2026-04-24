@@ -1,26 +1,21 @@
 using System.ComponentModel;
 using System.Globalization;
 using System.Text;
-using CoffeePOS.Features.Admin.Controls;
+using AntdUI;
 using CoffeePOS.Features.Billing;
-using CoffeePOS.Forms.Core;
 using CoffeePOS.Services.Contracts.Commands;
 using CoffeePOS.Services.Contracts.Queries;
-
 using CoffeePOS.Shared.Dtos.Bill;
 using CoffeePOS.Shared.Helpers;
-using Microsoft.VisualBasic;
 
 namespace CoffeePOS.Features.Admin;
 
-public class UC_ManageBills : UserControl
+public partial class UC_ManageBills : UserControl
 {
     private readonly IBillService _billService;
     private readonly IBillQueryService _billQueryService;
 
-    private UC_BillsHeaderToolbar _toolbar = null!;
-    private DataGridView _dgvBills = null!;
-    private StatefulSortableGrid<BillReportDto> _billsGrid = null!;
+    private List<BillReportDto> _bills = [];
 
     private static readonly (string Header, Func<BillReportDto, string> ValueSelector)[] CsvColumns =
     [
@@ -33,138 +28,127 @@ public class UC_ManageBills : UserControl
         (GetDisplayName(nameof(BillReportDto.CanceledAt)), b => b.CanceledAt?.ToString("dd/MM/yyyy HH:mm:ss") ?? string.Empty)
     ];
 
-    private List<BillReportDto> _bills = [];
-
     public UC_ManageBills(IBillService billService, IBillQueryService billQueryService)
     {
         _billService = billService;
         _billQueryService = billQueryService;
 
-        InitializeUI();
+        InitializeComponent();
+        SetupTable();
+        SetupEvents();
+
         _ = LoadBillsAsync();
     }
 
-    private void InitializeUI()
+    private void SetupTable()
     {
-        Dock = DockStyle.Fill;
-        BackColor = UiTheme.Surface;
+        _tableBills.Columns =
+        [
+            new Column(nameof(BillReportDto.Id), "Mã HĐ")
+            {
+                Align = ColumnAlign.Center,
+                Width = "80"
+            },
+            new Column(nameof(BillReportDto.BuzzerNumber), "Thẻ rung")
+            {
+                Align = ColumnAlign.Center,
+                Width = "90"
+            },
+            new Column(nameof(BillReportDto.TotalAmount), "Tổng tiền")
+            {
+                Align = ColumnAlign.Right,
+                DisplayFormat = "N0",
+                Width = "120"
+            },
+            new Column(nameof(BillReportDto.CreatedAt), "Ngày tạo")
+            {
+                Align = ColumnAlign.Center
+            },
+            new Column(nameof(BillReportDto.CreatedByName), "Thu ngân"),
+            new Column("Status", "Trạng thái")
+            {
+                Align = ColumnAlign.Center,
+                Width = "100",
+                Render = (value, record, rowIndex) =>
+                {
+                    var isCanceled = ((BillReportDto)record).IsCanceled;
+                    return new CellBadge(isCanceled ? TState.Error : TState.Success,
+                                        isCanceled ? "Đã huỷ" : "Hợp lệ");
+                }
+            },
+            new Column("action", "Thao tác")
+            {
+                Align = ColumnAlign.Center,
+                Fixed = true,
+                Width = "180",
+                Render = (value, record, rowIndex) =>
+                {
+                    var isCanceled = ((BillReportDto)record).IsCanceled;
 
-        _toolbar = new UC_BillsHeaderToolbar();
-        _toolbar.LoadClicked += async (_, _) => await LoadBillsAsync();
-        _toolbar.CancelClicked += ToggleSelectedBillStatusAsync;
-        _toolbar.ExportClicked += ExportReportToCsv;
+                    return new CellButton[] {
+                        new("view", "Chi tiết") { Type = TTypeMini.Primary },
+                        new("toggle", isCanceled ? "Khôi phục" : "Hủy HĐ") {
+                            Type = isCanceled ? TTypeMini.Success : TTypeMini.Error
+                        }
+                    };
+                }
+            }
+        ];
 
-        _dgvBills = new DataGridView
-        {
-            Dock = DockStyle.Fill
-        };
-        _dgvBills.ApplyStandardAdminStyle();
-        _dgvBills.SelectionChanged += (_, _) => RefreshCancelButtonState();
-        _dgvBills.CellDoubleClick += DgvBills_CellDoubleClick;
+        _tableBills.CellButtonClick += TableBills_CellButtonClick;
+    }
 
-        var hostPanel = new AntdUI.Panel
-        {
-            Dock = DockStyle.Fill,
-            Radius = 8,
-            Back = UiTheme.Surface,
-            Padding = new Padding(UiTheme.BlockGap)
-        };
-        hostPanel.Controls.Add(_dgvBills);
-
-        _billsGrid = new StatefulSortableGrid<BillReportDto>(_dgvBills);
-        _billsGrid.AttachSortHandler();
-        _billsGrid.SortChanged += ApplySort;
-
-        Controls.Add(hostPanel);
-        Controls.Add(_toolbar);
+    private void SetupEvents()
+    {
+        _btnLoad.Click += async (_, _) => await LoadBillsAsync();
+        _btnExport.Click += ExportReportToCsv;
     }
 
     private async Task LoadBillsAsync()
     {
         try
         {
-            _billsGrid.CapturePosition();
+            await Spin.open(_tableBills, async cfg =>
+        {
+            var rawFrom = _dpFrom.Value ?? DateTime.Today;
+            var rawTo = _dpTo.Value ?? DateTime.Today;
 
-            var fromDate = _toolbar.FromDate;
-            var toDate = _toolbar.ToDate;
+            var fromDate = DateOnly.FromDateTime(rawFrom);
+            var toDate = DateOnly.FromDateTime(rawTo);
 
             _bills = await _billQueryService.GetBillsByDateRangeAsync(fromDate, toDate);
-            BindGrid();
-            UpdateSummary();
 
-            _billsGrid.RestorePosition();
-        }
-        catch (ArgumentException ex)
-        {
-            MessageBoxHelper.Warning(ex.Message, "Lỗi nhập liệu", this);
+            Invoke(() =>
+            {
+                _tableBills.DataSource = _bills;
+                UpdateSummary();
+            });
+        });
         }
         catch (Exception ex)
         {
-            MessageBoxHelper.Error($"Lỗi tải hóa đơn: {ex.Message}", owner: this);
+            MessageBoxHelper.Error($"Lỗi tải hóa đơn: {ex.Message}", owner: this, type: FeedbackType.Message);
         }
     }
 
-    private void BindGrid()
+    private void TableBills_CellButtonClick(object sender, TableButtonEventArgs e)
     {
-        _dgvBills.DataSource = null;
-        _dgvBills.Columns.Clear();
+        if (e.Record is not BillReportDto selectedBill) return;
 
-        _billsGrid.Bind(_bills);
-
-        _dgvBills.Columns[nameof(BillReportDto.TotalAmount)].DefaultCellStyle.Format = "N0";
-        _dgvBills.Columns[nameof(BillReportDto.CreatedAt)].DefaultCellStyle.Format = "dd/MM/yyyy HH:mm:ss";
-        _dgvBills.Columns[nameof(BillReportDto.CanceledAt)].DefaultCellStyle.Format = "dd/MM/yyyy HH:mm:ss";
-
-        _dgvBills.Columns[nameof(BillReportDto.IsCanceled)].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-
-        RefreshCancelButtonState();
-    }
-
-    private void ApplySort()
-    {
-        _billsGrid.Bind(_bills);
-        RefreshCancelButtonState();
-    }
-
-    private void RefreshCancelButtonState()
-    {
-        var selected = GetSelectedBill();
-        _toolbar.CanCancel = selected is not null;
-        _toolbar.SetBillActionMode(selected?.IsCanceled == true);
-    }
-
-    private BillReportDto? GetSelectedBill()
-    {
-        if (_dgvBills.SelectedRows.Count == 0)
+        if (e.Btn.Id == "view")
         {
-            return null;
+            _ = ShowBillDetailsAsync(selectedBill);
         }
-
-        return _dgvBills.SelectedRows[0].DataBoundItem as BillReportDto;
-    }
-
-    private async void DgvBills_CellDoubleClick(object? sender, DataGridViewCellEventArgs e)
-    {
-        if (e.RowIndex < 0)
+        if (e.Btn.Id == "toggle")
         {
-            return;
+            ToggleSelectedBillStatusAsync(selectedBill);
         }
-
-        if (_dgvBills.Rows[e.RowIndex].DataBoundItem is not BillReportDto selectedBill)
-        {
-            return;
-        }
-
-        await ShowBillDetailsAsync(selectedBill);
     }
 
     private async Task ShowBillDetailsAsync(BillReportDto selectedBill)
     {
         try
         {
-            UseWaitCursor = true;
-            _dgvBills.Enabled = false;
-
             var details = await _billQueryService.GetBillDetailsAsync(selectedBill.Id);
             if (details.Count == 0)
             {
@@ -173,76 +157,132 @@ public class UC_ManageBills : UserControl
             }
 
             var detailControl = new UC_BillDetail(selectedBill, details);
-            using var shell = new DynamicModalShell<bool>(
-                $"CHI TIẾT HOÁ ĐƠN #{selectedBill.Id}",
-                detailControl,
-                new Size(900, 620),
-                showSaveButton: false,
-                cancelButtonText: "ĐÓNG");
-            shell.ShowDialog(this);
+            Form form = FindForm() ?? throw new InvalidOperationException("Lỗi UI.");
+
+            var config = new Modal.Config(form, $"CHI TIẾT HOÁ ĐƠN #{selectedBill.Id}", detailControl)
+            {
+                Font = UiTheme.BodyFont,
+                OkText = "ĐÓNG",
+                CancelText = null
+            };
+            Modal.open(config);
         }
         catch (Exception ex)
         {
-            MessageBoxHelper.Error($"Lỗi tải chi tiết hóa đơn: {ex.Message}", owner: this);
-        }
-        finally
-        {
-            _dgvBills.Enabled = true;
-            UseWaitCursor = false;
+            MessageBoxHelper.Error($"Lỗi tải chi tiết: {ex.Message}", owner: this);
         }
     }
 
-    private async void ToggleSelectedBillStatusAsync(object? sender, EventArgs e)
+    private async void ToggleSelectedBillStatusAsync(BillReportDto selectedBill)
     {
-        var selectedBill = GetSelectedBill();
-        if (selectedBill is null)
+        if (selectedBill.IsCanceled)
         {
-            MessageBoxHelper.Warning("Vui lòng chọn hóa đơn cần thao tác.", owner: this);
-            return;
+            if (!MessageBoxHelper.ConfirmWarning($"Bạn có chắc muốn khôi phục hóa đơn #{selectedBill.Id}?", "Xác nhận khôi phục", this))
+                return;
+
+            ExecuteRestoreBillAsync(selectedBill.Id);
         }
-
-        string actionText = selectedBill.IsCanceled ? "khôi phục" : "hủy";
-        string title = selectedBill.IsCanceled ? "Xác nhận khôi phục hóa đơn" : "Xác nhận hủy hóa đơn";
-        bool confirmed = MessageBoxHelper.ConfirmWarning(
-            $"Bạn có chắc muốn {actionText} hóa đơn #{selectedBill.Id} (Thẻ rung {selectedBill.BuzzerNumber})?",
-            title,
-            this);
-
-        if (!confirmed)
+        else
         {
-            return;
-        }
+            Form form = FindForm() ?? throw new InvalidOperationException("Lỗi UI.");
 
-        try
-        {
-            if (selectedBill.IsCanceled)
+            var txtReason = new Input
             {
-                await _billService.RestoreBillAsync(selectedBill.Id);
-                MessageBoxHelper.Info($"Đã khôi phục hóa đơn #{selectedBill.Id}.", owner: this);
-            }
-            else
-            {
-                string reason = Interaction.InputBox(
-                    $"Nhập lý do hủy hóa đơn #{selectedBill.Id}:",
-                    "Lý do hủy hóa đơn",
-                    "");
+                PlaceholderText = "Nhập lý do hủy hóa đơn (Bắt buộc)...",
+                AllowClear = true,
+                Font = UiTheme.BodyFont,
+                Height = 40,
+                Dock = DockStyle.Fill,
+                Multiline = true
+            };
 
-                if (string.IsNullOrWhiteSpace(reason))
+            var panel = new AntdUI.Panel
+            {
+                Size = LogicalToDeviceUnits(new Size(300, 100)),
+                Padding = new Padding(10, 15, 10, 10)
+            };
+            panel.Controls.Add(txtReason);
+
+            var config = new Modal.Config(form, $"HỦY HÓA ĐƠN #{selectedBill.Id}", panel)
+            {
+                Font = UiTheme.BodyFont,
+                OkText = "Xác nhận hủy",
+                CancelText = "Đóng",
+                OnOk = (cfg) =>
                 {
-                    MessageBoxHelper.Warning("Bắt buộc nhập lý do hủy hóa đơn.", owner: this);
-                    return;
+                    bool isValid = false;
+                    string reason = string.Empty;
+
+                    Invoke(() =>
+                    {
+                        reason = txtReason.Text.Trim();
+
+                        if (string.IsNullOrWhiteSpace(reason))
+                        {
+                            MessageBoxHelper.Warning("Bắt buộc nhập lý do hủy.", owner: this);
+                            txtReason.Focus();
+                        }
+                        else
+                        {
+                            isValid = true;
+                        }
+                    });
+
+                    if (!isValid) return false;
+
+                    ExecuteCancelBillAsync(selectedBill.Id, reason);
+                    return true;
                 }
+            };
 
-                await _billService.CancelBillAsync(selectedBill.Id, reason.Trim());
-                MessageBoxHelper.Info($"Đã hủy hóa đơn #{selectedBill.Id}.", owner: this);
-            }
-
-            await LoadBillsAsync();
+            Modal.open(config);
         }
-        catch (Exception ex)
+    }
+
+    private void ExecuteCancelBillAsync(int billId, string reason)
+    {
+        Target target = new(this);
+        AntdUI.Message.loading(target, "Đang xử lý...", async msg =>
         {
-            MessageBoxHelper.Error($"Lỗi thao tác hóa đơn: {ex.Message}", owner: this);
-        }
+            msg.ID = "cancel_bill";
+            try
+            {
+                await _billService.CancelBillAsync(billId, reason);
+                Invoke(() => MessageBoxHelper.Success($"Đã hủy hóa đơn #{billId}.", owner: this, type: FeedbackType.Message));
+                await LoadBillsAsync();
+            }
+            catch (Exception ex)
+            {
+                Invoke(() => MessageBoxHelper.Error($"Lỗi hủy hóa đơn: {ex.Message}", owner: this));
+            }
+            finally
+            {
+                Invoke(() => AntdUI.Message.close_id("cancel_bill"));
+            }
+        });
+    }
+
+    private void ExecuteRestoreBillAsync(int billId)
+    {
+        Target target = new(this);
+        AntdUI.Message.loading(target, "Đang xử lý...", async msg =>
+        {
+            msg.ID = "restore_bill";
+            try
+            {
+                await _billService.RestoreBillAsync(billId);
+                Invoke(() => MessageBoxHelper.Success($"Đã khôi phục hóa đơn #{billId}.", owner: this, type: FeedbackType.Message));
+                await LoadBillsAsync();
+            }
+            catch (Exception ex)
+            {
+                Invoke(() => MessageBoxHelper.Error($"Lỗi khôi phục: {ex.Message}", owner: this));
+            }
+            finally
+            {
+                Invoke(() => AntdUI.Message.close_id("restore_bill"));
+            }
+        });
     }
 
     private void UpdateSummary()
@@ -253,22 +293,25 @@ public class UC_ManageBills : UserControl
         decimal netRevenue = _bills.Where(x => !x.IsCanceled).Sum(x => x.TotalAmount);
 
         string revenueText = netRevenue.ToString("N0", CultureInfo.GetCultureInfo("vi-VN"));
-        _toolbar.SummaryText = $"Tổng đơn: {totalBills} | Đơn hợp lệ: {validBills} | Đơn hủy: {canceledBills} | Doanh thu thực thu: {revenueText} đ";
+        _lblSummary.Text = $"Tổng đơn: {totalBills}  |  Đơn hợp lệ: {validBills}  |  Đơn hủy: {canceledBills}  |  Doanh thu: {revenueText} đ";
     }
 
     private async void ExportReportToCsv(object? sender, EventArgs e)
     {
         if (_bills.Count == 0)
         {
-            MessageBoxHelper.Warning("Không có dữ liệu để xuất báo cáo.", owner: this);
+            MessageBoxHelper.Warning("Không có dữ liệu để xuất.", owner: this);
             return;
         }
+
+        DateTime fromDate = _dpFrom.Value ?? DateTime.Today;
+        DateTime toDate = _dpTo.Value ?? DateTime.Today;
 
         using SaveFileDialog saveDialog = new()
         {
             Filter = "CSV file (*.csv)|*.csv",
             Title = "Lưu báo cáo hóa đơn",
-            FileName = $"BaoCaoHoaDon_{_toolbar.FromDate:yyyyMMdd}_{_toolbar.ToDate:yyyyMMdd}.csv"
+            FileName = $"BaoCaoHoaDon_{fromDate:yyyyMMdd}_{toDate:yyyyMMdd}.csv"
         };
 
         if (saveDialog.ShowDialog(this) != DialogResult.OK) return;
@@ -276,10 +319,10 @@ public class UC_ManageBills : UserControl
         try
         {
             using var stream = new FileStream(saveDialog.FileName, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 4096, useAsync: true);
-            using var writer = new StreamWriter(stream, new UTF8Encoding(true));
+            using var writer = new StreamWriter(stream, new UTF8Encoding(true)); // UTF8 w/ BOM for Excel compatibility
 
             await writer.WriteLineAsync("Báo cáo hoá đơn");
-            await writer.WriteLineAsync($"Khoảng thời gian,{_toolbar.FromDate:dd/MM/yyyy} - {_toolbar.ToDate:dd/MM/yyyy}");
+            await writer.WriteLineAsync($"Khoảng thời gian,{fromDate:dd/MM/yyyy} - {toDate:dd/MM/yyyy}");
             await writer.WriteLineAsync($"Thời gian xuất,{DateTime.Now:dd/MM/yyyy HH:mm:ss}");
             await writer.WriteLineAsync(string.Empty);
 
@@ -292,7 +335,7 @@ public class UC_ManageBills : UserControl
                 await writer.WriteLineAsync(line);
             }
 
-            MessageBoxHelper.Info($"Xuất báo cáo thành công:\n{saveDialog.FileName}", owner: this);
+            MessageBoxHelper.Success($"Xuất báo cáo thành công:\n{saveDialog.FileName}", owner: this, type: FeedbackType.Message);
         }
         catch (Exception ex)
         {
@@ -302,28 +345,19 @@ public class UC_ManageBills : UserControl
 
     private static string EscapeCsvField(string value)
     {
-        if (!value.Contains(',') && !value.Contains('"') && !value.Contains('\n'))
-        {
-            return value;
-        }
-
+        if (!value.Contains(',') && !value.Contains('"') && !value.Contains('\n')) return value;
         return $"\"{value.Replace("\"", "\"\"")}\"";
     }
 
     private static string GetDisplayName(string propertyName)
     {
         var property = typeof(BillReportDto).GetProperty(propertyName);
-        if (property is null)
-        {
-            return propertyName;
-        }
+        if (property is null) return propertyName;
 
         var displayName = property.GetCustomAttributes(typeof(DisplayNameAttribute), true)
             .OfType<DisplayNameAttribute>()
             .FirstOrDefault();
 
-        return string.IsNullOrWhiteSpace(displayName?.DisplayName)
-            ? propertyName
-            : displayName.DisplayName;
+        return string.IsNullOrWhiteSpace(displayName?.DisplayName) ? propertyName : displayName.DisplayName;
     }
 }
