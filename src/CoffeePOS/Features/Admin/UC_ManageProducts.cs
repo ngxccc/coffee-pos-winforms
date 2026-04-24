@@ -136,20 +136,20 @@ public partial class UC_ManageProducts : UserControl
         try
         {
             var categories = await _categoryQueryService.GetSelectableCategoriesAsync();
-            var uiFields = new UC_ProductEditor(categories);
+            var productEditor = new UC_ProductEditor(categories);
 
             Form form = FindForm() ?? throw new InvalidOperationException("Lỗi UI: UserControl chưa được gắn vào Form chính.");
 
-            var config = new Modal.Config(form, "THÊM SẢN PHẨM MỚI", uiFields)
+            var config = new Modal.Config(form, "THÊM SẢN PHẨM MỚI", productEditor)
             {
                 Font = UiTheme.BodyFont,
                 OkText = "Lưu",
                 CancelText = "Huỷ",
                 OnOk = (cfg) =>
                 {
-                    if (!uiFields.ValidateInput()) return false;
+                    if (!productEditor.ValidateInput()) return false;
 
-                    ExecuteSaveProductAsync(uiFields.GetPayload(), isUpdate: false, productId: 0);
+                    ExecuteSaveProductAsync(productEditor.GetPayload(), isUpdate: false, productId: 0);
                     return false;
                 }
             };

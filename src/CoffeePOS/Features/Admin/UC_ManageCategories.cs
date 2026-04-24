@@ -1,11 +1,9 @@
-using System.Reflection.Metadata.Ecma335;
 using AntdUI;
 using CoffeePOS.Features.Admin.Controls;
 using CoffeePOS.Services.Contracts.Commands;
 using CoffeePOS.Services.Contracts.Queries;
 using CoffeePOS.Shared.Dtos.Category;
 using CoffeePOS.Shared.Helpers;
-using Windows.ApplicationModel.Chat;
 
 namespace CoffeePOS.Features.Admin;
 
@@ -129,20 +127,20 @@ public partial class UC_ManageCategories : UserControl
     {
         try
         {
-            var uiFields = new UC_CategoryEditor();
+            var catEditor = new UC_CategoryEditor();
 
             Form form = FindForm() ?? throw new InvalidOperationException("Lỗi UI: UserControl chưa được gắn vào Form chính.");
 
-            var config = new Modal.Config(form, "THÊM DANH MỤC MỚI", uiFields)
+            var config = new Modal.Config(form, "THÊM DANH MỤC MỚI", catEditor)
             {
                 Font = UiTheme.BodyFont,
                 OkText = "Lưu",
                 CancelText = "Huỷ",
                 OnOk = (cfg) =>
                 {
-                    if (!uiFields.ValidateInput()) return false;
+                    if (!catEditor.ValidateInput()) return false;
 
-                    ExecuteSaveCategoryAsync(uiFields.GetPayload(), isUpdate: false, categoryId: 0);
+                    ExecuteSaveCategoryAsync(catEditor.GetPayload(), isUpdate: false, categoryId: 0);
                     return true;
                 }
             };
