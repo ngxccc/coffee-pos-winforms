@@ -1,5 +1,6 @@
 using System.Drawing;
 using System.Windows.Forms;
+using CoffeePOS.Shared.Helpers;
 
 namespace CoffeePOS.Features.Admin.Controls;
 
@@ -8,8 +9,8 @@ partial class UC_ProductEditor
     private System.ComponentModel.IContainer components = null!;
 
     private AntdUI.Input _txtName = null!;
-    private NumericUpDown _nudPrice = null!;
-    private ComboBox _cboCategory = null!;
+    private AntdUI.InputNumber _nudPrice = null!;
+    private AntdUI.Select _cboCategory = null!;
     private AntdUI.Input _txtImageUrl = null!;
     private AntdUI.Avatar _picImage = null!;
     private AntdUI.Button _btnChooseImage = null!;
@@ -22,99 +23,112 @@ partial class UC_ProductEditor
 
     private void InitializeComponent()
     {
+        SuspendLayout();
+
         AutoScaleMode = AutoScaleMode.Dpi;
         BackColor = Color.White;
-        Size = new Size(450, 400);
+        Size = new Size(450, 500);
 
         AntdUI.Label lblName = new()
         {
             Text = "Tên món",
-            Location = new Point(20, 20),
-            AutoSize = true
+            AutoSize = true,
+            Font = UiTheme.BodyFont,
+            Margin = new Padding(0, 0, 0, 5)
         };
+        _txtName = new()
+        {
+            Height = 40,
+            Font = UiTheme.BodyFont,
+            PlaceholderText = "Nhập tên món",
+            AllowClear = true,
+            Margin = new Padding(0, 0, 0, 10)
+        };
+
         AntdUI.Label lblPrice = new()
         {
             Text = "Giá bán (VNĐ)",
-            Location = new Point(20, 85),
-            AutoSize = true
+            AutoSize = true,
+            Font = UiTheme.BodyFont,
+            Margin = new Padding(0, 0, 0, 5)
         };
-        AntdUI.Label lblCategory = new()
-        {
-            Text = "Danh mục",
-            Location = new Point(240, 85),
-            AutoSize = true
-        };
-        AntdUI.Label lblImage = new()
-        {
-            Text = "Link Hình Ảnh (URL) hoặc Upload",
-            Location = new Point(20, 150),
-            AutoSize = true
-        };
-
-        SuspendLayout();
-
-        _txtName = new()
-        {
-            Location = new Point(20, 45),
-            Size = new Size(420, 38),
-            Font = new Font("Segoe UI", 11F),
-            PlaceholderText = "Nhập tên món",
-            AllowClear = true,
-        };
-
         _nudPrice = new()
         {
-            Location = new Point(20, 110),
-            Size = new Size(200, 32),
-            Font = new Font("Segoe UI", 11F),
+            Height = 40,
+            Font = UiTheme.BodyFont,
             Maximum = 10000000m,
             Increment = 1000m,
             ThousandsSeparator = true,
+            Margin = new Padding(0, 0, 0, 10)
         };
 
+        AntdUI.Label lblCategory = new()
+        {
+            Text = "Danh mục",
+            AutoSize = true,
+            Font = UiTheme.BodyFont,
+            Margin = new Padding(0, 0, 0, 5)
+        };
         _cboCategory = new()
         {
-            Location = new Point(240, 110),
-            Size = new Size(200, 32),
-            Font = new Font("Segoe UI", 11F),
-            DropDownStyle = ComboBoxStyle.DropDownList,
+            Height = 40,
+            Font = UiTheme.BodyFont,
+            List = true,
+            Margin = new Padding(0, 0, 0, 10)
         };
 
+        AntdUI.Label lblImage = new()
+        {
+            Text = "Link Hình Ảnh (URL) hoặc Upload",
+            AutoSize = true,
+            Font = UiTheme.BodyFont,
+            Margin = new Padding(0, 0, 0, 5)
+        };
         _txtImageUrl = new()
         {
-            Location = new Point(20, 175),
-            Size = new Size(340, 38),
-            Font = new Font("Segoe UI", 11F),
+            Height = 40,
+            Font = UiTheme.BodyFont,
             PlaceholderText = "https://i.imgur.com/...",
-            AllowClear = true,
+            AllowClear = true
         };
-
         _btnChooseImage = new()
         {
+            Height = 40,
             Text = "Up ảnh",
-            Location = new Point(370, 175),
-            Size = new Size(70, 38),
+            Font = UiTheme.BodyFont,
             Type = AntdUI.TTypeMini.Primary,
-            Cursor = Cursors.Hand,
+            Cursor = Cursors.Hand
         };
 
         _picImage = new()
         {
-            Location = new Point(20, 220),
-            Size = new Size(150, 150),
+            Size = new Size(120, 120),
+            Margin = new Padding(0, 10, 0, 0),
+            ImageFit = AntdUI.TFit.Fill,
         };
 
-        Controls.Add(lblName);
-        Controls.Add(_txtName);
-        Controls.Add(lblPrice);
-        Controls.Add(_nudPrice);
-        Controls.Add(lblCategory);
-        Controls.Add(_cboCategory);
-        Controls.Add(lblImage);
-        Controls.Add(_txtImageUrl);
-        Controls.Add(_btnChooseImage);
-        Controls.Add(_picImage);
+        AntdUI.StackPanel mainLayout = new()
+        {
+            Dock = DockStyle.Fill,
+            Vertical = true,
+            Padding = new Padding(10)
+        };
 
+        mainLayout.Controls.Add(_picImage);
+        mainLayout.Controls.Add(_btnChooseImage);
+        mainLayout.Controls.Add(_txtImageUrl);
+        mainLayout.Controls.Add(lblImage);
+
+        mainLayout.Controls.Add(_cboCategory);
+        mainLayout.Controls.Add(lblCategory);
+
+        mainLayout.Controls.Add(_nudPrice);
+        mainLayout.Controls.Add(lblPrice);
+
+        mainLayout.Controls.Add(_txtName);
+        mainLayout.Controls.Add(lblName);
+
+        Controls.Add(mainLayout);
         ResumeLayout(false);
     }
 }

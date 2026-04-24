@@ -23,15 +23,22 @@ public partial class UC_ProductEditor : UserControl, IValidatableComponent<Produ
 
     private void SetupBindings(IReadOnlyList<CategoryOptionDto> categories)
     {
-        _cboCategory.DisplayMember = nameof(CategoryOptionDto.Name);
-        _cboCategory.ValueMember = nameof(CategoryOptionDto.Id);
-        _cboCategory.DataSource = categories.ToList();
+        _cboCategory.Items.Clear();
+
+        var selectedItems = categories.
+            Select(item => new AntdUI.SelectItem(item.Name, item.Id))
+            .ToArray();
+
+        _cboCategory.Items.AddRange(selectedItems);
+        _cboCategory.SelectedIndex = 0;
     }
 
     private void SetupEvents()
     {
         _btnChooseImage.Click += HandleLocalImageUploadAsync;
         _txtImageUrl.TextChanged += async (_, _) => await PreviewImageAsync(_txtImageUrl.Text);
+
+        _picImage.Click += HandleImageClick;
     }
 
     private void LoadExistingData(ProductDetailDto product)
@@ -95,7 +102,7 @@ public partial class UC_ProductEditor : UserControl, IValidatableComponent<Produ
         }
         catch (Exception ex)
         {
-            MessageBoxHelper.Error($"Up ảnh xịt: {ex.Message}", owner: this);
+            MessageBoxHelper.Error($"Up ảnh xịt: {ex.Message}", owner: this, type: FeedbackType.Message);
         }
         finally
         {
@@ -104,19 +111,51 @@ public partial class UC_ProductEditor : UserControl, IValidatableComponent<Produ
         }
     }
 
-    private async Task PreviewImageAsync(string url)
+    private async Task PreviewImageAsync(string pathOrUrl)
     {
-        if (string.IsNullOrWhiteSpace(url) || !Uri.TryCreate(url, UriKind.Absolute, out _))
+        if (string.IsNullOrWhiteSpace(pathOrUrl))
         {
             _picImage.Image?.Dispose();
             _picImage.Image = null;
             return;
         }
 
+        string finalUrlToLoad = pathOrUrl;
+
+        bool isWebUrl = Uri.TryCreate(pathOrUrl, UriKind.Absolute, out Uri? uriResult)
+                        && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
+
+        if (!isWebUrl)
+        {
+            string localPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Images", "Products", pathOrUrl);
+
+            if (File.Exists(localPath))
+            {
+                finalUrlToLoad = localPath;
+            }
+            else
+            {
+                _picImage.Image?.Dispose();
+                _picImage.Image = null;
+                return;
+            }
+        }
+
         try
         {
-            await ImageHelper.LoadImageAsync(_picImage, url, "Preview", 0);
+            await ImageHelper.LoadImageAsync(_picImage, finalUrlToLoad, "Preview", 0);
         }
         catch { /* Nuốt lỗi im lặng để không crash app */ }
+    }
+
+    private void HandleImageClick(object? sender, EventArgs e)
+    {
+        if (_picImage.Image != null)
+        {
+            Form form = FindForm() ?? throw new InvalidOperationException("Lỗi UI: UserControl chưa được gắn vào Form chính.");
+            var config = new AntdUI.Preview.Config(form, _picImage.Image);
+
+            AntdUI.Preview.open(config);
+        }
     }
 }

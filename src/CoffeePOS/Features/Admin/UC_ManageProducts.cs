@@ -127,8 +127,9 @@ public partial class UC_ManageProducts : UserControl
 
             var config = new Modal.Config(form, "THÊM SẢN PHẨM MỚI", uiFields)
             {
-                OkText = "LƯU",
-                CancelText = "HUỶ",
+                Font = UiTheme.BodyFont,
+                OkText = "Lưu",
+                CancelText = "Huỷ",
                 OnOk = (cfg) =>
                 {
                     if (!uiFields.ValidateInput()) return false;
@@ -163,14 +164,15 @@ public partial class UC_ManageProducts : UserControl
 
             var config = new Modal.Config(form, $"CẬP NHẬT: {product.Name}", uiFields)
             {
-                OkText = "CẬP NHẬT",
-                CancelText = "HUỶ",
+                Font = UiTheme.BodyFont,
+                OkText = "Cập nhật",
+                CancelText = "Huỷ",
                 OnOk = (cfg) =>
                 {
                     if (!uiFields.ValidateInput()) return false;
 
                     ExecuteSaveProductAsync(uiFields.GetPayload(), isUpdate: true, productId: product.Id, product.ImageUrl);
-                    return false;
+                    return true;
                 }
             };
             Modal.open(config);
@@ -209,7 +211,6 @@ public partial class UC_ManageProducts : UserControl
         }
     }
 
-    // BACKGROUND TASK (API Call + File I/O)
     private void ExecuteSaveProductAsync(ProductPayload payload, bool isUpdate, int productId, string? oldImageUrl = null)
     {
         Target target = new(this);
@@ -217,55 +218,57 @@ public partial class UC_ManageProducts : UserControl
         AntdUI.Message.loading(target, "Đang xử lý...", async msg =>
         {
             msg.ID = "save_prod";
-            bool isSuccess = false;
 
             try
             {
                 string finalFileName = await Task.Run(() => SaveSelectedImageAndResolveName(payload.ImageUrl, oldImageUrl ?? string.Empty));
-                var dto = new UpsertProductDto(productId, payload.Name, payload.Price, payload.CategoryId, finalFileName);
+                var dto = new UpsertProductDto(
+                    productId,
+                    payload.Name,
+                    payload.Price,
+                    payload.CategoryId,
+                    finalFileName
+                );
 
                 if (isUpdate) await _productService.UpdateProductAsync(dto);
                 else await _productService.AddProductAsync(dto);
 
-                if (isUpdate && !string.IsNullOrWhiteSpace(payload.ImageUrl))
-                {
-                    _ = Task.Run(() => TryDeletePreviousImage(oldImageUrl));
-                }
+                if (isUpdate && !string.IsNullOrWhiteSpace(oldImageUrl) && finalFileName != oldImageUrl)
+                    await Task.Run(() => TryDeletePreviousImage(oldImageUrl));
 
-                isSuccess = true;
+                MessageBoxHelper.Success("Lưu thành công!", owner: this, type: FeedbackType.Message);
+                await LoadDataAsync();
             }
             catch (Exception ex)
             {
-                Invoke(new Action(() => MessageBoxHelper.Error(ex.Message, type: FeedbackType.Message)));
+                Invoke(() => MessageBoxHelper.Error(ex.Message, type: FeedbackType.Message));
             }
             finally
             {
-                Invoke(new Action(() => AntdUI.Message.close_id("save_prod")));
+                Invoke(() => AntdUI.Message.close_id("save_prod"));
             }
-
-            if (isSuccess)
-            {
-                Invoke(new Action(() => MessageBoxHelper.Info("Lưu thành công!", type: FeedbackType.Message)));
-                await Task.Delay(500);
-                Invoke(new Action(() =>
-                {
-                    if (target.GetForm != null && !target.GetForm.IsDisposed) target.GetForm.Close();
-                    _ = LoadDataAsync();
-                }));
-            }
-        });
+        }, UiTheme.BodyFont);
     }
 
     private static string SaveSelectedImageAndResolveName(string selectedImagePath, string currentSavedImage)
     {
-        // WHY: Bỏ qua disk I/O nếu user không chọn ảnh mới hoặc đường dẫn ảo.
-        // PERF: O(1) Time complexity.
-        if (string.IsNullOrWhiteSpace(selectedImagePath) || !File.Exists(selectedImagePath))
+        if (string.IsNullOrWhiteSpace(selectedImagePath))
         {
             return currentSavedImage;
         }
 
-        // WHY: Sử dụng Local App Directory để đảm bảo tính di động (Portable) khi deploy app sang máy khác.
+        if (Uri.TryCreate(selectedImagePath, UriKind.Absolute, out Uri? uriResult)
+            && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps))
+        {
+            return selectedImagePath;
+        }
+
+        // WHY: Fallback về xử lý Local File. Bắt buộc phải có file vật lý mới copy.
+        if (!File.Exists(selectedImagePath))
+        {
+            return currentSavedImage;
+        }
+
         var directory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Images", "Products");
         if (!Directory.Exists(directory))
         {
@@ -273,7 +276,6 @@ public partial class UC_ManageProducts : UserControl
         }
 
         var extension = Path.GetExtension(selectedImagePath);
-
         string finalFileName = $"prod_{DateTime.Now:yyyyMMdd_HHmmss}_{Guid.NewGuid().ToString("N")[..8]}{extension}";
         var destinationPath = Path.Combine(directory, finalFileName);
 
