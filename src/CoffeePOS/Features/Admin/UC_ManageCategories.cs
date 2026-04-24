@@ -75,8 +75,11 @@ public partial class UC_ManageCategories : UserControl
     {
         try
         {
-            _allCategories = await _categoryQueryService.GetCategoryGridAsync(_switchTrash.Checked);
-            ApplyFilterAndSort(this, EventArgs.Empty);
+            await Spin.open(_tableCategories, async cfg =>
+            {
+                _allCategories = await _categoryQueryService.GetCategoryGridAsync(_switchTrash.Checked);
+                ApplyFilterAndSort(this, EventArgs.Empty);
+            });
         }
         catch (Exception ex)
         {
@@ -92,7 +95,9 @@ public partial class UC_ManageCategories : UserControl
             ? [.. _allCategories]
             : [.. _allCategories.Where(c => c.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase))];
 
+        _tableCategories.SuspendLayout();
         _tableCategories.DataSource = _filteredCategories;
+        _tableCategories.ResumeLayout(true);
     }
 
     private void TableCategories_CellButtonClick(object sender, TableButtonEventArgs e)
