@@ -22,6 +22,7 @@ static class Program
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
             .Build();
 
+        AntdUI.Localization.Provider = new AntdLanguageProvider();
         UiTheme.LoadFromConfig(bootstrapConfig);
         UiTheme.ApplyTheme();
         ImgbbHelper.Initialize(bootstrapConfig);
