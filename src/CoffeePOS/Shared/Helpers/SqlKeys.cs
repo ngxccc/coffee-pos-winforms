@@ -65,6 +65,12 @@ public static class SqlKeys
     public static class Topping
     {
         public const string Get = "Topping.get.sql";
+        public const string GetAll = "Topping.get_all.sql";
+        public const string GetDeleted = "Topping.get_deleted.sql";
+        public const string Insert = "Topping.insert.sql";
+        public const string Restore = "Topping.restore.sql";
+        public const string Update = "Topping.update.sql";
+        public const string SoftDelete = "Topping.soft_delete.sql";
     }
 
     public static class ProductSize
