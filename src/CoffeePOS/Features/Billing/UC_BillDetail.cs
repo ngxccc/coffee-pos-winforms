@@ -22,25 +22,34 @@ public partial class UC_BillDetail : UserControl
     {
         _tableItems.Columns =
         [
-            new AntdUI.Column(nameof(BillDetailDto.ProductName), DtoInfo.GetName<BillDetailDto>(nameof(BillDetailDto.ProductName))) {
-                Align = AntdUI.ColumnAlign.Left
-            },
-            new AntdUI.Column(nameof(BillDetailDto.Quantity), DtoInfo.GetName<BillDetailDto>(nameof(BillDetailDto.Quantity))) {
-                Align = AntdUI.ColumnAlign.Center,
-                DisplayFormat = "{0:N0}"
-            },
-            new AntdUI.Column(nameof(BillDetailDto.Price), DtoInfo.GetName<BillDetailDto>(nameof(BillDetailDto.Price))) {
-                Align = AntdUI.ColumnAlign.Right,
-                DisplayFormat = "{0:N0}"
-            },
-            new AntdUI.Column(nameof(BillDetailDto.LineTotal), DtoInfo.GetName<BillDetailDto>(nameof(BillDetailDto.LineTotal)))
+            DtoHelper.CreateCol<BillDetailDto>(nameof(BillDetailDto.ProductName), c =>
             {
-                Align = AntdUI.ColumnAlign.Right,
-                DisplayFormat = "{0:N0}"
-            },
-            new AntdUI.Column(nameof(BillDetailDto.Note), DtoInfo.GetName<BillDetailDto>(nameof(BillDetailDto.Note))){
-                Align = AntdUI.ColumnAlign.Left
-            },
+                c.Align = AntdUI.ColumnAlign.Left;
+                c.SortOrder = true;
+            }),
+            DtoHelper.CreateCol<BillDetailDto>(nameof(BillDetailDto.Quantity), c =>
+            {
+                c.Align = AntdUI.ColumnAlign.Center;
+                c.DisplayFormat = "{0:N0}";
+                c.SortOrder = true;
+            }),
+            DtoHelper.CreateCol<BillDetailDto>(nameof(BillDetailDto.Price), c =>
+            {
+                c.Align = AntdUI.ColumnAlign.Right;
+                c.DisplayFormat = "{0:N0}";
+                c.SortOrder = true;
+            }),
+            DtoHelper.CreateCol<BillDetailDto>(nameof(BillDetailDto.LineTotal), c =>
+            {
+                c.Align = AntdUI.ColumnAlign.Right;
+                c.DisplayFormat = "{0:N0}";
+                c.SortOrder = true;
+            }),
+            DtoHelper.CreateCol<BillDetailDto>(nameof(BillDetailDto.Note), c =>
+            {
+                c.Align = AntdUI.ColumnAlign.Left;
+                c.SortOrder = true;
+            }),
         ];
 
         _lblTitle.Text = $"CHI TIẾT HOÁ ĐƠN #{_bill.Id}";

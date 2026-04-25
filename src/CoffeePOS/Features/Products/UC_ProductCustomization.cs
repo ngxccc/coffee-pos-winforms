@@ -3,6 +3,7 @@ using CoffeePOS.Forms.Core;
 using CoffeePOS.Services.Contracts.Queries;
 using CoffeePOS.Shared.Dtos.Bill;
 using CoffeePOS.Shared.Dtos.Product;
+using CoffeePOS.Shared.Helpers;
 
 namespace CoffeePOS.Features.Products;
 
@@ -74,11 +75,17 @@ public partial class UC_ProductCustomization : UserControl, IValidatableComponen
         _tableToppings.Columns =
         [
             new ColumnCheck("IsSelected").SetFixed(),
-            new Column("Name", "Tên Topping", ColumnAlign.Left) { Width = "70%" },
-            new Column("Price", "Giá", ColumnAlign.Right) {
-                Width = "30%",
-                DisplayFormat = "{0:N0} đ"
-            }
+            DtoHelper.CreateCol<ToppingGridDto>(nameof(ToppingGridDto.Name), c =>
+            {
+                c.Align = ColumnAlign.Left;
+                c.SortOrder = true;
+            }),
+            DtoHelper.CreateCol<ToppingGridDto>(nameof(ToppingGridDto.Price), c =>
+            {
+                c.Align = ColumnAlign.Right;
+                c.DisplayFormat = "{0:N0} đ";
+                c.SortOrder = true;
+            })
         ];
         _tableToppings.CheckedChanged += (s, e) => CalculateTotal();
     }

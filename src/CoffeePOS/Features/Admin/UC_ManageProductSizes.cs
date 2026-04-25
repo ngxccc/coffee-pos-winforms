@@ -38,15 +38,16 @@ public partial class UC_ManageProductSizes : UserControl
     {
         _tableSizes.Columns =
         [
-            new Column(nameof(ProductSizeDto.SizeName), "Kích cỡ")
+            DtoHelper.CreateCol<ProductSizeDto>(nameof(ProductSizeDto.SizeName), c =>
             {
-                Align = ColumnAlign.Center,
-            },
-            new Column(nameof(ProductSizeDto.PriceAdjustment), "Điều chỉnh giá (VNĐ)")
-            {
-                Align = ColumnAlign.Right,
-                DisplayFormat = "N0"
-            },
+                c.Align = ColumnAlign.Center;
+                c.SortOrder = true;
+            }),
+            DtoHelper.CreateCol<ProductSizeDto>(nameof(ProductSizeDto.PriceAdjustment), c => {
+                c.Align = ColumnAlign.Right;
+                c.DisplayFormat = "N0";
+                c.SortOrder = true;
+            }),
             new Column("action", "Thao tác")
             {
                 Align = ColumnAlign.Center,

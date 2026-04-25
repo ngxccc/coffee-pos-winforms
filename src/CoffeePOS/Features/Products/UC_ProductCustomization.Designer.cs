@@ -71,7 +71,8 @@ public partial class UC_ProductCustomization
             Padding = new Padding(0),
             MultipleRows = true,
             Height = 300,
-            MaximumSize = new Size(500, 400)
+            MaximumSize = new Size(500, 400),
+            AutoSizeColumnsMode = ColumnsMode.Fill
         };
 
         var lblNoteTitle = CreateSectionLabel("GHI CHÚ");

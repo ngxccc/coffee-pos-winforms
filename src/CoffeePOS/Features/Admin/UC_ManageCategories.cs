@@ -31,11 +31,12 @@ public partial class UC_ManageCategories : UserControl
     {
         _tableCategories.Columns =
         [
-            new Column(nameof(CategoryGridDto.Id), DtoInfo.GetName<CategoryGridDto>(nameof(CategoryGridDto.Id)))
+            DtoHelper.CreateCol<CategoryGridDto>(nameof(CategoryGridDto.Id), c =>
             {
-                Align = ColumnAlign.Center
-            },
-            new Column(nameof(CategoryGridDto.Name), DtoInfo.GetName<CategoryGridDto>(nameof(CategoryGridDto.Name))),
+                c.Align = ColumnAlign.Center;
+                c.SortOrder = true;
+            }),
+            DtoHelper.CreateCol<CategoryGridDto>(nameof(CategoryGridDto.Name), c => c.SortOrder = true),
             new Column("action", "Thao tác")
             {
                 Align = ColumnAlign.Center,

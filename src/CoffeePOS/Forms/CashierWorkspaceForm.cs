@@ -468,6 +468,7 @@ public partial class CashierWorkspaceForm : Window
 
                 Invoke(() =>
                 {
+                    AntdUI.Message.close_id("shift_report_process");
                     _session.Logout();
                     DialogResult = DialogResult.Abort;
                     _isLoggingOut = true;
@@ -476,11 +477,14 @@ public partial class CashierWorkspaceForm : Window
             }
             catch (Exception ex)
             {
-                Invoke(() => AntdUI.Message.error(this, $"Lỗi chốt ca: {ex.Message}"));
-            }
-            finally
-            {
-                Invoke(() => AntdUI.Message.close_id("shift_report_process"));
+                if (IsHandleCreated && !IsDisposed && !Disposing)
+                {
+                    Invoke(() =>
+                    {
+                        AntdUI.Message.close_id("shift_report_process");
+                        AntdUI.Message.error(this, $"Lỗi chốt ca: {ex.Message}");
+                    });
+                }
             }
         });
     }

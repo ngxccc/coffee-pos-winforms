@@ -1,5 +1,4 @@
 using AntdUI;
-using CoffeePOS.Features.Billing.ViewModels;
 
 using CoffeePOS.Shared.Dtos.Bill;
 using CoffeePOS.Shared.Helpers;
@@ -21,32 +20,37 @@ public partial class UC_BillHistory : UserControl
     {
         _tableBills.Columns =
         [
-            new Column(nameof(BillHistoryViewModel.Id), DtoInfo.GetName<BillHistoryDto>(nameof(BillHistoryDto.Id)))
+            DtoHelper.CreateCol<BillHistoryDto>(nameof(BillHistoryDto.Id), c =>
             {
-                Width = "100",
-                Align = ColumnAlign.Center
-            },
-            new Column(nameof(BillHistoryViewModel.TotalItems), DtoInfo.GetName<BillHistoryDto>(nameof(BillHistoryDto.TotalItems)))
+                c.Align = ColumnAlign.Center;
+                c.SortOrder = true;
+            }),
+            DtoHelper.CreateCol<BillHistoryDto>(nameof(BillHistoryDto.TotalItems), c =>
             {
-                Width = "120",
-                Align = ColumnAlign.Center
-            },
-            new Column(nameof(BillHistoryViewModel.CreatedAt), DtoInfo.GetName<BillHistoryDto>(nameof(BillHistoryDto.CreatedAt)))
+                c.Align = ColumnAlign.Center;
+                c.SortOrder = true;
+            }),
+            DtoHelper.CreateCol<BillHistoryDto>(nameof(BillHistoryDto.CreatedAt), c =>
             {
-                Width = "120",
-                DisplayFormat = "HH:mm:ss",
-                Align = ColumnAlign.Center
-            },
-            new Column(nameof(BillHistoryViewModel.TotalAmount), DtoInfo.GetName<BillHistoryDto>(nameof(BillHistoryDto.TotalAmount)))
+                c.DisplayFormat = "HH:mm:ss";
+                c.Align = ColumnAlign.Center;
+                c.SortOrder = true;
+            }),
+            DtoHelper.CreateCol<BillHistoryDto>(nameof(BillHistoryDto.TotalAmount), c =>
             {
-                Width = "150",
-                Align = ColumnAlign.Right,
-                DisplayFormat = "N0"
-            },
-            new Column("Actions", "Thao tác")
+                c.Align = ColumnAlign.Right;
+                c.DisplayFormat = "N0";
+                c.SortOrder = true;
+            }),
+            new Column("action", "Thao tác")
             {
-                Width = "180",
-                Align = ColumnAlign.Center
+                Align = ColumnAlign.Center,
+                Render = (value, record, rowIndex) => {
+                    return new CellButton[] {
+                        new("view", "Xem", TTypeMini.Primary),
+                        new("reprint", "In lại", TTypeMini.Default)
+                    };
+                }
             }
         ];
 
@@ -55,31 +59,20 @@ public partial class UC_BillHistory : UserControl
 
     public void BindData(List<BillHistoryDto> bills)
     {
-        // PERF: Mapping O(N). Nếu N > 10,000 cần cân nhắc Virtualization thay vì init toàn bộ mảng CellButton.
-        var viewModels = bills.Select(b => new BillHistoryViewModel(b)).ToList();
+        _tableBills.DataSource = bills;
 
-        _tableBills.DataSource = viewModels;
-
-        // HACK: Tận dụng Dictionary để render Summary row ở bottom grid theo key của Column
         _tableBills.Summary = new Dictionary<string, object>
         {
-            { nameof(BillHistoryViewModel.Id), $"Tổng: {bills.Count} đơn" },
-            { nameof(BillHistoryViewModel.TotalAmount), bills.Sum(x => x.TotalAmount) }
+            { nameof(BillHistoryDto.Id), $"Tổng: {bills.Count} đơn" },
+            { nameof(BillHistoryDto.TotalAmount), bills.Sum(x => x.TotalAmount) }
         };
     }
 
     private void TableBills_CellButtonClick(object? sender, TableButtonEventArgs e)
     {
-        if (e.Record is not BillHistoryViewModel vm) return;
+        if (e.Record is not BillHistoryDto selectedBill) return;
 
-        switch (e.Btn.Id)
-        {
-            case "btnReprint":
-                OnReprintClicked?.Invoke(this, vm.OriginalDto);
-                break;
-            case "btnView":
-                OnDetailsRequested?.Invoke(this, vm.OriginalDto);
-                break;
-        }
+        if (e.Btn.Id == "view") OnDetailsRequested?.Invoke(this, selectedBill);
+        if (e.Btn.Id == "reprint") OnReprintClicked?.Invoke(this, selectedBill);
     }
 }

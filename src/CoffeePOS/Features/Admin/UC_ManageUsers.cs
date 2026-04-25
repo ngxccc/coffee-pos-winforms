@@ -39,25 +39,28 @@ public partial class UC_ManageUsers : UserControl
     {
         _tableUsers.Columns =
         [
-            new Column(nameof(UserGridDto.Id), DtoInfo.GetName<UserGridDto>(nameof(UserGridDto.Id)))
+            DtoHelper.CreateCol<UserGridDto>(nameof(UserGridDto.Id), c =>
             {
-                Align = ColumnAlign.Center,
-            },
-            new Column(nameof(UserGridDto.Username), DtoInfo.GetName<UserGridDto>(nameof(UserGridDto.Username))),
-            new Column(nameof(UserGridDto.FullName), DtoInfo.GetName<UserGridDto>(nameof(UserGridDto.FullName))),
-            new Column(nameof(UserGridDto.Role), DtoInfo.GetName<UserGridDto>(nameof(UserGridDto.Role)))
+                c.Align = ColumnAlign.Center;
+                c.SortOrder = true;
+            }),
+            DtoHelper.CreateCol<UserGridDto>(nameof(UserGridDto.Username), c => c.SortOrder = true),
+            DtoHelper.CreateCol<UserGridDto>(nameof(UserGridDto.FullName), c => c.SortOrder = true),
+            DtoHelper.CreateCol<UserGridDto>(nameof(UserGridDto.Role), c =>
             {
-                Align = ColumnAlign.Center,
-            },
-            new Column(nameof(UserGridDto.Status), DtoInfo.GetName<UserGridDto>(nameof(UserGridDto.Status)))
+                c.Align = ColumnAlign.Center;
+                c.SortOrder = true;
+            }),
+            DtoHelper.CreateCol<UserGridDto>(nameof(UserGridDto.Status), c =>
             {
-                Align = ColumnAlign.Center,
-                Render = (value, record, rowIndex) =>
+                c.Align = ColumnAlign.Center;
+                c.SortOrder = true;
+                c.Render = (value, record, rowIndex) =>
                 {
                     var u = (UserGridDto)record;
                     return new CellBadge(u.IsActive ? TState.Success : TState.Error, u.IsActive ? "Hoạt động" : "Đã khoá");
-                }
-            },
+                };
+            }),
             new Column("action", "Thao tác")
             {
                 Align = ColumnAlign.Center,
@@ -66,10 +69,8 @@ public partial class UC_ManageUsers : UserControl
                 {
                     var u = (UserGridDto)record;
                     return new CellButton[] {
-                        new("edit", "Cập nhật") { Type = TTypeMini.Primary },
-                        new("toggle", u.IsActive ? "Khóa" : "Mở khóa") {
-                            Type = u.IsActive ? TTypeMini.Error : TTypeMini.Success
-                        }
+                        new("edit", "Cập nhật", TTypeMini.Primary),
+                        new("toggle", u.IsActive ? "Khóa" : "Mở khóa", u.IsActive ? TTypeMini.Error : TTypeMini.Success)
                     };
                 }
             }

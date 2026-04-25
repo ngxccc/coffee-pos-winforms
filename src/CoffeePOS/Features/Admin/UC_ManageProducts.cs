@@ -42,17 +42,19 @@ public partial class UC_ManageProducts : UserControl
     {
         _tableProducts.Columns =
         [
-            new Column(nameof(ProductGridDto.Id), DtoInfo.GetName<ProductGridDto>(nameof(ProductGridDto.Id)))
+            DtoHelper.CreateCol<ProductGridDto>(nameof(ProductGridDto.Id), c =>
             {
-                Align = ColumnAlign.Center
-            },
-            new Column(nameof(ProductGridDto.Name), DtoInfo.GetName<ProductGridDto>(nameof(ProductGridDto.Name))),
-            new Column(nameof(ProductGridDto.CategoryName), DtoInfo.GetName<ProductGridDto>(nameof(ProductGridDto.CategoryName))),
-            new Column(nameof(ProductGridDto.Price), DtoInfo.GetName<ProductGridDto>(nameof(ProductGridDto.Price)))
+                c.Align = ColumnAlign.Center;
+                c.SortOrder = true;
+            }),
+            DtoHelper.CreateCol<ProductGridDto>(nameof(ProductGridDto.Name), c => c.SortOrder = true),
+            DtoHelper.CreateCol<ProductGridDto>(nameof(ProductGridDto.CategoryName), c => c.SortOrder = true),
+            DtoHelper.CreateCol<ProductGridDto>(nameof(ProductGridDto.Price), c =>
             {
-                DisplayFormat = "N0",
-                Align = ColumnAlign.Right
-            },
+                c.DisplayFormat = "N0";
+                c.Align = ColumnAlign.Right;
+                c.SortOrder = true;
+            }),
             new Column("action", "Thao tác")
             {
                 Align = ColumnAlign.Center,

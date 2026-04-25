@@ -44,31 +44,31 @@ public partial class UC_ManageBills : UserControl
     {
         _tableBills.Columns =
         [
-            new Column(nameof(BillReportDto.Id), "Mã HĐ")
+            DtoHelper.CreateCol<BillReportDto>(nameof(BillReportDto.Id), c =>
             {
-                Align = ColumnAlign.Center,
-                Width = "80"
-            },
-            new Column(nameof(BillReportDto.BuzzerNumber), "Thẻ rung")
+                c.Align = ColumnAlign.Center;
+                c.SortOrder = true;
+            }),
+            DtoHelper.CreateCol<BillReportDto>(nameof(BillReportDto.BuzzerNumber), c =>
             {
-                Align = ColumnAlign.Center,
-                Width = "90"
-            },
-            new Column(nameof(BillReportDto.TotalAmount), "Tổng tiền")
+                c.Align = ColumnAlign.Center;
+                c.SortOrder = true;
+            }),
+            DtoHelper.CreateCol<BillReportDto>(nameof(BillReportDto.TotalAmount), c =>
             {
-                Align = ColumnAlign.Right,
-                DisplayFormat = "N0",
-                Width = "120"
-            },
-            new Column(nameof(BillReportDto.CreatedAt), "Ngày tạo")
+                c.Align = ColumnAlign.Right;
+                c.DisplayFormat = "N0";
+                c.SortOrder = true;
+            }),
+            DtoHelper.CreateCol<BillReportDto>(nameof(BillReportDto.CreatedAt), c =>
             {
-                Align = ColumnAlign.Center
-            },
-            new Column(nameof(BillReportDto.CreatedByName), "Thu ngân"),
+                c.Align = ColumnAlign.Center;
+                c.SortOrder = true;
+            }),
+            DtoHelper.CreateCol<BillReportDto>(nameof(BillReportDto.CreatedByName), c => c.SortOrder = true),
             new Column("Status", "Trạng thái")
             {
                 Align = ColumnAlign.Center,
-                Width = "100",
                 Render = (value, record, rowIndex) =>
                 {
                     var isCanceled = ((BillReportDto)record).IsCanceled;
