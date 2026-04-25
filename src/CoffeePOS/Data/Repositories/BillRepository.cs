@@ -73,11 +73,11 @@ public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
         {
             list.Add(new BillDetailDto
             {
-                ProductId = reader.GetRequiredInt("product_id"),
-                ProductName = reader.GetRequiredString("product_name"),
-                Quantity = reader.GetRequiredInt("quantity"),
-                Price = reader.GetRequiredDecimal("base_price"),
-                Note = reader.GetNullableString("note") ?? string.Empty
+                ProductId = reader.GetRequired<int>("product_id"),
+                ProductName = reader.GetRequired<string>("product_name"),
+                Quantity = reader.GetRequired<int>("quantity"),
+                Price = reader.GetRequired<decimal>("base_price"),
+                Note = reader.GetNullable<string>("note") ?? string.Empty
             });
         }
 
@@ -113,11 +113,11 @@ public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
         while (await reader.ReadAsync())
         {
             list.Add(new BillHistoryDto(
-                reader.GetRequiredInt("id"),
-                reader.GetRequiredInt("buzzer_number"),
-                reader.GetRequiredInt("total_items"),
-                reader.GetRequiredDecimal("total_amount"),
-                reader.GetDateOnlyAsDateTime("created_at")));
+                reader.GetRequired<int>("id"),
+                reader.GetRequired<int>("buzzer_number"),
+                reader.GetRequired<int>("total_items"),
+                reader.GetRequired<decimal>("total_amount"),
+                reader.GetRequired<DateTime>("created_at")));
         }
         return list;
     }
@@ -135,13 +135,13 @@ public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
         while (await reader.ReadAsync())
         {
             list.Add(new BillReportDto(
-                reader.GetRequiredInt("id"),
-                reader.GetRequiredInt("buzzer_number"),
-                reader.GetRequiredDecimal("total_amount"),
-                reader.GetDateOnlyAsDateTime("created_at"),
-                reader.GetRequiredString("created_by_name"),
-                reader.GetRequiredBool("is_deleted"),
-                reader.GetNullableDateTime("deleted_at")));
+                reader.GetRequired<int>("id"),
+                reader.GetRequired<int>("buzzer_number"),
+                reader.GetRequired<decimal>("total_amount"),
+                reader.GetRequired<DateTime>("created_at"),
+                reader.GetRequired<string>("created_by_name"),
+                reader.GetRequired<bool>("is_deleted"),
+                reader.GetNullable<DateTime>("deleted_at")));
         }
 
         return list;

@@ -28,7 +28,7 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
 
         while (await reader.ReadAsync())
         {
-            int id = reader.GetRequiredInt("id");
+            int id = reader.GetRequired<int>("id");
             if (!dict.TryGetValue(id, out var product))
             {
                 product = MapProductFromReader(reader);
@@ -104,7 +104,7 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
 
         while (await reader.ReadAsync())
         {
-            int id = reader.GetRequiredInt("id");
+            int id = reader.GetRequired<int>("id");
             if (!dict.TryGetValue(id, out var product))
             {
                 product = MapProductFromReader(reader);
@@ -146,11 +146,11 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
     private static ProductDetailDto MapProductFromReader(DbDataReader reader)
     {
         return new ProductDetailDto(
-            reader.GetRequiredInt("id"),
-            reader.GetRequiredString("name"),
-            reader.GetRequiredDecimal("price"),
-            reader["category_id"] is DBNull ? 0 : reader.GetRequiredInt("category_id"),
-            reader["image_url"] is DBNull ? string.Empty : reader.GetRequiredString("image_url"),
+            reader.GetRequired<int>("id"),
+            reader.GetRequired<string>("name"),
+            reader.GetRequired<decimal>("price"),
+            reader["category_id"] is DBNull ? 0 : reader.GetRequired<int>("category_id"),
+            reader["image_url"] is DBNull ? string.Empty : reader.GetRequired<string>("image_url"),
             []
         );
     }
@@ -164,7 +164,7 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
         if (!HasColumn(reader, "size_name") || reader["size_name"] is DBNull)
             return;
 
-        string sizeName = reader.GetRequiredString("size_name");
+        string sizeName = reader.GetRequired<string>("size_name");
 
         // Tránh lặp size nếu câu truy vấn SQL bị nổ số lượng dòng
         if (!product.Sizes.Any(s => s.SizeName == sizeName))
@@ -173,7 +173,7 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
             (
                 product.Id,
                 sizeName,
-                reader.GetRequiredDecimal("price_adjustment")
+                reader.GetRequired<decimal>("price_adjustment")
             ));
         }
     }

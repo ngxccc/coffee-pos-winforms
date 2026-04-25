@@ -27,11 +27,9 @@ public class ProductSizeRepository(NpgsqlDataSource dataSource) : IProductSizeRe
         while (await reader.ReadAsync())
         {
             result.Add(new ProductSizeDto(
-                reader.GetRequiredInt("id"),
-                // reader.GetRequiredInt("product_id"),
-                // reader.GetRequiredString("product_name"),
-                reader.GetRequiredString("size_name"),
-                reader.GetRequiredDecimal("price_adjustment")
+                reader.GetRequired<int>("id"),
+                reader.GetRequired<string>("size_name"),
+                reader.GetRequired<decimal>("price_adjustment")
             ));
         }
 

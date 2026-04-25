@@ -24,23 +24,15 @@ public class UserRepository(NpgsqlDataSource dataSource) : IUserRepository
         using var cmd = new NpgsqlCommand(SqlGetAll, conn);
         using var reader = await cmd.ExecuteReaderAsync();
 
-        // PERF: O(N) Iteration.
-        // WHY: Bypassing string allocation by extracting the natively mapped Enum directly.
-        int idOrdinal = reader.GetOrdinal("id");
-        int usernameOrdinal = reader.GetOrdinal("username");
-        int fullNameOrdinal = reader.GetOrdinal("full_name");
-        int roleOrdinal = reader.GetOrdinal("role");
-        int isActiveOrdinal = reader.GetOrdinal("is_active");
-
         while (await reader.ReadAsync())
         {
-            var role = reader.GetFieldValue<UserRole>(roleOrdinal);
-            var isActive = reader.GetBoolean(isActiveOrdinal);
+            var role = reader.GetRequired<UserRole>("role");
+            var isActive = reader.GetRequired<bool>("is_active");
 
             result.Add(new UserGridDto(
-                reader.GetInt32(idOrdinal),
-                reader.GetString(usernameOrdinal),
-                reader.IsDBNull(fullNameOrdinal) ? "---" : reader.GetString(fullNameOrdinal),
+                reader.GetRequired<int>("id"),
+                reader.GetRequired<string>("username"),
+                reader.GetNullable<string>("full_name") ?? "---",
                 role,
                 role.ToDisplayName(),
                 isActive,
@@ -59,8 +51,8 @@ public class UserRepository(NpgsqlDataSource dataSource) : IUserRepository
         using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
         if (await reader.ReadAsync(cancellationToken))
         {
-            string dbHash = reader.GetFieldValue<string>(reader.GetOrdinal("password_hash"));
-            bool isActive = reader.GetBoolean(reader.GetOrdinal("is_active"));
+            string dbHash = reader.GetRequired<string>("password_hash");
+            bool isActive = reader.GetRequired<bool>("is_active");
 
             // HACK: Synchronous BCrypt verify inside Async method.
             // It takes ~300ms. If heavily concurrent, consider Task.Run(() => BCrypt.Verify(...))
@@ -70,10 +62,10 @@ public class UserRepository(NpgsqlDataSource dataSource) : IUserRepository
                     throw new InvalidOperationException("Tài khoản của bạn đã bị khóa!\nMọi thắc mắc xin liên hệ quản trị viên.");
 
                 return new AuthUserDto(
-                    reader.GetInt32(reader.GetOrdinal("id")),
-                    reader.GetString(reader.GetOrdinal("username")),
-                    reader.GetString(reader.GetOrdinal("full_name")),
-                    reader.GetFieldValue<UserRole>(reader.GetOrdinal("role")));
+                    reader.GetRequired<int>("id"),
+                    reader.GetRequired<string>("username"),
+                    reader.GetRequired<string>("full_name"),
+                    reader.GetRequired<UserRole>("role"));
             }
         }
 

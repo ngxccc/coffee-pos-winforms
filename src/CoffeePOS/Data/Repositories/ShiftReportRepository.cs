@@ -23,8 +23,8 @@ public class ShiftReportRepository(NpgsqlDataSource dataSource) : IShiftReportRe
         if (await reader.ReadAsync())
         {
             return (
-                reader.GetInt32(reader.GetOrdinal("total_bills")),
-                reader.GetDecimal(reader.GetOrdinal("expected_cash"))
+                reader.GetRequired<int>("total_bills"),
+                reader.GetRequired<decimal>("expected_cash")
             );
         }
         return (0, 0);

@@ -20,9 +20,9 @@ public class DashboardRepository(NpgsqlDataSource dataSource) : IDashboardReposi
 
         if (await reader.ReadAsync())
         {
-            decimal revenue = reader.GetRequiredDecimal("revenue");
-            int count = reader.GetRequiredInt("order_count");
-            decimal avgOrder = reader.GetRequiredDecimal("avg_order");
+            decimal revenue = reader.GetRequired<decimal>("revenue");
+            int count = reader.GetRequired<int>("order_count");
+            decimal avgOrder = reader.GetRequired<decimal>("avg_order");
 
             return new TodaySummaryDto(revenue, count, avgOrder);
         }
@@ -44,9 +44,9 @@ public class DashboardRepository(NpgsqlDataSource dataSource) : IDashboardReposi
         while (await reader.ReadAsync())
         {
             list.Add(new DashboardChartDataDto(
-                reader.GetDateOnlyAsDateTime("report_date"),
-                reader.GetRequiredInt("total_bills"),
-                reader.GetRequiredDecimal("daily_revenue")
+                reader.GetRequired<DateTime>("report_date"),
+                reader.GetRequired<int>("total_bills"),
+                reader.GetRequired<decimal>("daily_revenue")
             ));
         }
 
@@ -67,8 +67,8 @@ public class DashboardRepository(NpgsqlDataSource dataSource) : IDashboardReposi
         while (await reader.ReadAsync())
         {
             list.Add(new TopProductDto(
-                reader.GetRequiredString("product_name"),
-                reader.GetRequiredInt("total_sold")
+                reader.GetRequired<string>("product_name"),
+                reader.GetRequired<int>("total_sold")
             ));
         }
         return list;

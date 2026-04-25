@@ -131,7 +131,7 @@ public class CategoryRepository(NpgsqlDataSource dataSource) : ICategoryReposito
     private static CategoryDetailDto MapCategoryFromReader(DbDataReader reader)
     {
         return new CategoryDetailDto(
-            reader.GetRequiredInt("id"),
-            reader.GetRequiredString("name"));
+            reader.GetRequired<int>("id"),
+            reader.GetRequired<string>("name"));
     }
 }
