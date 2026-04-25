@@ -121,7 +121,7 @@ public partial class LoginForm : Window
         }
         catch (InvalidOperationException ex)
         {
-            MessageBoxHelper.Error($"Tài khoản của bạn đã bị khóa!\nMọi thắc mắc xin liên hệ quản trị viên.\n{ex.Message}", owner: this, type: FeedbackType.Message);
+            MessageBoxHelper.Error($"{ex.Message}", owner: this, type: FeedbackType.Message);
         }
         catch (Exception ex)
         {
