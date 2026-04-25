@@ -38,7 +38,7 @@ public class CategoryRepository(NpgsqlDataSource dataSource) : ICategoryReposito
         using var conn = await dataSource.OpenConnectionAsync();
 
         using var cmd = new NpgsqlCommand(SqlGetById, conn);
-        cmd.Parameters.AddWithValue("id", id);
+        cmd.Parameters.Add(new NpgsqlParameter<int>("id", id));
 
         using var reader = await cmd.ExecuteReaderAsync();
         return await reader.ReadAsync() ? MapCategoryFromReader(reader) : null;
@@ -49,7 +49,7 @@ public class CategoryRepository(NpgsqlDataSource dataSource) : ICategoryReposito
         using var conn = await dataSource.OpenConnectionAsync();
 
         using var cmd = new NpgsqlCommand(SqlInsert, conn);
-        cmd.Parameters.AddWithValue("name", command.Name);
+        cmd.Parameters.Add(new NpgsqlParameter<string>("name", command.Name));
 
         await cmd.ExecuteNonQueryAsync();
     }
@@ -59,8 +59,8 @@ public class CategoryRepository(NpgsqlDataSource dataSource) : ICategoryReposito
         using var conn = await dataSource.OpenConnectionAsync();
 
         using var cmd = new NpgsqlCommand(SqlUpdate, conn);
-        cmd.Parameters.AddWithValue("id", command.Id);
-        cmd.Parameters.AddWithValue("name", command.Name);
+        cmd.Parameters.Add(new NpgsqlParameter<int>("id", command.Id));
+        cmd.Parameters.Add(new NpgsqlParameter<string>("name", command.Name));
 
         await cmd.ExecuteNonQueryAsync();
     }
@@ -73,13 +73,13 @@ public class CategoryRepository(NpgsqlDataSource dataSource) : ICategoryReposito
         try
         {
             using var cmdCat = new NpgsqlCommand(SqlSoftDelete, conn, tx);
-            cmdCat.Parameters.AddWithValue("id", id);
+            cmdCat.Parameters.Add(new NpgsqlParameter<int>("id", id));
 
             int rowsAffected = await cmdCat.ExecuteNonQueryAsync();
             if (rowsAffected == 0) return false;
 
             using var cmdProd = new NpgsqlCommand(SqlSoftDeleteProductsByCategory, conn, tx);
-            cmdProd.Parameters.AddWithValue("id", id);
+            cmdProd.Parameters.Add(new NpgsqlParameter<int>("id", id));
             await cmdProd.ExecuteNonQueryAsync();
 
             await tx.CommitAsync();
@@ -112,7 +112,7 @@ public class CategoryRepository(NpgsqlDataSource dataSource) : ICategoryReposito
         using var conn = await dataSource.OpenConnectionAsync();
 
         using var cmd = new NpgsqlCommand(SqlGetDeletedById, conn);
-        cmd.Parameters.AddWithValue("id", id);
+        cmd.Parameters.Add(new NpgsqlParameter<int>("id", id));
 
         using var reader = await cmd.ExecuteReaderAsync();
         return await reader.ReadAsync() ? MapCategoryFromReader(reader) : null;
@@ -123,7 +123,7 @@ public class CategoryRepository(NpgsqlDataSource dataSource) : ICategoryReposito
         using var conn = await dataSource.OpenConnectionAsync();
 
         using var cmd = new NpgsqlCommand(SqlRestore, conn);
-        cmd.Parameters.AddWithValue("id", id);
+        cmd.Parameters.Add(new NpgsqlParameter<int>("id", id));
 
         return await cmd.ExecuteNonQueryAsync() > 0;
     }

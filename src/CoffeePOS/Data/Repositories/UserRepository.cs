@@ -54,7 +54,7 @@ public class UserRepository(NpgsqlDataSource dataSource) : IUserRepository
     {
         using var conn = await dataSource.OpenConnectionAsync(cancellationToken);
         using var cmd = new NpgsqlCommand(SqlAuthenticate, conn);
-        cmd.Parameters.AddWithValue("u", username);
+        cmd.Parameters.Add(new NpgsqlParameter<string>("u", username));
 
         using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
         if (await reader.ReadAsync(cancellationToken))
@@ -109,7 +109,7 @@ public class UserRepository(NpgsqlDataSource dataSource) : IUserRepository
 
         cmd.Parameters.Add(new NpgsqlParameter<int>("id", userId));
         cmd.Parameters.Add(new NpgsqlParameter<string>("username", username));
-        cmd.Parameters.Add(new NpgsqlParameter<string>("fullName", fullName));
+        cmd.Parameters.Add(new NpgsqlParameter<string>("full_name", fullName));
         cmd.Parameters.Add(new NpgsqlParameter<UserRole>("role", role));
 
         try
@@ -128,7 +128,7 @@ public class UserRepository(NpgsqlDataSource dataSource) : IUserRepository
         using var cmd = new NpgsqlCommand(SqlSetActiveStatus, conn);
 
         cmd.Parameters.Add(new NpgsqlParameter<int>("id", targetUserId));
-        cmd.Parameters.Add(new NpgsqlParameter<bool>("isActive", isActive));
+        cmd.Parameters.Add(new NpgsqlParameter<bool>("is_active", isActive));
 
         await cmd.ExecuteNonQueryAsync();
     }

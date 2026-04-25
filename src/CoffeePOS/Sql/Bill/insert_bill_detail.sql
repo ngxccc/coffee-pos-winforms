@@ -6,4 +6,4 @@ INSERT INTO bill_details (
     base_price,
     note
   )
-VALUES (@b, @p, @n, @q, @basePrice, @note);
+VALUES (@b, @p, @n, @q, @base_price, @note);

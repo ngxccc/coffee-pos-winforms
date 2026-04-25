@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace CoffeePOS.Forms;
 
-public partial class AdminDashboardForm : AntdUI.Window
+public partial class AdminDashboardForm : Window
 {
     private readonly IUserSession _session;
     private readonly IServiceProvider _serviceProvider;
@@ -68,6 +68,7 @@ public partial class AdminDashboardForm : AntdUI.Window
 
             var config = new Modal.Config(this, "THÔNG TIN CÁ NHÂN", profilesControl)
             {
+                Font = UiTheme.BodyFont,
                 OkText = "Cập nhật",
                 CancelText = "Huỷ",
                 BtnHeight = 45,

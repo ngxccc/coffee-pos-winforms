@@ -1,9 +1,12 @@
 using AntdUI;
+using CoffeePOS.Core;
 using CoffeePOS.Features.Admin.Controls;
 using CoffeePOS.Services.Contracts.Commands;
 using CoffeePOS.Services.Contracts.Queries;
+using CoffeePOS.Shared.Constants;
 using CoffeePOS.Shared.Dtos.Product;
 using CoffeePOS.Shared.Helpers;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace CoffeePOS.Features.Admin;
 
@@ -12,21 +15,27 @@ public partial class UC_ManageProducts : UserControl
     private readonly IProductService _productService;
     private readonly IProductQueryService _productQueryService;
     private readonly ICategoryQueryService _categoryQueryService;
+    private readonly IUiFactory _uiFactory;
 
     private List<ProductGridDto> _allProducts = [];
     private List<ProductGridDto> _filteredProducts = [];
 
-    public UC_ManageProducts(IProductService productService, IProductQueryService productQueryService, ICategoryQueryService categoryQueryService)
+    public UC_ManageProducts(
+        IProductService productService,
+        IProductQueryService productQueryService,
+        ICategoryQueryService categoryQueryService,
+        IUiFactory uiFactory)
     {
         _productService = productService;
         _productQueryService = productQueryService;
         _categoryQueryService = categoryQueryService;
+        _uiFactory = uiFactory;
 
         InitializeComponent();
         SetupTable();
         SetupEvents();
 
-        _ = LoadDataAsync();
+        Load += async (s, e) => await LoadDataAsync();
     }
 
     private void SetupTable()
@@ -56,6 +65,9 @@ public partial class UC_ManageProducts : UserControl
                         };
 
                     return new CellButton[] {
+                        new("sizes", "Size") {
+                            Type = TTypeMini.Default,
+                        },
                         new("edit", "Sửa") {
                             Type = TTypeMini.Primary,
                         },
@@ -110,18 +122,10 @@ public partial class UC_ManageProducts : UserControl
     {
         if (e.Record is not ProductGridDto selectedItem) return;
 
-        if (e.Btn.Id == "edit")
-        {
-            HandleEditProduct(selectedItem);
-        }
-        if (e.Btn.Id == "delete")
-        {
-            HandleDeleteProduct(selectedItem);
-        }
-        if (e.Btn.Id == "restore")
-        {
-            HandleRestoreProduct(selectedItem);
-        }
+        if (e.Btn.Id == "sizes") HandleManageSizes(selectedItem);
+        if (e.Btn.Id == "edit") HandleEditProduct(selectedItem);
+        if (e.Btn.Id == "delete") HandleDeleteProduct(selectedItem);
+        if (e.Btn.Id == "restore") HandleRestoreProduct(selectedItem);
     }
 
     private async void HandleTrashModeChanged(object? sender, BoolEventArgs e)
@@ -135,8 +139,7 @@ public partial class UC_ManageProducts : UserControl
     {
         try
         {
-            var categories = await _categoryQueryService.GetSelectableCategoriesAsync();
-            var productEditor = new UC_ProductEditor(categories);
+            var productEditor = _uiFactory.CreateControl<UC_ProductEditor>(0);
 
             Form form = FindForm() ?? throw new InvalidOperationException("Lỗi UI: UserControl chưa được gắn vào Form chính.");
 
@@ -150,7 +153,7 @@ public partial class UC_ManageProducts : UserControl
                     if (!productEditor.ValidateInput()) return false;
 
                     ExecuteSaveProductAsync(productEditor.GetPayload(), isUpdate: false, productId: 0);
-                    return false;
+                    return true;
                 }
             };
             Modal.open(config);
@@ -161,23 +164,15 @@ public partial class UC_ManageProducts : UserControl
         }
     }
 
-    private async void HandleEditProduct(ProductGridDto selectedItem)
+    private void HandleEditProduct(ProductGridDto selectedItem)
     {
         try
         {
-            var product = await _productQueryService.GetProductByIdAsync(selectedItem.Id);
-            if (product == null)
-            {
-                MessageBoxHelper.Error("Không tìm thấy sản phẩm!", type: FeedbackType.Message);
-                return;
-            }
+            var uiFields = _uiFactory.CreateControl<UC_ProductEditor>(selectedItem.Id);
 
-            var categories = await _categoryQueryService.GetSelectableCategoriesAsync();
-            var uiFields = new UC_ProductEditor(categories, product);
+            Form form = FindForm() ?? throw new InvalidOperationException("Lỗi UI.");
 
-            Form form = FindForm() ?? throw new InvalidOperationException("Lỗi UI: UserControl chưa được gắn vào Form chính.");
-
-            var config = new Modal.Config(form, $"CẬP NHẬT: {product.Name}", uiFields)
+            var config = new Modal.Config(form, $"CẬP NHẬT: {selectedItem.Name}", uiFields)
             {
                 Font = UiTheme.BodyFont,
                 OkText = "Cập nhật",
@@ -186,7 +181,7 @@ public partial class UC_ManageProducts : UserControl
                 {
                     if (!uiFields.ValidateInput()) return false;
 
-                    ExecuteSaveProductAsync(uiFields.GetPayload(), isUpdate: true, productId: product.Id, product.ImageUrl);
+                    ExecuteSaveProductAsync(uiFields.GetPayload(), isUpdate: true, productId: selectedItem.Id, uiFields.OriginalImageUrl);
                     return true;
                 }
             };
@@ -228,6 +223,26 @@ public partial class UC_ManageProducts : UserControl
         {
             MessageBoxHelper.Warning(ex.Message, "Cảnh báo", this);
         }
+    }
+
+    private void HandleManageSizes(ProductGridDto selectedItem)
+    {
+        var ucSizes = _uiFactory.CreateControl<UC_ManageProductSizes>(
+            selectedItem.Id,
+            selectedItem.Name
+        );
+
+        Form form = FindForm() ?? throw new InvalidOperationException("Lỗi UI.");
+
+        var config = new Modal.Config(form, $"CẤU HÌNH SIZE: {selectedItem.Name.ToUpper()}", ucSizes)
+        {
+            Font = UiTheme.BodyFont,
+            OkText = "Đóng",
+            CancelText = null,
+            OnOk = (cfg) => { return true; }
+        };
+
+        Modal.open(config);
     }
 
     private void ExecuteSaveProductAsync(ProductPayload payload, bool isUpdate, int productId, string? oldImageUrl = null)

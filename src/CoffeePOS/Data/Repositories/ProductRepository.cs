@@ -44,7 +44,7 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
         using var conn = await dataSource.OpenConnectionAsync();
 
         using var cmd = new NpgsqlCommand(SqlGetById, conn);
-        cmd.Parameters.AddWithValue("id", productId);
+        cmd.Parameters.Add(new NpgsqlParameter<int>("id", productId));
 
         using var reader = await cmd.ExecuteReaderAsync();
         ProductDetailDto? product = null;
@@ -62,10 +62,10 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
         using var conn = await dataSource.OpenConnectionAsync();
 
         using var cmd = new NpgsqlCommand(SqlInsert, conn);
-        cmd.Parameters.AddWithValue("name", command.Name);
-        cmd.Parameters.AddWithValue("price", command.Price);
-        cmd.Parameters.AddWithValue("categoryId", command.CategoryId);
-        cmd.Parameters.AddWithValue("imageUrl", command.ImageUrl ?? string.Empty);
+        cmd.Parameters.Add(new NpgsqlParameter<string>("name", command.Name));
+        cmd.Parameters.Add(new NpgsqlParameter<decimal>("price", command.Price));
+        cmd.Parameters.Add(new NpgsqlParameter<int>("category_id", command.CategoryId));
+        cmd.Parameters.Add(new NpgsqlParameter<string>("image_url", command.ImageUrl ?? string.Empty));
 
         await cmd.ExecuteNonQueryAsync();
     }
@@ -75,11 +75,11 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
         using var conn = await dataSource.OpenConnectionAsync();
 
         using var cmd = new NpgsqlCommand(SqlUpdate, conn);
-        cmd.Parameters.AddWithValue("id", command.Id);
-        cmd.Parameters.AddWithValue("name", command.Name);
-        cmd.Parameters.AddWithValue("price", command.Price);
-        cmd.Parameters.AddWithValue("categoryId", command.CategoryId);
-        cmd.Parameters.AddWithValue("imageUrl", command.ImageUrl ?? string.Empty);
+        cmd.Parameters.Add(new NpgsqlParameter<int>("id", command.Id));
+        cmd.Parameters.Add(new NpgsqlParameter<string>("name", command.Name));
+        cmd.Parameters.Add(new NpgsqlParameter<decimal>("price", command.Price));
+        cmd.Parameters.Add(new NpgsqlParameter<int>("category_id", command.CategoryId));
+        cmd.Parameters.Add(new NpgsqlParameter<string>("image_url", command.ImageUrl ?? string.Empty));
 
         await cmd.ExecuteNonQueryAsync();
     }
@@ -89,7 +89,7 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
         using var conn = await dataSource.OpenConnectionAsync();
 
         using var cmd = new NpgsqlCommand(SqlSoftDelete, conn);
-        cmd.Parameters.AddWithValue("id", productId);
+        cmd.Parameters.Add(new NpgsqlParameter<int>("id", productId));
 
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
@@ -120,7 +120,7 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
         using var conn = await dataSource.OpenConnectionAsync();
 
         using var cmd = new NpgsqlCommand(SqlGetDeletedById, conn);
-        cmd.Parameters.AddWithValue("id", productId);
+        cmd.Parameters.Add(new NpgsqlParameter<int>("id", productId));
 
         using var reader = await cmd.ExecuteReaderAsync();
         ProductDetailDto? product = null;
@@ -137,7 +137,7 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
     {
         using var conn = await dataSource.OpenConnectionAsync();
         using var cmd = new NpgsqlCommand(SqlRestore, conn);
-        cmd.Parameters.AddWithValue("id", productId);
+        cmd.Parameters.Add(new NpgsqlParameter<int>("id", productId));
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 

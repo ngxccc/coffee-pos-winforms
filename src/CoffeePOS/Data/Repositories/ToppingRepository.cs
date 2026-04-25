@@ -16,7 +16,7 @@ public class ToppingRepository(NpgsqlDataSource dataSource) : IToppingRepository
         using var conn = await dataSource.OpenConnectionAsync();
 
         using var cmd = new NpgsqlCommand(SqlGet, conn);
-        cmd.Parameters.AddWithValue("is_deleted", isDeleted);
+        cmd.Parameters.Add(new NpgsqlParameter<bool>("is_deleted", isDeleted));
         using var reader = await cmd.ExecuteReaderAsync();
 
         while (await reader.ReadAsync())

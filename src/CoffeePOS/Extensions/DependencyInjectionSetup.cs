@@ -19,7 +19,7 @@ public static class DependencyInjectionSetup
     // PERF: Zero-reflection AOT-safe dependency registration. Time Complexity: O(1)
     public static IServiceCollection AddCoffeePosServices(this IServiceCollection services)
     {
-        // QUY TẮC A: Repositories (nối đích danh, không dùng tên đuôi string)
+        // QUY TẮC A: Repositories
         services.AddSingleton<IUserRepository, UserRepository>();
         services.AddSingleton<IProductRepository, ProductRepository>();
         services.AddSingleton<ICategoryRepository, CategoryRepository>();
@@ -27,6 +27,7 @@ public static class DependencyInjectionSetup
         services.AddSingleton<IBillRepository, BillRepository>();
         services.AddSingleton<IDashboardRepository, DashboardRepository>();
         services.AddSingleton<IToppingRepository, ToppingRepository>();
+        services.AddSingleton<IProductSizeRepository, ProductSizeRepository>();
 
         // QUY TẮC A: Services
         services.AddSingleton<IUserService, UserService>();
@@ -40,6 +41,8 @@ public static class DependencyInjectionSetup
         services.AddSingleton<IBillService, BillService>();
         services.AddSingleton<IBillQueryService, BillQueryService>();
         services.AddSingleton<IDashboardQueryService, DashboardQueryService>();
+        services.AddSingleton<IProductSizeService, ProductSizeService>();
+        services.AddSingleton<IProductSizeQueryService, ProductSizeQueryService>();
 
         // QUY TẮC B: Forms (Transient vì form được dispose sau khi đóng)
         services.AddTransient<LoginForm>();
@@ -70,6 +73,9 @@ public static class DependencyInjectionSetup
         services.AddTransient<UC_CategoryEditor>();
         services.AddTransient<UC_ProductEditor>();
         services.AddTransient<UC_UserAccountEditor>();
+
+        services.AddTransient<UC_ProductSizeEditor>();
+        services.AddTransient<UC_ManageProductSizes>();
 
         return services;
     }

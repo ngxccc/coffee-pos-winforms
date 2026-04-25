@@ -66,4 +66,12 @@ public static class SqlKeys
     {
         public const string Get = "Topping.get.sql";
     }
+
+    public static class ProductSize
+    {
+        public const string GetByProductId = "ProductSize.get_by_product_id.sql";
+        public const string Insert = "ProductSize.insert.sql";
+        public const string Update = "ProductSize.update.sql";
+        public const string Delete = "ProductSize.delete.sql";
+    }
 }

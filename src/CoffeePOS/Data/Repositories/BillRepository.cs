@@ -23,9 +23,9 @@ public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
         try
         {
             using var cmdBill = new NpgsqlCommand(SqlInsertBill, conn, tx);
-            cmdBill.Parameters.AddWithValue("b", command.BuzzerNumber);
-            cmdBill.Parameters.AddWithValue("u", command.CreatedByUserId);
-            cmdBill.Parameters.AddWithValue("total", command.TotalAmount);
+            cmdBill.Parameters.Add(new NpgsqlParameter<int>("b", command.BuzzerNumber));
+            cmdBill.Parameters.Add(new NpgsqlParameter<int>("u", command.CreatedByUserId));
+            cmdBill.Parameters.Add(new NpgsqlParameter<decimal>("total", command.TotalAmount));
 
             int billId = (await cmdBill.ExecuteScalarAsync())
                 .GetRequiredIntFromScalar("BillRepository.ProcessFullOrderAsync bill id");
@@ -36,12 +36,12 @@ public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
             {
                 var batchCommand = new NpgsqlBatchCommand(SqlInsertBillDetail);
 
-                batchCommand.Parameters.AddWithValue("b", billId);
-                batchCommand.Parameters.AddWithValue("p", item.ProductId);
-                batchCommand.Parameters.AddWithValue("n", item.ProductName);
-                batchCommand.Parameters.AddWithValue("q", item.Quantity);
-                batchCommand.Parameters.AddWithValue("basePrice", item.Price);
-                batchCommand.Parameters.AddWithValue("note", item.Note ?? string.Empty);
+                batchCommand.Parameters.Add(new NpgsqlParameter<int>("b", billId));
+                batchCommand.Parameters.Add(new NpgsqlParameter<int>("p", item.ProductId));
+                batchCommand.Parameters.Add(new NpgsqlParameter<string>("n", item.ProductName));
+                batchCommand.Parameters.Add(new NpgsqlParameter<int>("q", item.Quantity));
+                batchCommand.Parameters.Add(new NpgsqlParameter<decimal>("base_price", item.Price));
+                batchCommand.Parameters.Add(new NpgsqlParameter<string>("note", item.Note ?? string.Empty));
 
                 batch.BatchCommands.Add(batchCommand);
             }
@@ -66,7 +66,7 @@ public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
         using var conn = await dataSource.OpenConnectionAsync();
 
         using var cmd = new NpgsqlCommand(SqlGetBillDetails, conn);
-        cmd.Parameters.AddWithValue("b", billId);
+        cmd.Parameters.Add(new NpgsqlParameter<int>("b", billId));
 
         using var reader = await cmd.ExecuteReaderAsync();
         while (await reader.ReadAsync())
@@ -88,8 +88,8 @@ public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
     {
         using var conn = await dataSource.OpenConnectionAsync();
         using var cmd = new NpgsqlCommand(SqlCancelBill, conn);
-        cmd.Parameters.AddWithValue("reason", reason);
-        cmd.Parameters.AddWithValue("id", billId);
+        cmd.Parameters.Add(new NpgsqlParameter<string>("reason", reason));
+        cmd.Parameters.Add(new NpgsqlParameter<int>("id", billId));
         await cmd.ExecuteNonQueryAsync();
     }
 
@@ -97,7 +97,7 @@ public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
     {
         using var conn = await dataSource.OpenConnectionAsync();
         using var cmd = new NpgsqlCommand(SqlRestoreBill, conn);
-        cmd.Parameters.AddWithValue("id", billId);
+        cmd.Parameters.Add(new NpgsqlParameter<int>("id", billId));
         await cmd.ExecuteNonQueryAsync();
     }
 
@@ -107,7 +107,7 @@ public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
         using var conn = await dataSource.OpenConnectionAsync();
 
         using var cmd = new NpgsqlCommand(SqlGetTodayBillsByUser, conn);
-        cmd.Parameters.AddWithValue("uid", userId);
+        cmd.Parameters.Add(new NpgsqlParameter<int>("uid", userId));
 
         using var reader = await cmd.ExecuteReaderAsync();
         while (await reader.ReadAsync())
@@ -128,8 +128,8 @@ public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
         using var conn = await dataSource.OpenConnectionAsync();
 
         using var cmd = new NpgsqlCommand(SqlGetBillsByDateRange, conn);
-        cmd.Parameters.AddWithValue("from_date", fromDate);
-        cmd.Parameters.AddWithValue("to_date", toDateExclusive);
+        cmd.Parameters.Add(new NpgsqlParameter<DateTime>("from_date", fromDate));
+        cmd.Parameters.Add(new NpgsqlParameter<DateTime>("to_date", toDateExclusive));
 
         using var reader = await cmd.ExecuteReaderAsync();
         while (await reader.ReadAsync())

@@ -1,4 +1,6 @@
+using AntdUI;
 using CoffeePOS.Forms.Core;
+using CoffeePOS.Services.Contracts.Queries;
 using CoffeePOS.Shared.Dtos.Category;
 using CoffeePOS.Shared.Dtos.Product;
 using CoffeePOS.Shared.Helpers;
@@ -9,16 +11,53 @@ public record ProductPayload(string Name, decimal Price, int CategoryId, string 
 
 public partial class UC_ProductEditor : UserControl, IValidatableComponent<ProductPayload>
 {
-    public UC_ProductEditor(IReadOnlyList<CategoryOptionDto> categories, ProductDetailDto? existingProduct = null)
+    private readonly int _productId;
+    private readonly ICategoryQueryService _categoryQueryService;
+    private readonly IProductQueryService _productQueryService;
+
+    public string? OriginalImageUrl { get; private set; }
+
+    public UC_ProductEditor(
+        int productId,
+        ICategoryQueryService categoryQueryService,
+        IProductQueryService productQueryService)
     {
+        _productId = productId;
+        _categoryQueryService = categoryQueryService;
+        _productQueryService = productQueryService;
+
         InitializeComponent();
-        SetupBindings(categories);
         SetupEvents();
 
-        if (existingProduct != null)
+        Load += async (s, e) => await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        await Spin.open(this, async cfg =>
         {
-            LoadExistingData(existingProduct);
-        }
+            try
+            {
+                var categories = await _categoryQueryService.GetSelectableCategoriesAsync();
+
+                ProductDetailDto? product = null;
+                if (_productId > 0)
+                    product = await _productQueryService.GetProductByIdAsync(_productId);
+
+                Invoke(() =>
+                {
+                    SetupBindings(categories);
+                    if (product != null)
+                    {
+                        LoadExistingData(product);
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Invoke(() => MessageBoxHelper.Error($"Lỗi tải dữ liệu: {ex.Message}", owner: this));
+            }
+        });
     }
 
     private void SetupBindings(IReadOnlyList<CategoryOptionDto> categories)
@@ -26,11 +65,13 @@ public partial class UC_ProductEditor : UserControl, IValidatableComponent<Produ
         _cboCategory.Items.Clear();
 
         var selectedItems = categories.
-            Select(item => new AntdUI.SelectItem(item.Name, item.Id))
+            Select(item => new SelectItem(item.Name, item.Id))
             .ToArray();
 
         _cboCategory.Items.AddRange(selectedItems);
-        _cboCategory.SelectedIndex = 0;
+
+        if (_cboCategory.Items.Count > 0)
+            _cboCategory.SelectedIndex = 0;
     }
 
     private void SetupEvents()
@@ -43,6 +84,8 @@ public partial class UC_ProductEditor : UserControl, IValidatableComponent<Produ
 
     private void LoadExistingData(ProductDetailDto product)
     {
+        OriginalImageUrl = product.ImageUrl;
+
         _txtName.Text = product.Name;
         _nudPrice.Value = product.Price;
         _cboCategory.SelectedValue = product.CategoryId;

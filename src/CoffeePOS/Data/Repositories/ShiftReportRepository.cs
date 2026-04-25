@@ -35,14 +35,14 @@ public class ShiftReportRepository(NpgsqlDataSource dataSource) : IShiftReportRe
         using var conn = await dataSource.OpenConnectionAsync();
 
         using var cmd = new NpgsqlCommand(SqlInsertShiftReport, conn);
-        cmd.Parameters.AddWithValue("user_id", command.UserId);
-        cmd.Parameters.AddWithValue("start_time", command.StartTime);
-        cmd.Parameters.AddWithValue("end_time", command.EndTime);
-        cmd.Parameters.AddWithValue("total_bills", command.TotalBills);
-        cmd.Parameters.AddWithValue("expected_cash", command.ExpectedCash);
-        cmd.Parameters.AddWithValue("actual_cash", command.ActualCash);
-        cmd.Parameters.AddWithValue("variance", command.Variance);
-        cmd.Parameters.AddWithValue("note", string.IsNullOrWhiteSpace(command.Note) ? DBNull.Value : command.Note);
+        cmd.Parameters.Add(new NpgsqlParameter<int>("user_id", command.UserId));
+        cmd.Parameters.Add(new NpgsqlParameter<DateTime>("start_time", command.StartTime));
+        cmd.Parameters.Add(new NpgsqlParameter<DateTime>("end_time", command.EndTime));
+        cmd.Parameters.Add(new NpgsqlParameter<int>("total_bills", command.TotalBills));
+        cmd.Parameters.Add(new NpgsqlParameter<decimal>("expected_cash", command.ExpectedCash));
+        cmd.Parameters.Add(new NpgsqlParameter<decimal>("actual_cash", command.ActualCash));
+        cmd.Parameters.Add(new NpgsqlParameter<decimal>("variance", command.Variance));
+        cmd.Parameters.Add(new NpgsqlParameter<string?>("note", string.IsNullOrWhiteSpace(command.Note) ? null : command.Note));
 
         await cmd.ExecuteNonQueryAsync();
     }

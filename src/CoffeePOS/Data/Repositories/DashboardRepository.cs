@@ -38,7 +38,7 @@ public class DashboardRepository(NpgsqlDataSource dataSource) : IDashboardReposi
         using var conn = await dataSource.OpenConnectionAsync();
 
         using var cmd = new NpgsqlCommand(SqlGetRevenueChart, conn);
-        cmd.Parameters.AddWithValue("days", days);
+        cmd.Parameters.Add(new NpgsqlParameter<int>("days", days));
         using var reader = await cmd.ExecuteReaderAsync();
 
         while (await reader.ReadAsync())

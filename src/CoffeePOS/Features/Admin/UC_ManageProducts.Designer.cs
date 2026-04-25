@@ -52,7 +52,6 @@ partial class UC_ManageProducts
         AntdUI.GridPanel trashLayout = new()
         {
             Span = "40% 60%",
-            Gap = 4
         };
 
         AntdUI.Label lblTrash = new()
@@ -70,9 +69,8 @@ partial class UC_ManageProducts
         AntdUI.GridPanel headerPanel = new()
         {
             Dock = DockStyle.Top,
-            Height = 70,
-            Span = "160 100% 200",
-            Gap = 10,
+            Height = 45,
+            Span = "160 100% 160",
             Margin = new Padding(0, 0, 0, 10)
         };
 

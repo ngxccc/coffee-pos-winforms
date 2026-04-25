@@ -79,7 +79,7 @@ partial class UC_ManageBills
         AntdUI.GridPanel filterLayout = new()
         {
             Span = "140 14 140 10 120 120 100%",
-            Height = 40,
+            Height = 45,
             Margin = new Padding(0),
         };
 
