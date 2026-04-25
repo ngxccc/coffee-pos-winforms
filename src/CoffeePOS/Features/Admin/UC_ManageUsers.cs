@@ -17,11 +17,6 @@ public partial class UC_ManageUsers : UserControl
     private List<UserGridDto> _allUsers = [];
     private List<UserGridDto> _filteredUsers = [];
 
-    private readonly System.Windows.Forms.Timer _searchDebouncer = new()
-    {
-        Interval = 300
-    };
-
     public UC_ManageUsers(IUserService userService, IUserQueryService userQueryService, IUserSession session)
     {
         _userService = userService;
@@ -81,13 +76,7 @@ public partial class UC_ManageUsers : UserControl
 
     private void SetupEvents()
     {
-        _txtSearch.TextChanged += (s, e) =>
-        {
-            _searchDebouncer.Stop();
-            _searchDebouncer.Start();
-        };
-
-        _searchDebouncer.Tick += ExecuteFilterAndSort;
+        _txtSearch.OnDebouncedTextChanged(300, () => ExecuteFilterAndSort(this, EventArgs.Empty));
         _btnAdd.Click += HandleAddUser;
     }
 
@@ -113,8 +102,6 @@ public partial class UC_ManageUsers : UserControl
 
     private void ExecuteFilterAndSort(object? sender, EventArgs e)
     {
-        _searchDebouncer.Stop();
-
         string keyword = _txtSearch.Text.Trim();
 
         _filteredUsers = string.IsNullOrEmpty(keyword)

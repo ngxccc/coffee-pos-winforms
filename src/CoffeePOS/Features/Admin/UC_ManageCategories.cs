@@ -65,7 +65,7 @@ public partial class UC_ManageCategories : UserControl
 
     private void SetupEvents()
     {
-        _txtSearch.TextChanged += ApplyFilterAndSort;
+        _txtSearch.OnDebouncedTextChanged(300, () => ApplyFilterAndSort(this, EventArgs.Empty));
         _switchTrash.CheckedChanged += HandleTrashModeChanged;
         _btnAdd.Click += HandleAddCategory;
     }

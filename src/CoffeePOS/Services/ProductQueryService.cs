@@ -44,7 +44,7 @@ public class ProductQueryService(IProductRepository productRepo, ICategoryReposi
             return cachedToppings ?? [];
         }
 
-        var toppings = await toppingRepo.GetAllToppingsAsync();
+        var toppings = await toppingRepo.GetToppingsAsync();
         memoryCache.Set(TOPPINGS_CACHE_KEY, toppings, new MemoryCacheEntryOptions
         {
             AbsoluteExpirationRelativeToNow = CACHE_DURATION
