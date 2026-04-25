@@ -73,7 +73,7 @@ public static class DependencyInjectionSetup
         services.AddTransient<UC_UsersHeaderToolbar>();
         services.AddTransient<UC_CategoryEditor>();
         services.AddTransient<UC_ProductEditor>();
-        services.AddTransient<UC_UserAccountFields>();
+        services.AddTransient<UC_UserAccountEditor>();
 
         return services;
     }

@@ -1,26 +1,26 @@
+using AntdUI;
 using CoffeePOS.Core;
 using CoffeePOS.Features.Admin.Controls;
-using CoffeePOS.Forms.Core;
 using CoffeePOS.Services.Contracts.Commands;
 using CoffeePOS.Services.Contracts.Queries;
-
 using CoffeePOS.Shared.Dtos.User;
 using CoffeePOS.Shared.Helpers;
 
 namespace CoffeePOS.Features.Admin;
 
-public class UC_ManageUsers : UserControl
+public partial class UC_ManageUsers : UserControl
 {
     private readonly IUserService _userService;
     private readonly IUserQueryService _userQueryService;
     private readonly IUserSession _session;
 
-    private UC_UsersHeaderToolbar _toolbar = null!;
-    private DataGridView _dgvUsers = null!;
-    private StatefulSortableGrid<UserGridDto> _usersGrid = null!;
-
     private List<UserGridDto> _allUsers = [];
     private List<UserGridDto> _filteredUsers = [];
+
+    private readonly System.Windows.Forms.Timer _searchDebouncer = new()
+    {
+        Interval = 300
+    };
 
     public UC_ManageUsers(IUserService userService, IUserQueryService userQueryService, IUserSession session)
     {
@@ -28,148 +28,224 @@ public class UC_ManageUsers : UserControl
         _userQueryService = userQueryService;
         _session = session;
 
-        InitializeUI();
+        InitializeComponent();
+        SetupTable();
+        SetupEvents();
+
         _ = LoadDataAsync();
     }
 
-    private void InitializeUI()
+    private void SetupTable()
     {
-        Dock = DockStyle.Fill;
-        BackColor = UiTheme.Surface;
+        _tableUsers.Columns =
+        [
+            new Column(nameof(UserGridDto.Id), DtoInfo.GetName<UserGridDto>(nameof(UserGridDto.Id)))
+            {
+                Align = ColumnAlign.Center,
+            },
+            new Column(nameof(UserGridDto.Username), DtoInfo.GetName<UserGridDto>(nameof(UserGridDto.Username))),
+            new Column(nameof(UserGridDto.FullName), DtoInfo.GetName<UserGridDto>(nameof(UserGridDto.FullName))),
+            new Column(nameof(UserGridDto.Role), DtoInfo.GetName<UserGridDto>(nameof(UserGridDto.Role)))
+            {
+                Align = ColumnAlign.Center,
+            },
+            new Column(nameof(UserGridDto.Status), DtoInfo.GetName<UserGridDto>(nameof(UserGridDto.Status)))
+            {
+                Align = ColumnAlign.Center,
+                Render = (value, record, rowIndex) =>
+                {
+                    var u = (UserGridDto)record;
+                    return new CellBadge(u.IsActive ? TState.Success : TState.Error, u.IsActive ? "Hoạt động" : "Đã khoá");
+                }
+            },
+            new Column("action", "Thao tác")
+            {
+                Align = ColumnAlign.Center,
+                Fixed = true,
+                Render = (value, record, rowIndex) =>
+                {
+                    var u = (UserGridDto)record;
+                    return new CellButton[] {
+                        new("edit", "Cập nhật") { Type = TTypeMini.Primary },
+                        new("toggle", u.IsActive ? "Khóa" : "Mở khóa") {
+                            Type = u.IsActive ? TTypeMini.Error : TTypeMini.Success
+                        }
+                    };
+                }
+            }
+        ];
 
-        _toolbar = new UC_UsersHeaderToolbar();
-        _toolbar.SearchChanged += ApplyFilterAndSort;
-        _toolbar.AddClicked += AddUserAsync;
-        _toolbar.ResetPasswordClicked += EditUserAsync;
-        _toolbar.ToggleStatusClicked += ToggleUserStatusAsync;
+        _tableUsers.CellButtonClick += TableUsers_CellButtonClick;
+    }
 
-        _dgvUsers = new DataGridView
+    private void SetupEvents()
+    {
+        _txtSearch.TextChanged += (s, e) =>
         {
-            Dock = DockStyle.Fill
+            _searchDebouncer.Stop();
+            _searchDebouncer.Start();
         };
-        _dgvUsers.ApplyStandardAdminStyle();
-        _dgvUsers.CellDoubleClick += EditUserAsync;
 
-        var hostPanel = new AntdUI.Panel
-        {
-            Dock = DockStyle.Fill,
-            Radius = 8,
-            Back = UiTheme.Surface,
-            Padding = new Padding(UiTheme.BlockGap)
-        };
-        hostPanel.Controls.Add(_dgvUsers);
-
-        _usersGrid = new StatefulSortableGrid<UserGridDto>(_dgvUsers);
-        _usersGrid.AttachSortHandler();
-        _usersGrid.SortChanged += ApplyFilterAndSort;
-
-        Controls.Add(hostPanel);
-        Controls.Add(_toolbar);
+        _searchDebouncer.Tick += ExecuteFilterAndSort;
+        _btnAdd.Click += HandleAddUser;
     }
 
     private async Task LoadDataAsync()
     {
         try
         {
-            _usersGrid.CapturePosition();
+            await Spin.open(_tableUsers, async cfg =>
+            {
+                _allUsers = await _userQueryService.GetUserGridAsync();
 
-            _allUsers = await _userQueryService.GetUserGridAsync();
-            ApplyFilterAndSort();
-
-            _usersGrid.RestorePosition();
+                Invoke(() =>
+                {
+                    ExecuteFilterAndSort(this, EventArgs.Empty);
+                });
+            });
         }
         catch (Exception ex)
         {
-            MessageBoxHelper.Error($"Lỗi tải danh sách nhân viên: {ex.Message}", owner: this);
+            MessageBoxHelper.Error($"Lỗi tải danh sách nhân viên: {ex.Message}", owner: this, type: FeedbackType.Message);
         }
     }
 
-    private async void AddUserAsync(object? sender, EventArgs e)
+    private void ExecuteFilterAndSort(object? sender, EventArgs e)
     {
-        var uiFields = new UC_UserAccountFields(null); // null = Add Mode
-        using var shell = new DynamicModalShell<UserAccountPayload>("THÊM NHÂN VIÊN MỚI", uiFields, new Size(420, 480));
+        _searchDebouncer.Stop();
 
-        if (shell.ShowDialog(this) != DialogResult.OK) return;
+        string keyword = _txtSearch.Text.Trim();
 
-        try
-        {
-            // WHY: ExtractData now natively returns UserAccountPayload without risky angle-bracket casting.
-            var payload = shell.ExtractData();
+        _filteredUsers = string.IsNullOrEmpty(keyword)
+            ? [.. _allUsers]
+            : [.. _allUsers.Where(u =>
+                u.Username.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+                u.FullName.Contains(keyword, StringComparison.OrdinalIgnoreCase))];
 
-            // Map pure UI state to Business DTO
-            var command = new CreateUserDto(payload.Username, payload.FullName, payload.Role, payload.Password, payload.Password);
-
-            await _userService.AddUserAsync(command);
-
-            MessageBoxHelper.Info("Thêm nhân viên thành công!", owner: this);
-            await LoadDataAsync();
-        }
-        catch (Exception ex)
-        {
-            MessageBoxHelper.Error($"Lỗi thêm nhân viên: {ex.Message}", owner: this);
-        }
+        _tableUsers.DataSource = _filteredUsers;
     }
 
-    private async void EditUserAsync(object? sender, EventArgs e)
+    private void TableUsers_CellButtonClick(object sender, TableButtonEventArgs e)
     {
-        if (_dgvUsers.SelectedRows.Count == 0) return;
-        if (_dgvUsers.SelectedRows[0].DataBoundItem is not UserGridDto selectedUser) return;
+        if (e.Record is not UserGridDto selectedUser) return;
 
-        var uiFields = new UC_UserAccountFields(selectedUser); // pass data = Edit Mode
-        using var shell = new DynamicModalShell<UserAccountPayload>($"CẬP NHẬT TÀI KHOẢN: {selectedUser.Username}", uiFields, new Size(420, 480));
-
-        if (shell.ShowDialog(this) != DialogResult.OK) return;
-
-        try
-        {
-            var payload = shell.ExtractData();
-
-            // Map pure UI state to Business DTO
-            var command = new UpdateUserAccountDto(
-                selectedUser.Id,
-                payload.Username,
-                payload.FullName,
-                payload.Role,
-                payload.Password,
-                payload.ConfirmPassword);
-
-            await _userService.UpdateUserAccountAsync(_session.CurrentUser!.Id, command);
-
-            MessageBoxHelper.Info($"Đã cập nhật tài khoản '{selectedUser.Username}'.", owner: this);
-            await LoadDataAsync();
-        }
-        catch (Exception ex)
-        {
-            MessageBoxHelper.Error($"Lỗi cập nhật: {ex.Message}", owner: this);
-        }
+        if (e.Btn.Id == "edit") HandleEditUser(selectedUser);
+        if (e.Btn.Id == "toggle") HandleToggleStatus(selectedUser);
     }
 
-    private async void ToggleUserStatusAsync(object? sender, EventArgs e)
+    private void HandleAddUser(object? sender, EventArgs e)
     {
-        if (_dgvUsers.SelectedRows.Count == 0) return;
+        var userAccountEditor = new UC_UserAccountEditor(null);
+        Form form = FindForm() ?? throw new InvalidOperationException("Lỗi UI.");
 
-        var selectedRow = _dgvUsers.SelectedRows[0];
-        if (selectedRow.DataBoundItem is not UserGridDto selectedUser)
+        var config = new Modal.Config(form, "THÊM NHÂN VIÊN MỚI", userAccountEditor)
         {
-            MessageBoxHelper.Warning("Không thể đọc dữ liệu người dùng đã chọn.", "Lỗi", this);
-            return;
-        }
+            Font = UiTheme.BodyFont,
+            OkText = "Lưu",
+            CancelText = "Hủy",
+            OnOk = (cfg) =>
+            {
+                bool isValid = false;
+                UserAccountPayload? payload = null;
 
-        int targetUserId = (int)selectedRow.Cells[nameof(UserGridDto.Id)].Value;
-        string username = selectedRow.Cells[nameof(UserGridDto.Username)].Value.ToString()!;
-        bool isActive = selectedUser.IsActive;
+                Invoke(() =>
+                {
+                    if (userAccountEditor.ValidateInput())
+                    {
+                        payload = userAccountEditor.GetPayload();
+                        isValid = true;
+                    }
+                });
 
-        bool nextState = !isActive;
+                if (!isValid || payload == null) return false;
+
+                ExecuteSaveUserAsync(payload, isUpdate: false, targetUserId: 0);
+                return true;
+            }
+        };
+
+        Modal.open(config);
+    }
+
+    private void HandleEditUser(UserGridDto selectedUser)
+    {
+        var userAccountEditor = new UC_UserAccountEditor(selectedUser);
+        Form form = FindForm() ?? throw new InvalidOperationException("Lỗi UI.");
+
+        var config = new Modal.Config(form, $"CẬP NHẬT TÀI KHOẢN: {selectedUser.Username}", userAccountEditor)
+        {
+            Font = UiTheme.BodyFont,
+            OkText = "Cập nhật",
+            CancelText = "Hủy",
+            OnOk = (cfg) =>
+            {
+                bool isValid = false;
+                UserAccountPayload? payload = null;
+
+                Invoke(() =>
+                {
+                    if (userAccountEditor.ValidateInput())
+                    {
+                        payload = userAccountEditor.GetPayload();
+                        isValid = true;
+                    }
+                });
+
+                if (!isValid || payload == null) return false;
+
+                ExecuteSaveUserAsync(payload, isUpdate: true, targetUserId: selectedUser.Id);
+                return true;
+            }
+        };
+
+        Modal.open(config);
+    }
+
+    private void ExecuteSaveUserAsync(UserAccountPayload payload, bool isUpdate, int targetUserId)
+    {
+        Target target = new(this);
+        AntdUI.Message.loading(target, "Đang xử lý...", async msg =>
+        {
+            msg.ID = "save_user";
+            try
+            {
+                if (isUpdate)
+                {
+                    var command = new UpdateUserAccountDto(targetUserId, payload.Username, payload.FullName, payload.Role, payload.Password, payload.ConfirmPassword);
+                    await _userService.UpdateUserAccountAsync(_session.CurrentUser!.Id, command);
+                }
+                else
+                {
+                    var command = new CreateUserDto(payload.Username, payload.FullName, payload.Role, payload.Password, payload.ConfirmPassword);
+                    await _userService.AddUserAsync(command);
+                }
+
+                Invoke(() => MessageBoxHelper.Success("Lưu thành công!", owner: this, type: FeedbackType.Message));
+                await LoadDataAsync();
+            }
+            catch (Exception ex)
+            {
+                Invoke(() => MessageBoxHelper.Error(ex.Message, owner: this, type: FeedbackType.Message));
+            }
+            finally
+            {
+                Invoke(() => AntdUI.Message.close_id("save_user"));
+            }
+        });
+    }
+
+    private async void HandleToggleStatus(UserGridDto selectedUser)
+    {
+        bool nextState = !selectedUser.IsActive;
         string actionText = nextState ? "mở khóa" : "khóa";
 
-        if (!MessageBoxHelper.ConfirmWarning($"Bạn có chắc muốn {actionText} tài khoản '{username}'?", "Xác nhận", this))
-        {
+        if (!MessageBoxHelper.ConfirmWarning($"Bạn có chắc muốn {actionText} tài khoản '{selectedUser.Username}'?", "Xác nhận", this))
             return;
-        }
 
         try
         {
-            await _userService.SetUserActiveStatusAsync(_session.CurrentUser!.Id, targetUserId, nextState);
+            await _userService.SetUserActiveStatusAsync(_session.CurrentUser!.Id, selectedUser.Id, nextState);
+            MessageBoxHelper.Success($"Đã {actionText} thành công!", owner: this, type: FeedbackType.Message);
             await LoadDataAsync();
         }
         catch (ArgumentException ex)
@@ -182,20 +258,7 @@ public class UC_ManageUsers : UserControl
         }
         catch (Exception ex)
         {
-            MessageBoxHelper.Error($"Lỗi cập nhật trạng thái tài khoản: {ex.Message}", owner: this);
+            MessageBoxHelper.Error($"Lỗi cập nhật trạng thái: {ex.Message}", owner: this);
         }
-    }
-
-    private void ApplyFilterAndSort()
-    {
-        string keyword = _toolbar.SearchText.Trim();
-        _filteredUsers = string.IsNullOrEmpty(keyword)
-            ? [.. _allUsers]
-            :
-            [.. _allUsers.Where(u =>
-                u.Username.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
-                u.FullName.Contains(keyword, StringComparison.OrdinalIgnoreCase))];
-
-        _usersGrid.Bind(_filteredUsers);
     }
 }
