@@ -124,17 +124,14 @@ public partial class UC_ManageUsers : UserControl
     private void HandleAddUser(object? sender, EventArgs e)
     {
         var userAccountEditor = new UC_UserAccountEditor(null);
-        Form form = FindForm() ?? throw new InvalidOperationException("Lỗi UI.");
 
-        var config = new Modal.Config(form, "THÊM NHÂN VIÊN MỚI", userAccountEditor)
-        {
-            Font = UiTheme.BodyFont,
-            OkText = "Lưu",
-            CancelText = "Hủy",
-            OnOk = (cfg) =>
+        ModalHelper.OpenModalWithComplexValidator(this,
+            "THÊM NHÂN VIÊN MỚI",
+            userAccountEditor,
+            () =>
             {
-                bool isValid = false;
                 UserAccountPayload? payload = null;
+                bool isValid = false;
 
                 Invoke(() =>
                 {
@@ -145,30 +142,23 @@ public partial class UC_ManageUsers : UserControl
                     }
                 });
 
-                if (!isValid || payload == null) return false;
-
-                ExecuteSaveUserAsync(payload, isUpdate: false, targetUserId: 0);
-                return true;
-            }
-        };
-
-        Modal.open(config);
+                return (isValid, payload);
+            },
+            async (payload) => ExecuteSaveUser(payload, isUpdate: false, targetUserId: 0)
+        );
     }
 
     private void HandleEditUser(UserGridDto selectedUser)
     {
         var userAccountEditor = new UC_UserAccountEditor(selectedUser);
-        Form form = FindForm() ?? throw new InvalidOperationException("Lỗi UI.");
 
-        var config = new Modal.Config(form, $"CẬP NHẬT TÀI KHOẢN: {selectedUser.Username}", userAccountEditor)
-        {
-            Font = UiTheme.BodyFont,
-            OkText = "Cập nhật",
-            CancelText = "Hủy",
-            OnOk = (cfg) =>
+        ModalHelper.OpenModalWithComplexValidator(this,
+            $"CẬP NHẬT TÀI KHOẢN: {selectedUser.Username}",
+            userAccountEditor,
+            () =>
             {
-                bool isValid = false;
                 UserAccountPayload? payload = null;
+                bool isValid = false;
 
                 Invoke(() =>
                 {
@@ -179,17 +169,13 @@ public partial class UC_ManageUsers : UserControl
                     }
                 });
 
-                if (!isValid || payload == null) return false;
-
-                ExecuteSaveUserAsync(payload, isUpdate: true, targetUserId: selectedUser.Id);
-                return true;
-            }
-        };
-
-        Modal.open(config);
+                return (isValid, payload);
+            },
+            async (payload) => ExecuteSaveUser(payload, isUpdate: true, targetUserId: selectedUser.Id)
+        );
     }
 
-    private void ExecuteSaveUserAsync(UserAccountPayload payload, bool isUpdate, int targetUserId)
+    private void ExecuteSaveUser(UserAccountPayload payload, bool isUpdate, int targetUserId)
     {
         Target target = new(this);
         AntdUI.Message.loading(target, "Đang xử lý...", async msg =>

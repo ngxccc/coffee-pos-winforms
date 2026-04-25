@@ -93,17 +93,14 @@ public partial class UC_ManageProductSizes : UserControl
     private void HandleAddSize(object? sender, EventArgs e)
     {
         var editor = new UC_ProductSizeEditor();
-        Form form = FindForm() ?? throw new InvalidOperationException("Lỗi UI.");
 
-        var config = new Modal.Config(form, $"THÊM SIZE CHO: {_productName.ToUpper()}", editor)
-        {
-            Font = UiTheme.BodyFont,
-            OkText = "Lưu",
-            CancelText = "Hủy",
-            OnOk = (cfg) =>
+        ModalHelper.OpenModalWithComplexValidator(this,
+            $"THÊM SIZE CHO: {_productName.ToUpper()}",
+            editor,
+            () =>
             {
-                bool isValid = false;
                 ProductSizePayload? payload = null;
+                bool isValid = false;
 
                 Invoke(() =>
                 {
@@ -111,7 +108,6 @@ public partial class UC_ManageProductSizes : UserControl
                     {
                         var tempPayload = editor.GetPayload();
 
-                        // HACK: RAM-Based Unique Constraint Validation (Chặn gửi trùng Size xuống DB)
                         if (_allSizes.Any(s => s.SizeName.Equals(tempPayload.SizeName, StringComparison.OrdinalIgnoreCase)))
                         {
                             MessageBoxHelper.Warning($"Kích cỡ '{tempPayload.SizeName}' đã tồn tại cho món này!", owner: this);
@@ -124,29 +120,23 @@ public partial class UC_ManageProductSizes : UserControl
                     }
                 });
 
-                if (!isValid || payload == null) return false;
-
-                ExecuteSaveSizeAsync(payload, isUpdate: false, targetSizeId: 0);
-                return true;
-            }
-        };
-        Modal.open(config);
+                return (isValid, payload);
+            },
+            async (payload) => ExecuteSaveSize(payload, isUpdate: false, targetSizeId: 0)
+        );
     }
 
     private void HandleEditSize(ProductSizeDto selectedItem)
     {
         var editor = new UC_ProductSizeEditor(selectedItem.SizeName, selectedItem.PriceAdjustment);
-        Form form = FindForm() ?? throw new InvalidOperationException("Lỗi UI.");
 
-        var config = new Modal.Config(form, $"SỬA GIÁ SIZE {selectedItem.SizeName}", editor)
-        {
-            Font = UiTheme.BodyFont,
-            OkText = "Cập nhật",
-            CancelText = "Hủy",
-            OnOk = (cfg) =>
+        ModalHelper.OpenModalWithComplexValidator(this,
+            $"SỬA GIÁ SIZE {selectedItem.SizeName}",
+            editor,
+            () =>
             {
-                bool isValid = false;
                 ProductSizePayload? payload = null;
+                bool isValid = false;
 
                 Invoke(() =>
                 {
@@ -157,13 +147,10 @@ public partial class UC_ManageProductSizes : UserControl
                     }
                 });
 
-                if (!isValid || payload == null) return false;
-
-                ExecuteSaveSizeAsync(payload, isUpdate: true, targetSizeId: selectedItem.Id);
-                return true;
-            }
-        };
-        Modal.open(config);
+                return (isValid, payload);
+            },
+            async (payload) => ExecuteSaveSize(payload, isUpdate: true, targetSizeId: selectedItem.Id)
+        );
     }
 
     private async void HandleDeleteSize(ProductSizeDto selectedItem)
@@ -182,7 +169,7 @@ public partial class UC_ManageProductSizes : UserControl
         }
     }
 
-    private void ExecuteSaveSizeAsync(ProductSizePayload payload, bool isUpdate, int targetSizeId)
+    private void ExecuteSaveSize(ProductSizePayload payload, bool isUpdate, int targetSizeId)
     {
         Target target = new(this);
         AntdUI.Message.loading(target, "Đang xử lý...", async msg =>

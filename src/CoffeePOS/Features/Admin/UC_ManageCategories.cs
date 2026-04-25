@@ -122,22 +122,10 @@ public partial class UC_ManageCategories : UserControl
         {
             var catEditor = new UC_CategoryEditor();
 
-            Form form = FindForm() ?? throw new InvalidOperationException("Lỗi UI: UserControl chưa được gắn vào Form chính.");
-
-            var config = new Modal.Config(form, "THÊM DANH MỤC MỚI", catEditor)
-            {
-                Font = UiTheme.BodyFont,
-                OkText = "Lưu",
-                CancelText = "Huỷ",
-                OnOk = (cfg) =>
-                {
-                    if (!catEditor.ValidateInput()) return false;
-
-                    ExecuteSaveCategoryAsync(catEditor.GetPayload(), isUpdate: false, categoryId: 0);
-                    return true;
-                }
-            };
-            Modal.open(config);
+            ModalHelper.OpenModal(this, "THÊM DANH MỤC MỚI", catEditor,
+                catEditor.ValidateInput,
+                async () => ExecuteSaveCategory(catEditor.GetPayload(), isUpdate: false, categoryId: 0)
+            );
         }
         catch (Exception ex)
         {
@@ -163,23 +151,11 @@ public partial class UC_ManageCategories : UserControl
             }
 
             var uiFields = new UC_CategoryEditor(cat.Name);
-            Form form = FindForm() ?? throw new InvalidOperationException("Lỗi UI.");
 
-            var config = new Modal.Config(form, $"CẬP NHẬT: {cat.Name}", uiFields)
-            {
-                Font = UiTheme.BodyFont,
-                OkText = "Cập nhật",
-                CancelText = "Huỷ",
-                OnOk = (modalCfg) =>
-                {
-                    if (!uiFields.ValidateInput()) return false;
-
-                    ExecuteSaveCategoryAsync(uiFields.GetPayload(), isUpdate: true, categoryId: cat.Id);
-                    return true;
-                }
-            };
-
-            Modal.open(config);
+            ModalHelper.OpenModal(this, $"CẬP NHẬT: {cat.Name}", uiFields,
+                uiFields.ValidateInput,
+                async () => ExecuteSaveCategory(uiFields.GetPayload(), isUpdate: true, categoryId: cat.Id)
+            );
         }
         catch (Exception ex)
         {
@@ -220,7 +196,7 @@ public partial class UC_ManageCategories : UserControl
         }
     }
 
-    private void ExecuteSaveCategoryAsync(CategoryPayload payload, bool isUpdate, int categoryId)
+    private void ExecuteSaveCategory(CategoryPayload payload, bool isUpdate, int categoryId)
     {
         Target target = new(this);
 

@@ -64,8 +64,10 @@ public partial class UC_ManageToppings : UserControl
 
     private async Task LoadDataAsync()
     {
-        await Spin.open(this, async cfg =>
+        Target target = new(this);
+        AntdUI.Message.loading(target, "Đang tải dữ liệu...", async msg =>
         {
+            msg.ID = "load_toppings";
             try
             {
                 bool isTrash = Invoke(() => _switchTrash.Checked);
@@ -76,7 +78,11 @@ public partial class UC_ManageToppings : UserControl
             {
                 Invoke(() => MessageBoxHelper.Error($"Lỗi tải dữ liệu: {ex.Message}", owner: this));
             }
-        });
+            finally
+            {
+                Invoke(() => AntdUI.Message.close_id("load_toppings"));
+            }
+        }, UiTheme.BodyFont);
     }
 
     private void HandleSearch()
@@ -102,10 +108,10 @@ public partial class UC_ManageToppings : UserControl
     private void HandleAddClicked(object? sender, EventArgs e)
     {
         var editor = new UC_ToppingEditor();
-        OpenModal("THÊM TOPPING MỚI", editor, async () =>
-        {
-            await _cmdService.AddToppingAsync(editor.GetPayload());
-        });
+        ModalHelper.OpenModal(this, "THÊM TOPPING MỚI", editor,
+            editor.ValidateInput,
+            async () => await _cmdService.AddToppingAsync(editor.GetPayload())
+        );
     }
 
     private void HandleTableAction(object sender, TableButtonEventArgs e)
@@ -130,59 +136,29 @@ public partial class UC_ManageToppings : UserControl
     {
         var editor = new UC_ToppingEditor(record.Id, record.Name, record.Price);
 
-        OpenModal($"SỬA: {record.Name}", editor, async () =>
-        {
-            await _cmdService.UpdateToppingAsync(editor.GetPayload());
-        });
+        ModalHelper.OpenModal(this, $"SỬA: {record.Name}", editor,
+            editor.ValidateInput,
+            async () => await _cmdService.UpdateToppingAsync(editor.GetPayload())
+        );
     }
 
     private void HandleDeleteTopping(ToppingDto record)
     {
-        if (MessageBoxHelper.ConfirmWarning($"Xóa topping '{record.Name}'?\n(Sẽ bị ẩn khỏi menu bán hàng)", "Xác nhận", this))
-        {
-            ExecuteActionWithSpin(async () => await _cmdService.SoftDeleteToppingAsync(record.Id));
-        }
+        ModalHelper.ExecuteActionWithConfirmAndSpin(this,
+            $"Xóa topping '{record.Name}'?\n(Sẽ bị ẩn khỏi menu bán hàng)",
+            async () => await _cmdService.SoftDeleteToppingAsync(record.Id),
+            LoadDataAsync
+        );
     }
 
     private void HandleRestoreTopping(ToppingDto record)
     {
-        if (MessageBoxHelper.ConfirmWarning($"Khôi phục '{record.Name}' trở lại phần mềm?", "Xác nhận", this))
-        {
-            ExecuteActionWithSpin(async () => await _cmdService.RestoreToppingAsync(record.Id));
-        }
+        ModalHelper.ExecuteActionWithConfirmAndSpin(this,
+            $"Khôi phục '{record.Name}' trở lại phần mềm?",
+            async () => await _cmdService.RestoreToppingAsync(record.Id),
+            LoadDataAsync
+        );
     }
 
-    private void OpenModal(string title, UC_ToppingEditor uiContent, Func<Task> dbAction)
-    {
-        Form form = FindForm() ?? throw new InvalidOperationException("Lỗi UI.");
-        var config = new Modal.Config(form, title, uiContent)
-        {
-            Font = UiTheme.BodyFont,
-            OkText = "Lưu lại",
-            CancelText = "Hủy",
-            OnOk = (cfg) =>
-            {
-                if (!uiContent.ValidateInput()) return false;
-                ExecuteActionWithSpin(dbAction);
-                return true;
-            }
-        };
-        Modal.open(config);
-    }
 
-    private async void ExecuteActionWithSpin(Func<Task> action)
-    {
-        await Spin.open(this, async cfg =>
-        {
-            try
-            {
-                await action();
-                await LoadDataAsync();
-            }
-            catch (Exception ex)
-            {
-                Invoke(() => MessageBoxHelper.Error($"Lỗi thao tác: {ex.Message}", owner: this));
-            }
-        });
-    }
 }

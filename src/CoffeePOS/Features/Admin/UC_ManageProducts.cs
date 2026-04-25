@@ -144,22 +144,10 @@ public partial class UC_ManageProducts : UserControl
         {
             var productEditor = _uiFactory.CreateControl<UC_ProductEditor>(0);
 
-            Form form = FindForm() ?? throw new InvalidOperationException("Lỗi UI: UserControl chưa được gắn vào Form chính.");
-
-            var config = new Modal.Config(form, "THÊM SẢN PHẨM MỚI", productEditor)
-            {
-                Font = UiTheme.BodyFont,
-                OkText = "Lưu",
-                CancelText = "Huỷ",
-                OnOk = (cfg) =>
-                {
-                    if (!productEditor.ValidateInput()) return false;
-
-                    ExecuteSaveProductAsync(productEditor.GetPayload(), isUpdate: false, productId: 0);
-                    return true;
-                }
-            };
-            Modal.open(config);
+            ModalHelper.OpenModal(this, "THÊM SẢN PHẨM MỚI", productEditor,
+                () => productEditor.ValidateInput(),
+                async () => ExecuteSaveProduct(productEditor.GetPayload(), isUpdate: false, productId: 0)
+            );
         }
         catch (Exception ex)
         {
@@ -173,22 +161,10 @@ public partial class UC_ManageProducts : UserControl
         {
             var uiFields = _uiFactory.CreateControl<UC_ProductEditor>(selectedItem.Id);
 
-            Form form = FindForm() ?? throw new InvalidOperationException("Lỗi UI.");
-
-            var config = new Modal.Config(form, $"CẬP NHẬT: {selectedItem.Name}", uiFields)
-            {
-                Font = UiTheme.BodyFont,
-                OkText = "Cập nhật",
-                CancelText = "Huỷ",
-                OnOk = (cfg) =>
-                {
-                    if (!uiFields.ValidateInput()) return false;
-
-                    ExecuteSaveProductAsync(uiFields.GetPayload(), isUpdate: true, productId: selectedItem.Id, uiFields.OriginalImageUrl);
-                    return true;
-                }
-            };
-            Modal.open(config);
+            ModalHelper.OpenModal(this, $"CẬP NHẬT: {selectedItem.Name}", uiFields,
+                uiFields.ValidateInput,
+                async () => ExecuteSaveProduct(uiFields.GetPayload(), isUpdate: true, productId: selectedItem.Id, uiFields.OriginalImageUrl)
+            );
         }
         catch (Exception ex)
         {
@@ -235,20 +211,10 @@ public partial class UC_ManageProducts : UserControl
             selectedItem.Name
         );
 
-        Form form = FindForm() ?? throw new InvalidOperationException("Lỗi UI.");
-
-        var config = new Modal.Config(form, $"CẤU HÌNH SIZE: {selectedItem.Name.ToUpper()}", ucSizes)
-        {
-            Font = UiTheme.BodyFont,
-            OkText = "Đóng",
-            CancelText = null,
-            OnOk = (cfg) => { return true; }
-        };
-
-        Modal.open(config);
+        ModalHelper.OpenModalReadOnly(this, $"CẤU HÌNH SIZE: {selectedItem.Name.ToUpper()}", ucSizes);
     }
 
-    private void ExecuteSaveProductAsync(ProductPayload payload, bool isUpdate, int productId, string? oldImageUrl = null)
+    private void ExecuteSaveProduct(ProductPayload payload, bool isUpdate, int productId, string? oldImageUrl = null)
     {
         Target target = new(this);
 
