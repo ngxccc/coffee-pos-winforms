@@ -423,8 +423,18 @@ public partial class CashierWorkspaceForm : Window
             }
             catch (Exception ex)
             {
-                AntdUI.Message.close_id("change_pass");
-                AntdUI.Message.error(this, $"Lỗi đổi mật khẩu: {ex.Message}");
+                string errMsg = ex is InvalidOperationException or ArgumentException
+                    ? ex.Message
+                    : $"Lỗi đổi mật khẩu: {ex.Message}";
+
+                Invoke(() => MessageBoxHelper.Error(errMsg, owner: this, type: FeedbackType.Message));
+            }
+            finally
+            {
+                if (!IsDisposed)
+                {
+                    Invoke(() => AntdUI.Message.close_id("change_pass"));
+                }
             }
         });
     }
