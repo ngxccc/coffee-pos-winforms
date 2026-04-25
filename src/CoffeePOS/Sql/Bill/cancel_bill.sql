@@ -1,7 +1,8 @@
 UPDATE bills
-SET is_deleted = true,
-  cancel_reason = @reason,
-  deleted_at = NOW(),
+SET status = 'canceled',
+  cancel_reason = @cancel_reason,
+  canceled_at = NOW(),
+  canceled_by = @canceled_by,
   updated_at = NOW()
 WHERE id = @id
-  AND is_deleted = false;
+  AND status != 'canceled';

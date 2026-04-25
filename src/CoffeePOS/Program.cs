@@ -71,6 +71,9 @@ static class Program
             {
                 var dataSourceBuilder = new NpgsqlDataSourceBuilder(connStr);
                 dataSourceBuilder.MapEnum<UserRole>("user_role");
+                dataSourceBuilder.MapEnum<BillStatus>("bill_status");
+                dataSourceBuilder.MapEnum<ProductSize>("product_size");
+                dataSourceBuilder.MapEnum<BillOrderType>("bill_order_type");
 
                 var npgsqlDataSource = dataSourceBuilder.Build();
 

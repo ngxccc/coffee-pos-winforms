@@ -2,10 +2,12 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Text;
 using AntdUI;
+using CoffeePOS.Core;
 using CoffeePOS.Features.Billing;
 using CoffeePOS.Services.Contracts.Commands;
 using CoffeePOS.Services.Contracts.Queries;
 using CoffeePOS.Shared.Dtos.Bill;
+using CoffeePOS.Shared.Enums;
 using CoffeePOS.Shared.Helpers;
 
 namespace CoffeePOS.Features.Admin;
@@ -14,6 +16,7 @@ public partial class UC_ManageBills : UserControl
 {
     private readonly IBillService _billService;
     private readonly IBillQueryService _billQueryService;
+    private readonly IUserSession _userSession;
 
     private List<BillReportDto> _bills = [];
 
@@ -24,20 +27,21 @@ public partial class UC_ManageBills : UserControl
         (GetDisplayName(nameof(BillReportDto.TotalAmount)), b => b.TotalAmount.ToString(CultureInfo.InvariantCulture)),
         (GetDisplayName(nameof(BillReportDto.CreatedAt)), b => b.CreatedAt.ToString("dd/MM/yyyy HH:mm:ss")),
         (GetDisplayName(nameof(BillReportDto.CreatedByName)), b => b.CreatedByName),
-        (GetDisplayName(nameof(BillReportDto.IsCanceled)), b => b.IsCanceled ? "1" : "0"),
+        (GetDisplayName(nameof(BillReportDto.Status)), b => b.Status == BillStatus.Paid ? "paid" : "canceled"),
         (GetDisplayName(nameof(BillReportDto.CanceledAt)), b => b.CanceledAt?.ToString("dd/MM/yyyy HH:mm:ss") ?? string.Empty)
     ];
 
-    public UC_ManageBills(IBillService billService, IBillQueryService billQueryService)
+    public UC_ManageBills(IBillService billService, IBillQueryService billQueryService, IUserSession userSession)
     {
         _billService = billService;
         _billQueryService = billQueryService;
+        _userSession = userSession;
 
         InitializeComponent();
         SetupTable();
         SetupEvents();
 
-        _ = LoadBillsAsync();
+        Load += async (s, e) => await LoadBillsAsync();
     }
 
     private void SetupTable()
@@ -71,7 +75,7 @@ public partial class UC_ManageBills : UserControl
                 Align = ColumnAlign.Center,
                 Render = (value, record, rowIndex) =>
                 {
-                    var isCanceled = ((BillReportDto)record).IsCanceled;
+                    var isCanceled = ((BillReportDto)record).Status == BillStatus.Canceled;
                     return new CellBadge(isCanceled ? TState.Error : TState.Success,
                                         isCanceled ? "Đã huỷ" : "Hợp lệ");
                 }
@@ -83,7 +87,7 @@ public partial class UC_ManageBills : UserControl
                 Width = "180",
                 Render = (value, record, rowIndex) =>
                 {
-                    var isCanceled = ((BillReportDto)record).IsCanceled;
+                    var isCanceled = ((BillReportDto)record).Status == BillStatus.Canceled;
 
                     return new CellButton[] {
                         new("view", "Chi tiết") { Type = TTypeMini.Primary },
@@ -181,7 +185,7 @@ public partial class UC_ManageBills : UserControl
 
     private async void ToggleSelectedBillStatusAsync(BillReportDto selectedBill)
     {
-        if (selectedBill.IsCanceled)
+        if (selectedBill.Status == BillStatus.Canceled)
         {
             if (!MessageBoxHelper.ConfirmWarning($"Bạn có chắc muốn khôi phục hóa đơn #{selectedBill.Id}?", "Xác nhận khôi phục", this))
                 return;
@@ -236,7 +240,7 @@ public partial class UC_ManageBills : UserControl
 
                     if (!isValid) return false;
 
-                    ExecuteCancelBillAsync(selectedBill.Id, reason);
+                    ExecuteCancelBill(selectedBill.Id, reason);
                     return true;
                 }
             };
@@ -245,7 +249,7 @@ public partial class UC_ManageBills : UserControl
         }
     }
 
-    private void ExecuteCancelBillAsync(int billId, string reason)
+    private void ExecuteCancelBill(int billId, string reason)
     {
         Target target = new(this);
         AntdUI.Message.loading(target, "Đang xử lý...", async msg =>
@@ -253,7 +257,7 @@ public partial class UC_ManageBills : UserControl
             msg.ID = "cancel_bill";
             try
             {
-                await _billService.CancelBillAsync(billId, reason);
+                await _billService.CancelBillAsync(billId, _userSession.CurrentUser!.Id, reason);
                 Invoke(() => MessageBoxHelper.Success($"Đã hủy hóa đơn #{billId}.", owner: this, type: FeedbackType.Message));
                 await LoadBillsAsync();
             }
@@ -294,9 +298,9 @@ public partial class UC_ManageBills : UserControl
     private void UpdateSummary()
     {
         int totalBills = _bills.Count;
-        int canceledBills = _bills.Count(x => x.IsCanceled);
+        int canceledBills = _bills.Count(x => x.Status == BillStatus.Canceled);
         int validBills = totalBills - canceledBills;
-        decimal netRevenue = _bills.Where(x => !x.IsCanceled).Sum(x => x.TotalAmount);
+        decimal netRevenue = _bills.Where(x => !(x.Status == BillStatus.Canceled)).Sum(x => x.TotalAmount);
 
         string revenueText = netRevenue.ToString("N0", CultureInfo.GetCultureInfo("vi-VN"));
         _lblSummary.Text = $"Tổng đơn: {totalBills}  |  Đơn hợp lệ: {validBills}  |  Đơn hủy: {canceledBills}  |  Doanh thu: {revenueText} đ";

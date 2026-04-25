@@ -2,6 +2,7 @@ namespace CoffeePOS.Data.Repositories;
 
 using CoffeePOS.Data.Repositories.Contracts;
 using CoffeePOS.Shared.Dtos.Bill;
+using CoffeePOS.Shared.Enums;
 using CoffeePOS.Shared.Helpers;
 using Npgsql;
 
@@ -84,12 +85,13 @@ public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
         return list;
     }
 
-    public async Task CancelBillAsync(int billId, string reason)
+    public async Task CancelBillAsync(int billId, int userId, string reason)
     {
         using var conn = await dataSource.OpenConnectionAsync();
         using var cmd = new NpgsqlCommand(SqlCancelBill, conn);
-        cmd.Parameters.Add(new NpgsqlParameter<string>("reason", reason));
+        cmd.Parameters.Add(new NpgsqlParameter<string>("cancel_reason", reason));
         cmd.Parameters.Add(new NpgsqlParameter<int>("id", billId));
+        cmd.Parameters.Add(new NpgsqlParameter<int>("canceled_by", userId));
         await cmd.ExecuteNonQueryAsync();
     }
 
@@ -117,7 +119,9 @@ public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
                 reader.GetRequired<int>("buzzer_number"),
                 reader.GetRequired<int>("total_items"),
                 reader.GetRequired<decimal>("total_amount"),
-                reader.GetRequired<DateTime>("created_at")));
+                reader.GetRequired<BillStatus>("status"),
+                reader.GetRequired<DateTime>("created_at"),
+                reader.GetNullable<DateTime>("canceled_at")));
         }
         return list;
     }
@@ -138,10 +142,11 @@ public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
                 reader.GetRequired<int>("id"),
                 reader.GetRequired<int>("buzzer_number"),
                 reader.GetRequired<decimal>("total_amount"),
-                reader.GetRequired<DateTime>("created_at"),
+                reader.GetRequired<BillStatus>("status"),
                 reader.GetRequired<string>("created_by_name"),
-                reader.GetRequired<bool>("is_deleted"),
-                reader.GetNullable<DateTime>("deleted_at")));
+                reader.GetNullable<string>("canceled_by_name"),
+                reader.GetRequired<DateTime>("created_at"),
+                reader.GetNullable<DateTime>("canceled_at")));
         }
 
         return list;

@@ -41,7 +41,7 @@ public partial class UC_BillHistory
             Radius = 8,
             BorderWidth = 1F,
             BorderColor = UiTheme.SurfaceAlt,
-            Font = new Font("Segoe UI", 10),
+            Font = UiTheme.BodyFont,
             AutoSizeColumnsMode = AntdUI.ColumnsMode.Fill
         };
 

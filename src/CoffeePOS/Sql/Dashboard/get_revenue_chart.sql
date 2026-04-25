@@ -10,7 +10,6 @@ SELECT dr.report_date,
   COALESCE(SUM(b.total_amount), 0) AS daily_revenue
 FROM date_range dr
   LEFT JOIN bills b ON dr.report_date = b.created_at::date
-  AND b.is_deleted = FALSE
   AND b.status = 'paid'
   AND b.created_at >= (CURRENT_DATE - ((@days - 1) * INTERVAL '1 day'))
 GROUP BY dr.report_date

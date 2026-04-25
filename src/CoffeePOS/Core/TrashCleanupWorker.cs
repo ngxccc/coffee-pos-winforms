@@ -15,8 +15,9 @@ public class TrashCleanupWorker(NpgsqlDataSource dataSource) : BackgroundService
                 using var conn = await dataSource.OpenConnectionAsync(stoppingToken);
 
                 string sql = @"
-                    DELETE FROM products WHERE is_deleted = true AND deleted_at < NOW() - INTERVAL '30 days';
-                    DELETE FROM categories WHERE is_deleted = true AND deleted_at < NOW() - INTERVAL '30 days';";
+                    DELETE FROM products WHERE deleted_at < NOW() - INTERVAL '30 days';
+                    DELETE FROM categories WHERE deleted_at < NOW() - INTERVAL '30 days';
+                    DELETE FROM toppings WHERE deleted_at < NOW() - INTERVAL '30 days';";
 
                 using var cmd = new NpgsqlCommand(sql, conn);
                 int rowsDeleted = await cmd.ExecuteNonQueryAsync(stoppingToken);

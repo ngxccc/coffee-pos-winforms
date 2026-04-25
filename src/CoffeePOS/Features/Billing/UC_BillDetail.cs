@@ -1,5 +1,5 @@
-using System.Drawing;
 using CoffeePOS.Shared.Dtos.Bill;
+using CoffeePOS.Shared.Enums;
 using CoffeePOS.Shared.Helpers;
 
 namespace CoffeePOS.Features.Billing;
@@ -58,10 +58,10 @@ public partial class UC_BillDetail : UserControl
         _lblStaff.Text = $"Nhân viên: {_bill.CreatedByName}";
         _lblCreatedAt.Text = $"Tạo lúc: {_bill.CreatedAt:dd/MM/yyyy HH:mm}";
 
-        string status = _bill.IsCanceled ? "Đã huỷ" : "Hợp lệ";
+        string status = _bill.Status == BillStatus.Canceled ? "Đã huỷ" : "Hợp lệ";
         _lblStatus.Text = $"Trạng thái: {status}";
 
-        if (_bill.IsCanceled && _bill.CanceledAt.HasValue)
+        if (_bill.Status == BillStatus.Canceled && _bill.CanceledAt.HasValue)
         {
             _lblCanceledAt.Text = $"Huỷ lúc: {_bill.CanceledAt.Value:dd/MM/yyyy HH:mm}";
             _lblCanceledAt.ForeColor = Color.Red;

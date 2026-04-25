@@ -6,8 +6,8 @@ CREATE TABLE IF NOT EXISTS bills (
   total_amount DECIMAL(18, 0) DEFAULT 0,
   status bill_status DEFAULT 'pending' NOT NULL,
   cancel_reason VARCHAR(255) NULL,
-  is_deleted BOOLEAN DEFAULT FALSE,
+  canceled_by INT REFERENCES users(id) NULL,
   created_at TIMESTAMPTZ DEFAULT NOW (),
   updated_at TIMESTAMPTZ DEFAULT NOW (),
-  deleted_at TIMESTAMPTZ NULL
+  canceled_at TIMESTAMPTZ NULL
 );

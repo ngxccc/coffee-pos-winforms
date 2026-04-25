@@ -1,6 +1,7 @@
 using AntdUI;
 using CoffeePOS.Core;
 using CoffeePOS.Features.Billing;
+using CoffeePOS.Features.Billing.Controls;
 using CoffeePOS.Features.Products;
 using CoffeePOS.Features.Sidebar;
 using CoffeePOS.Forms.Core;
@@ -8,6 +9,7 @@ using CoffeePOS.Services.Contracts.Commands;
 using CoffeePOS.Services.Contracts.Queries;
 using CoffeePOS.Shared.Dtos.Bill;
 using CoffeePOS.Shared.Dtos.ShiftReport;
+using CoffeePOS.Shared.Enums;
 using CoffeePOS.Shared.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -78,8 +80,15 @@ public partial class CashierWorkspaceForm : Window
 
         _ucBillHistory.OnReprintClicked += HandleReprintBill;
         _ucBillHistory.OnDetailsRequested += HandleBillDetailsRequestedAsync;
+        _ucBillHistory.OnCancelRequested += HandleCancelBillRequested;
+        _ucBillHistory.OnRestoreRequested += HandleRestoreBillRequested;
 
         _ucMenu.OnProductSelected += HandleProductSelectedAsync;
+
+        _ucSidebar.OnHomeClicked += HandleHomeClicked;
+        _ucSidebar.OnBillHistoryClicked += HandleBillHistoryClickedAsync;
+        _ucSidebar.OnProfilesClicked += HandleProfilesClicked;
+        _ucSidebar.OnLogoutClicked += HandleLogoutClicked;
     }
 
     private async void HandleEditCartItemAsync(object? sender, CartItemDto cartItem)
@@ -168,7 +177,7 @@ public partial class CashierWorkspaceForm : Window
                     }
 
                     var reportBill = reports.FirstOrDefault(x => x.Id == historyBill.Id)
-                        ?? new BillReportDto(historyBill.Id, historyBill.BuzzerNumber, historyBill.TotalAmount, historyBill.CreatedAt, _session.CurrentUser?.FullName ?? "N/A", false, null);
+                        ?? new BillReportDto(historyBill.Id, historyBill.BuzzerNumber, historyBill.TotalAmount, BillStatus.Paid, _session.CurrentUser?.FullName ?? "N/A", null, historyBill.CreatedAt, null);
 
                     var detailControl = new UC_BillDetail(reportBill, details);
                     var config = new Modal.Config(this, $"CHI TIẾT HOÁ ĐƠN #{reportBill.Id}", detailControl)
@@ -184,6 +193,80 @@ public partial class CashierWorkspaceForm : Window
                 Invoke(() => MessageBoxHelper.Error($"Lỗi tải chi tiết: {ex.Message}", owner: this));
             }
         });
+    }
+
+    private void HandleCancelBillRequested(object? sender, BillHistoryDto bill)
+    {
+        var reasonControl = new UC_CancelBillReason();
+
+        var config = new Modal.Config(this, $"HỦY ĐƠN HÀNG #{bill.Id}", reasonControl)
+        {
+            Font = UiTheme.BodyFont,
+            OkText = "Xác nhận hủy",
+            CancelText = "Đóng",
+            OnOk = (cfg) =>
+            {
+                if (!reasonControl.ValidateInput()) return false;
+
+                string reason = reasonControl.GetPayload();
+
+                AntdUI.Message.loading(this, "Đang xử lý hủy...", async msgCfg =>
+                {
+                    msgCfg.ID = "cancel_bill";
+                    try
+                    {
+                        await _billService.CancelBillAsync(bill.Id, _session.CurrentUser!.Id, reason);
+
+                        Invoke(() =>
+                        {
+                            AntdUI.Message.success(this, "Hủy đơn hàng thành công!");
+                            HandleBillHistoryClickedAsync(null, EventArgs.Empty);
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        Invoke(() => MessageBoxHelper.Error($"Lỗi hủy đơn: {ex.Message}", owner: this));
+                    }
+                    finally
+                    {
+                        Invoke(() => AntdUI.Message.close_id("cancel_bill"));
+                    }
+                });
+
+                return true;
+            }
+        };
+
+        AntdUI.Modal.open(config);
+    }
+
+    private void HandleRestoreBillRequested(object? sender, BillHistoryDto bill)
+    {
+        if (MessageBoxHelper.ConfirmWarning($"Khôi phục hoá đơn #{bill.Id}?\n(Doanh thu của đơn hàng này sẽ được tính lại vào hệ thống)", "Xác nhận khôi phục", this))
+        {
+            AntdUI.Message.loading(this, "Đang khôi phục...", async msgCfg =>
+            {
+                msgCfg.ID = "restore_bill";
+                try
+                {
+                    await _billService.RestoreBillAsync(bill.Id);
+
+                    Invoke(() =>
+                    {
+                        AntdUI.Message.success(this, "Khôi phục thành công!");
+                        HandleBillHistoryClickedAsync(null, EventArgs.Empty);
+                    });
+                }
+                catch (Exception ex)
+                {
+                    Invoke(() => MessageBoxHelper.Error($"Lỗi khôi phục: {ex.Message}", owner: this));
+                }
+                finally
+                {
+                    Invoke(() => AntdUI.Message.close_id("restore_bill"));
+                }
+            });
+        }
     }
 
     private async void HandleProductSelectedAsync(int prodId, string prodName, decimal price, string? imageIdentifier)
