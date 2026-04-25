@@ -67,7 +67,7 @@ public class UserRepository(NpgsqlDataSource dataSource) : IUserRepository
             if (await Task.Run(() => BCrypt.Net.BCrypt.Verify(password, dbHash)))
             {
                 if (!isActive)
-                    throw new InvalidOperationException("Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.");
+                    throw new InvalidOperationException("Tài khoản của bạn đã bị khóa!\nMọi thắc mắc xin liên hệ quản trị viên.");
 
                 return new AuthUserDto(
                     reader.GetInt32(reader.GetOrdinal("id")),
