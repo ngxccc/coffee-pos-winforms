@@ -7,6 +7,6 @@ INSERT INTO users (
 VALUES (
     @username,
     @hash,
-    @fullName,
+    @full_name,
     CAST(@role AS user_role)
   );
