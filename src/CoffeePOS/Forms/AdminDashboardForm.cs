@@ -1,7 +1,7 @@
+using AntdUI;
 using CoffeePOS.Core;
 using CoffeePOS.Features.Admin;
 using CoffeePOS.Features.Sidebar;
-using CoffeePOS.Forms.Core;
 using CoffeePOS.Services.Contracts.Commands;
 using CoffeePOS.Shared.Helpers;
 using Microsoft.Extensions.DependencyInjection;
@@ -65,34 +65,21 @@ public partial class AdminDashboardForm : AntdUI.Window
         {
             var uiFactory = _serviceProvider.GetRequiredService<IUiFactory>();
             var profilesControl = uiFactory.CreateControl<UC_Profiles>();
-            using var shell = new DynamicModalShell<ChangePasswordPayload>("THÔNG TIN CÁ NHÂN", profilesControl, new Size(450, 550), saveButtonText: "CẬP NHẬT");
 
-            if (shell.ShowDialog(this) != DialogResult.OK) return;
-
-            try
+            var config = new Modal.Config(this, "THÔNG TIN CÁ NHÂN", profilesControl)
             {
-                var payload = shell.ExtractData();
-                var userService = _serviceProvider.GetRequiredService<IUserService>();
+                OkText = "Cập nhật",
+                CancelText = "Huỷ",
+                BtnHeight = 45,
+                OnOk = (cfg) =>
+                {
+                    var payload = profilesControl.GetPayload();
+                    ExecutePasswordChange(payload);
+                    return false;
+                }
+            };
 
-                await userService.ChangePasswordAsync(
-                    _session.CurrentUser!.Id,
-                    _session.CurrentUser.Username,
-                    payload
-                );
-
-                MessageBoxHelper.Info("Đổi mật khẩu thành công! Vui lòng đăng nhập lại.", "Thành công", this);
-                _session.Logout();
-                DialogResult = DialogResult.Abort;
-                Close();
-            }
-            catch (ArgumentException ex)
-            {
-                MessageBoxHelper.Error(ex.Message, owner: this);
-            }
-            catch (Exception ex)
-            {
-                MessageBoxHelper.Error($"Lỗi hệ thống: {ex.Message}", owner: this);
-            }
+            AntdUI.Modal.open(config);
         };
 
         _ucSidebar.OnLogoutClicked += BtnLogout_Click;
@@ -100,7 +87,7 @@ public partial class AdminDashboardForm : AntdUI.Window
 
     private void BtnLogout_Click(object? sender, EventArgs e)
     {
-        if (MessageBoxHelper.ConfirmYesNo("Sếp muốn đăng xuất khỏi hệ thống?", "Xác nhận", this))
+        if (MessageBoxHelper.ConfirmYesNo("Bạn muốn đăng xuất khỏi hệ thống?", "Xác nhận", this))
         {
             _session.Logout();
             DialogResult = DialogResult.Abort;
@@ -126,5 +113,47 @@ public partial class AdminDashboardForm : AntdUI.Window
 
         value.Visible = true;
         value.BringToFront();
+    }
+
+    private void ExecutePasswordChange(ChangePasswordPayload payload)
+    {
+        AntdUI.Message.loading(this, "Đang đổi mật khẩu...", async config =>
+        {
+            config.ID = "change_pass";
+
+            try
+            {
+                var userService = _serviceProvider.GetRequiredService<IUserService>();
+                await userService.ChangePasswordAsync(
+                    _session.CurrentUser!.Id,
+                    _session.CurrentUser.Username,
+                    payload
+                );
+
+                Invoke(() =>
+                {
+                    _session.Logout();
+                    DialogResult = DialogResult.Abort;
+                    AntdUI.Message.close_id("change_pass");
+                    MessageBoxHelper.Info("Đổi mật khẩu thành công! Hệ thống sẽ đăng xuất.");
+                    Close();
+                });
+            }
+            catch (Exception ex)
+            {
+                string errMsg = ex is InvalidOperationException or ArgumentException
+                    ? ex.Message
+                    : $"Lỗi đổi mật khẩu: {ex.Message}";
+
+                Invoke(() => MessageBoxHelper.Error(errMsg, owner: this, type: FeedbackType.Message));
+            }
+            finally
+            {
+                if (!IsDisposed)
+                {
+                    Invoke(() => AntdUI.Message.close_id("change_pass"));
+                }
+            }
+        });
     }
 }
