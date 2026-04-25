@@ -13,7 +13,7 @@ public partial class UC_ProductCustomization : UserControl, IValidatableComponen
     private readonly ProductDetailDto _product;
     private readonly CartItemDto? _existingItem;
 
-    private List<ToppingGridDto> _allToppings = [];
+    private List<ToppingDto> _allToppings = [];
     private bool _loaded;
     private readonly decimal _basePrice;
     private decimal _currentSizeAdjustment = 0;
@@ -75,12 +75,12 @@ public partial class UC_ProductCustomization : UserControl, IValidatableComponen
         _tableToppings.Columns =
         [
             new ColumnCheck("IsSelected").SetFixed(),
-            DtoHelper.CreateCol<ToppingGridDto>(nameof(ToppingGridDto.Name), c =>
+            DtoHelper.CreateCol<ToppingDto>(nameof(ToppingDto.Name), c =>
             {
                 c.Align = ColumnAlign.Left;
                 c.SortOrder = true;
             }),
-            DtoHelper.CreateCol<ToppingGridDto>(nameof(ToppingGridDto.Price), c =>
+            DtoHelper.CreateCol<ToppingDto>(nameof(ToppingDto.Price), c =>
             {
                 c.Align = ColumnAlign.Right;
                 c.DisplayFormat = "{0:N0} đ";

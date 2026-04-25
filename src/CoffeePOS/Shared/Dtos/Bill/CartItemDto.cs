@@ -9,7 +9,7 @@ public record CartItemDto
     public string SizeName { get; set; } = "M";
     public decimal BasePrice { get; set; }
     public string? ImageUrl { get; set; }
-    public List<ToppingGridDto> Toppings { get; set; } = [];
+    public List<ToppingDto> Toppings { get; set; } = [];
     public string Note { get; set; } = "";
     public string DisplayName
     {

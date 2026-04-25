@@ -37,9 +37,9 @@ public class ProductQueryService(IProductRepository productRepo, ICategoryReposi
                 p.ImageUrl))];
     }
 
-    public async Task<List<ToppingGridDto>> GetAllToppingsAsync()
+    public async Task<List<ToppingDto>> GetAllToppingsAsync()
     {
-        if (memoryCache.TryGetValue(TOPPINGS_CACHE_KEY, out List<ToppingGridDto>? cachedToppings))
+        if (memoryCache.TryGetValue(TOPPINGS_CACHE_KEY, out List<ToppingDto>? cachedToppings))
         {
             return cachedToppings ?? [];
         }
