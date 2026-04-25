@@ -149,14 +149,20 @@ public partial class UC_ManageBills : UserControl
     {
         try
         {
-            var details = await _billQueryService.GetBillDetailsAsync(selectedBill.Id);
-            if (details.Count == 0)
+            List<BillDetailDto>? details = null;
+
+            await Spin.open(this, async cfg =>
+            {
+                details = await _billQueryService.GetBillDetailsAsync(selectedBill.Id);
+            });
+
+            if (details?.Count == 0)
             {
                 MessageBoxHelper.Warning($"Hóa đơn #{selectedBill.Id} chưa có chi tiết món.", owner: this);
                 return;
             }
 
-            var detailControl = new UC_BillDetail(selectedBill, details);
+            var detailControl = new UC_BillDetail(selectedBill, details!);
             Form form = FindForm() ?? throw new InvalidOperationException("Lỗi UI.");
 
             var config = new Modal.Config(form, $"CHI TIẾT HOÁ ĐƠN #{selectedBill.Id}", detailControl)

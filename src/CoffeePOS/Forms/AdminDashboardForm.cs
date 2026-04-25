@@ -39,51 +39,63 @@ public partial class AdminDashboardForm : Window
 
     private void WireEvents()
     {
-        _ucSidebar.OnNavigate += (routeTag) =>
+        _ucSidebar.OnNavigate += HandleNavigation;
+        _ucSidebar.OnProfilesClicked += HandleProfilesClicked;
+        _ucSidebar.OnLogoutClicked += HandleLogoutClicked;
+    }
+
+    private void HandleNavigation(string routeTag)
+    {
+        switch (routeTag)
         {
-            switch (routeTag)
+            case "Dashboard":
+                NavigateTo<UC_Dashboard>(routeTag);
+                break;
+            case "ManageProducts":
+                NavigateTo<UC_ManageProducts>(routeTag);
+                break;
+            case "ManageCategories":
+                NavigateTo<UC_ManageCategories>(routeTag);
+                break;
+            case "ManageUsers":
+                NavigateTo<UC_ManageUsers>(routeTag);
+                break;
+            case "ManageBills":
+                NavigateTo<UC_ManageBills>(routeTag);
+                break;
+        }
+    }
+
+    private void HandleProfilesClicked(object? sender, EventArgs e)
+    {
+        var uiFactory = _serviceProvider.GetRequiredService<IUiFactory>();
+        var profilesControl = uiFactory.CreateControl<UC_Profiles>();
+
+        var config = new Modal.Config(this, "THÔNG TIN CÁ NHÂN", profilesControl)
+        {
+            Font = UiTheme.BodyFont,
+            OkText = "Cập nhật",
+            CancelText = "Huỷ",
+            BtnHeight = 45,
+            OnOk = (cfg) =>
             {
-                case "Dashboard":
-                    NavigateTo<UC_Dashboard>(routeTag);
-                    break;
-                case "ManageProducts":
-                    NavigateTo<UC_ManageProducts>(routeTag);
-                    break;
-                case "ManageCategories":
-                    NavigateTo<UC_ManageCategories>(routeTag);
-                    break;
-                case "ManageUsers":
-                    NavigateTo<UC_ManageUsers>(routeTag);
-                    break;
-                case "ManageBills":
-                    NavigateTo<UC_ManageBills>(routeTag);
-                    break;
+                var payload = profilesControl.GetPayload();
+                ExecutePasswordChange(payload);
+                return false;
             }
         };
 
-        _ucSidebar.OnProfilesClicked += async (s, e) =>
+        AntdUI.Modal.open(config);
+    }
+
+    private void HandleLogoutClicked(object? sender, EventArgs e)
+    {
+        if (MessageBoxHelper.ConfirmYesNo("Bạn muốn đăng xuất khỏi hệ thống?", "Xác nhận", this))
         {
-            var uiFactory = _serviceProvider.GetRequiredService<IUiFactory>();
-            var profilesControl = uiFactory.CreateControl<UC_Profiles>();
-
-            var config = new Modal.Config(this, "THÔNG TIN CÁ NHÂN", profilesControl)
-            {
-                Font = UiTheme.BodyFont,
-                OkText = "Cập nhật",
-                CancelText = "Huỷ",
-                BtnHeight = 45,
-                OnOk = (cfg) =>
-                {
-                    var payload = profilesControl.GetPayload();
-                    ExecutePasswordChange(payload);
-                    return false;
-                }
-            };
-
-            AntdUI.Modal.open(config);
-        };
-
-        _ucSidebar.OnLogoutClicked += BtnLogout_Click;
+            _session.Logout();
+            DialogResult = DialogResult.Abort;
+            Close();
+        }
     }
 
     private void BtnLogout_Click(object? sender, EventArgs e)

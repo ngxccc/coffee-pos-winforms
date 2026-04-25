@@ -62,84 +62,72 @@ public partial class CashierWorkspaceForm : Window
         InitializeComponent();
         AssembleLayout(_ucSidebar, _ucBilling, _ucBillHistory, _ucMenu);
 
-        BindInitialData();
-        SetupSidebarEvents();
-        SetupBillingEvents();
-        SetupHistoryEvents();
-        SetupMenuEvents();
+        WireEvents();
     }
 
     protected override void OnLoad(EventArgs e)
     {
         base.OnLoad(e);
-        AntdUI.Message.info(this, $"Chào mừng {_session.CurrentUser!.FullName} đến với ca làm việc của mình!");
+        AntdUI.Message.info(this, $"Chào mừng {_session.CurrentUser!.FullName} đến với ca làm việc của mình!"); _lblUserInfo.Text = $"Ca trực: {_session.CurrentUser?.FullName ?? "N/A"}";
     }
 
-    // SETUP
-    private void BindInitialData()
+    private void WireEvents()
     {
-        _lblUserInfo.Text = $"Ca trực: {_session.CurrentUser?.FullName ?? "N/A"}";
+        _ucBilling.OnPayClicked += ProcessPayment;
+        _ucBilling.OnEditCartItem += HandleEditCartItemAsync;
+
+        _ucBillHistory.OnReprintClicked += HandleReprintBill;
+        _ucBillHistory.OnDetailsRequested += HandleBillDetailsRequestedAsync;
+
+        _ucMenu.OnProductSelected += HandleProductSelectedAsync;
     }
 
-    private void SetupSidebarEvents()
+    private async void HandleEditCartItemAsync(object? sender, CartItemDto cartItem)
     {
-        _ucSidebar.OnHomeClicked += HandleHomeClicked;
-        _ucSidebar.OnBillHistoryClicked += HandleBillHistoryClickedAsync;
-        _ucSidebar.OnProfilesClicked += HandleProfilesClicked;
-        _ucSidebar.OnLogoutClicked += HandleLogoutClicked;
-    }
-
-    private void SetupBillingEvents()
-    {
-        _ucBilling.OnPayClicked += (s, e) => ProcessPayment();
-
-        _ucBilling.OnEditCartItem += async (s, cartItem) =>
+        try
         {
+            var productQueryService = _serviceProvider.GetRequiredService<IProductQueryService>();
+            var product = await productQueryService.GetProductByIdAsync(cartItem.ProductId);
+
+            if (product == null)
+            {
+                MessageBoxHelper.Error("Không tìm thấy thông tin sản phẩm!", owner: this);
+                return;
+            }
+
+            var hostForm = FindForm();
+            if (hostForm == null) return;
+
+            var customizationControl = new UC_ProductCustomization(cartItem, product, productQueryService);
+            var drawerShell = new DynamicDrawerShell<CartItemDto>($"SỬA: {product.Name.ToUpper()}", customizationControl, 480);
+
+            drawerShell.OnSaved += (updatedItem) =>
+            {
+                _ucBilling.UpdateItem(cartItem, updatedItem);
+            };
+
+            Drawer.open(new Drawer.Config(hostForm, drawerShell)
+            {
+                Align = TAlignMini.Right,
+                MaskClosable = true,
+                Padding = 0
+            });
+        }
+        catch (Exception ex)
+        {
+            MessageBoxHelper.Error($"Lỗi tải tuỳ chỉnh: {ex.Message}", owner: this);
+        }
+    }
+
+    private void HandleReprintBill(object? sender, BillHistoryDto bill)
+    {
+        if (!MessageBoxHelper.ConfirmYesNo($"Bạn muốn in lại hóa đơn #{bill.Id}?", "In lại", this)) return;
+
+        AntdUI.Message.loading(this, "Đang xử lý in lại...", async cfg =>
+        {
+            cfg.ID = "reprint_bill";
             try
             {
-                var productQueryService = _serviceProvider.GetRequiredService<IProductQueryService>();
-                var product = await productQueryService.GetProductByIdAsync(cartItem.ProductId);
-
-                if (product == null)
-                {
-                    MessageBoxHelper.Error("Không tìm thấy thông tin sản phẩm!", owner: this);
-                    return;
-                }
-
-                var hostForm = FindForm();
-                if (hostForm == null) return;
-
-                var customizationControl = new UC_ProductCustomization(cartItem, product, productQueryService);
-                var drawerShell = new DynamicDrawerShell<CartItemDto>($"SỬA: {product.Name.ToUpper()}", customizationControl, 480);
-
-                drawerShell.OnSaved += (updatedItem) =>
-                {
-                    _ucBilling.UpdateItem(cartItem, updatedItem);
-                };
-
-                Drawer.open(new Drawer.Config(hostForm, drawerShell)
-                {
-                    Align = TAlignMini.Right,
-                    MaskClosable = true,
-                    Padding = 0
-                });
-            }
-            catch (Exception ex)
-            {
-                MessageBoxHelper.Error($"Lỗi tải tuỳ chỉnh: {ex.Message}", owner: this);
-            }
-        };
-    }
-
-    private void SetupHistoryEvents()
-    {
-        _ucBillHistory.OnReprintClicked += async (s, bill) =>
-        {
-            if (!MessageBoxHelper.ConfirmYesNo($"Bạn muốn in lại hóa đơn #{bill.Id}?", "In lại", this)) return;
-
-            try
-            {
-                Cursor.Current = Cursors.WaitCursor;
                 var billItems = await _billQueryService.GetBillDetailsAsync(bill.Id);
                 await _pdfQueue.EnqueueJobAsync(new BillPrintPayload
                 {
@@ -152,99 +140,91 @@ public partial class CashierWorkspaceForm : Window
             }
             catch (Exception ex)
             {
-                MessageBoxHelper.Error($"Lỗi in hóa đơn: {ex.Message}", "LỖI HỆ THỐNG", this);
+                Invoke(() => MessageBoxHelper.Error($"Lỗi in hóa đơn: {ex.Message}", "LỖI HỆ THỐNG", this));
             }
             finally
             {
-                Cursor.Current = Cursors.Default;
+                Invoke(() => AntdUI.Message.close_id("reprint_bill"));
             }
-        };
+        });
+    }
 
-        _ucBillHistory.OnDetailsRequested += async (s, historyBill) =>
+    private async void HandleBillDetailsRequestedAsync(object? sender, BillHistoryDto historyBill)
+    {
+        await Spin.open(this, async cfg =>
         {
             try
             {
-                Cursor.Current = Cursors.WaitCursor;
                 var details = await _billQueryService.GetBillDetailsAsync(historyBill.Id);
-                if (details.Count == 0)
-                {
-                    MessageBoxHelper.Warning($"Hóa đơn #{historyBill.Id} chưa có chi tiết món.", owner: this);
-                    return;
-                }
-
                 var billDate = DateOnly.FromDateTime(historyBill.CreatedAt);
                 var reports = await _billQueryService.GetBillsByDateRangeAsync(billDate, billDate);
-                var reportBill = reports.FirstOrDefault(x => x.Id == historyBill.Id)
-                    ?? new BillReportDto(historyBill.Id, historyBill.BuzzerNumber, historyBill.TotalAmount, historyBill.CreatedAt, _session.CurrentUser?.FullName ?? "N/A", false, null);
 
-                var detailControl = new UC_BillDetail(reportBill, details);
-
-                var config = new Modal.Config(this, $"CHI TIẾT HOÁ ĐƠN #{reportBill.Id}", detailControl)
+                Invoke(() =>
                 {
-                    OkText = "Đóng",
-                    CancelText = null,
-                };
-                AntdUI.Modal.open(config);
+                    if (details.Count == 0)
+                    {
+                        MessageBoxHelper.Warning($"Hóa đơn #{historyBill.Id} chưa có chi tiết món.", owner: this);
+                        return;
+                    }
+
+                    var reportBill = reports.FirstOrDefault(x => x.Id == historyBill.Id)
+                        ?? new BillReportDto(historyBill.Id, historyBill.BuzzerNumber, historyBill.TotalAmount, historyBill.CreatedAt, _session.CurrentUser?.FullName ?? "N/A", false, null);
+
+                    var detailControl = new UC_BillDetail(reportBill, details);
+                    var config = new Modal.Config(this, $"CHI TIẾT HOÁ ĐƠN #{reportBill.Id}", detailControl)
+                    {
+                        OkText = "Đóng",
+                        CancelText = null,
+                    };
+                    AntdUI.Modal.open(config);
+                });
             }
             catch (Exception ex)
             {
-                MessageBoxHelper.Error($"Lỗi tải chi tiết: {ex.Message}", owner: this);
+                Invoke(() => MessageBoxHelper.Error($"Lỗi tải chi tiết: {ex.Message}", owner: this));
             }
-            finally
-            {
-                Cursor.Current = Cursors.Default;
-            }
-        };
+        });
     }
 
-    private void SetupMenuEvents()
+    private async void HandleProductSelectedAsync(int prodId, string prodName, decimal price, string? imageIdentifier)
     {
-        _ucMenu.OnProductSelected += async (prodId, prodName, price, imageIdentifier) =>
+        await Spin.open(this, async cfg =>
         {
             try
             {
                 var productQueryService = _serviceProvider.GetRequiredService<IProductQueryService>();
                 var product = await productQueryService.GetProductByIdAsync(prodId);
 
-                if (product == null)
+                Invoke(() =>
                 {
-                    MessageBoxHelper.Error("Không tìm thấy thông tin sản phẩm!", owner: this);
-                    return;
-                }
+                    if (product == null)
+                    {
+                        MessageBoxHelper.Error("Không tìm thấy thông tin sản phẩm!", owner: this);
+                        return;
+                    }
 
-                var hostForm = FindForm();
-                if (hostForm == null) return;
+                    var hostForm = FindForm();
+                    if (hostForm == null) return;
 
-                var customizationControl = new UC_ProductCustomization(product, productQueryService);
+                    var customizationControl = new UC_ProductCustomization(product, productQueryService);
+                    var drawerShell = new DynamicDrawerShell<CartItemDto>($"TÙY CHỈNH: {product.Name.ToUpper()}", customizationControl, width: 480);
 
-                var drawerShell = new DynamicDrawerShell<CartItemDto>(
-                    $"TÙY CHỈNH: {product.Name.ToUpper()}",
-                    customizationControl,
-                    width: 480
-                );
+                    drawerShell.OnSaved += (cartItemPayload) =>
+                    {
+                        if (_mainSplitter.SplitPanelState == false) _mainSplitter.SplitPanelState = true;
+                        _ucBilling.AddItem(cartItemPayload);
+                    };
 
-                drawerShell.OnSaved += (cartItemPayload) =>
-                {
-                    if (_mainSplitter.SplitPanelState == false)
-                        _mainSplitter.SplitPanelState = true;
-                    _ucBilling.AddItem(cartItemPayload);
-                };
-
-                Drawer.open(new Drawer.Config(hostForm, drawerShell)
-                {
-                    Align = TAlignMini.Right,
-                    MaskClosable = true,
-                    Padding = 0
+                    Drawer.open(new Drawer.Config(hostForm, drawerShell) { Align = TAlignMini.Right, MaskClosable = true, Padding = 0 });
                 });
             }
             catch (Exception ex)
             {
-                MessageBoxHelper.Error($"Lỗi mở tuỳ chỉnh món: {ex.Message}", owner: this);
+                Invoke(() => MessageBoxHelper.Error($"Lỗi mở tuỳ chỉnh món: {ex.Message}", owner: this));
             }
-        };
+        });
     }
 
-    // HANDLE
     private void HandleHomeClicked(object? sender, EventArgs e)
     {
         _ucMenu.BringToFront();
@@ -252,9 +232,23 @@ public partial class CashierWorkspaceForm : Window
 
     private async void HandleBillHistoryClickedAsync(object? sender, EventArgs e)
     {
-        var todayBills = await _billQueryService.GetTodayBillsByUserAsync(_session.CurrentUser!.Id);
-        _ucBillHistory.BindData(todayBills);
         _ucBillHistory.BringToFront();
+
+        await Spin.open(this, async cfg =>
+        {
+            try
+            {
+                var todayBills = await _billQueryService.GetTodayBillsByUserAsync(_session.CurrentUser!.Id);
+                Invoke(() =>
+                {
+                    _ucBillHistory.BindData(todayBills);
+                });
+            }
+            catch (Exception ex)
+            {
+                Invoke(() => AntdUI.Message.error(this, $"Lỗi tải lịch sử: {ex.Message}"));
+            }
+        });
     }
 
     private void HandleProfilesClicked(object? sender, EventArgs e)
@@ -294,8 +288,9 @@ public partial class CashierWorkspaceForm : Window
 
         var config = new Modal.Config(this, "CHỐT CA LÀM VIỆC", shiftControl)
         {
-            OkText = "XÁC NHẬN CHỐT CA",
-            CancelText = "HUỶ",
+            Font = UiTheme.BodyFont,
+            OkText = "Xác nhận chốt ca",
+            CancelText = "Huỷ",
             BtnHeight = 45,
 
             OnOk = (cfg) =>
@@ -313,7 +308,7 @@ public partial class CashierWorkspaceForm : Window
         AntdUI.Modal.open(config);
     }
 
-    private void ProcessPayment()
+    private void ProcessPayment(object? sender, EventArgs e)
     {
         if (_isProcessingPayment) return;
 

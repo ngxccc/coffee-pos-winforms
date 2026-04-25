@@ -24,7 +24,7 @@ public partial class UC_ManageCategories : UserControl
         SetupTable();
         SetupEvents();
 
-        _ = LoadDataAsync();
+        Load += async (s, e) => await LoadDataAsync();
     }
 
     private void SetupTable()
@@ -103,18 +103,9 @@ public partial class UC_ManageCategories : UserControl
     {
         if (e.Record is not CategoryGridDto selectedItem) return;
 
-        if (e.Btn.Id == "edit")
-        {
-            HandleEditCategory(selectedItem);
-        }
-        if (e.Btn.Id == "delete")
-        {
-            HandleDeleteCategory(selectedItem);
-        }
-        if (e.Btn.Id == "restore")
-        {
-            HandleRestoreCategory(selectedItem);
-        }
+        if (e.Btn.Id == "edit") HandleEditCategory(selectedItem);
+        if (e.Btn.Id == "delete") HandleDeleteCategory(selectedItem);
+        if (e.Btn.Id == "restore") HandleRestoreCategory(selectedItem);
     }
 
     private async void HandleTrashModeChanged(object? sender, BoolEventArgs e)
@@ -157,7 +148,13 @@ public partial class UC_ManageCategories : UserControl
     {
         try
         {
-            var cat = await _categoryQueryService.GetCategoryByIdAsync(selectedItem.Id);
+            CategoryDetailDto? cat = null;
+
+            await Spin.open(this, async cfg =>
+            {
+                cat = await _categoryQueryService.GetCategoryByIdAsync(selectedItem.Id);
+            });
+
             if (cat == null)
             {
                 MessageBoxHelper.Error("Không tìm thấy danh mục!", type: FeedbackType.Message);
@@ -165,15 +162,14 @@ public partial class UC_ManageCategories : UserControl
             }
 
             var uiFields = new UC_CategoryEditor(cat.Name);
-
-            Form form = FindForm() ?? throw new InvalidOperationException("Lỗi UI: UserControl chưa được gắn vào Form chính.");
+            Form form = FindForm() ?? throw new InvalidOperationException("Lỗi UI.");
 
             var config = new Modal.Config(form, $"CẬP NHẬT: {cat.Name}", uiFields)
             {
                 Font = UiTheme.BodyFont,
                 OkText = "Cập nhật",
                 CancelText = "Huỷ",
-                OnOk = (cfg) =>
+                OnOk = (modalCfg) =>
                 {
                     if (!uiFields.ValidateInput()) return false;
 
@@ -181,6 +177,7 @@ public partial class UC_ManageCategories : UserControl
                     return true;
                 }
             };
+
             Modal.open(config);
         }
         catch (Exception ex)
