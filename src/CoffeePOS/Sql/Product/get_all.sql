@@ -11,6 +11,6 @@ SELECT p.id,
   p.deleted_at
 FROM products p
   LEFT JOIN product_sizes ps ON p.id = ps.product_id
-WHERE p.is_deleted = false
+WHERE p.is_deleted = @is_deleted
 ORDER BY p.id DESC,
   ps.price_adjustment ASC;

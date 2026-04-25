@@ -67,6 +67,7 @@ public partial class UC_Sidebar : UserControl
             AddMenuItem("Hóa đơn", "ManageBills", SvgAssets.FileText);
             AddMenuItem("Sản phẩm", "ManageProducts", SvgAssets.Box);
             AddMenuItem("Danh mục", "ManageCategories", SvgAssets.Tags);
+            AddMenuItem("Topping", "ManageToppings", SvgAssets.Topping);
             AddMenuItem("Nhân sự", "ManageUsers", SvgAssets.Users);
         }
 

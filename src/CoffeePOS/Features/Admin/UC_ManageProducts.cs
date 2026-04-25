@@ -33,7 +33,7 @@ public partial class UC_ManageProducts : UserControl
 
         InitializeComponent();
         SetupTable();
-        SetupEvents();
+        WireEvents();
 
         Load += async (s, e) => await LoadDataAsync();
     }
@@ -84,7 +84,7 @@ public partial class UC_ManageProducts : UserControl
         _tableProducts.CellButtonClick += TableProducts_CellButtonClick;
     }
 
-    private void SetupEvents()
+    private void WireEvents()
     {
         _txtSearch.OnDebouncedTextChanged(300, () => ApplyFilterAndSort(this, EventArgs.Empty));
         _switchTrash.CheckedChanged += HandleTrashModeChanged;
@@ -133,6 +133,7 @@ public partial class UC_ManageProducts : UserControl
     private async void HandleTrashModeChanged(object? sender, BoolEventArgs e)
     {
         _tableProducts.BackColor = _switchTrash.Checked ? Color.MistyRose : UiTheme.Surface;
+        _btnAdd.Enabled = !_switchTrash.Checked;
         _tableProducts.DataSource = null;
         await LoadDataAsync();
     }

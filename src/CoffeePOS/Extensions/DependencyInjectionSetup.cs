@@ -28,21 +28,31 @@ public static class DependencyInjectionSetup
         services.AddSingleton<IDashboardRepository, DashboardRepository>();
         services.AddSingleton<IToppingRepository, ToppingRepository>();
         services.AddSingleton<IProductSizeRepository, ProductSizeRepository>();
+        services.AddSingleton<IToppingRepository, ToppingRepository>();
 
         // QUY TẮC A: Services
         services.AddSingleton<IUserService, UserService>();
         services.AddSingleton<IUserQueryService, UserQueryService>();
+
         services.AddSingleton<IProductService, ProductService>();
         services.AddSingleton<IProductQueryService, ProductQueryService>();
+
         services.AddSingleton<ICategoryService, CategoryService>();
         services.AddSingleton<ICategoryQueryService, CategoryQueryService>();
+
         services.AddSingleton<IShiftReportService, ShiftReportService>();
         services.AddSingleton<IShiftReportQueryService, ShiftReportQueryService>();
+
         services.AddSingleton<IBillService, BillService>();
         services.AddSingleton<IBillQueryService, BillQueryService>();
+
         services.AddSingleton<IDashboardQueryService, DashboardQueryService>();
+
         services.AddSingleton<IProductSizeService, ProductSizeService>();
         services.AddSingleton<IProductSizeQueryService, ProductSizeQueryService>();
+
+        services.AddSingleton<IToppingService, ToppingService>();
+        services.AddSingleton<IToppingQueryService, ToppingQueryService>();
 
         // QUY TẮC B: Forms (Transient vì form được dispose sau khi đóng)
         services.AddTransient<LoginForm>();
@@ -76,6 +86,9 @@ public static class DependencyInjectionSetup
 
         services.AddTransient<UC_ProductSizeEditor>();
         services.AddTransient<UC_ManageProductSizes>();
+
+        services.AddTransient<UC_ToppingEditor>();
+        services.AddTransient<UC_ManageToppings>();
 
         return services;
     }

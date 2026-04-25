@@ -10,7 +10,6 @@ public class ToppingRepository(NpgsqlDataSource dataSource) : IToppingRepository
     private readonly NpgsqlDataSource _dataSource = dataSource;
 
     private static readonly string SqlGetAll = SqlFileLoader.Load(SqlKeys.Topping.GetAll);
-    private static readonly string SqlGetDeleted = SqlFileLoader.Load(SqlKeys.Topping.GetDeleted);
     private static readonly string SqlInsert = SqlFileLoader.Load(SqlKeys.Topping.Insert);
     private static readonly string SqlUpdate = SqlFileLoader.Load(SqlKeys.Topping.Update);
     private static readonly string SqlSoftDelete = SqlFileLoader.Load(SqlKeys.Topping.SoftDelete);
@@ -19,10 +18,10 @@ public class ToppingRepository(NpgsqlDataSource dataSource) : IToppingRepository
     public async Task<List<ToppingDto>> GetToppingsAsync(bool isDeleted)
     {
         var result = new List<ToppingDto>();
-        string sql = isDeleted ? SqlGetDeleted : SqlGetAll;
 
         await using var conn = await _dataSource.OpenConnectionAsync();
-        await using var cmd = new NpgsqlCommand(sql, conn);
+        await using var cmd = new NpgsqlCommand(SqlGetAll, conn);
+        cmd.Parameters.Add(new NpgsqlParameter<bool>("is_deleted", isDeleted));
         await using var reader = await cmd.ExecuteReaderAsync();
 
         while (await reader.ReadAsync())

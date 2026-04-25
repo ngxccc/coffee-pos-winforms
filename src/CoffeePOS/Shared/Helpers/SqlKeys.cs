@@ -44,8 +44,6 @@ public static class SqlKeys
         public const string Insert = "Product.insert.sql";
         public const string Update = "Product.update.sql";
         public const string SoftDelete = "Product.soft_delete.sql";
-        public const string GetDeleted = "Product.get_deleted.sql";
-        public const string GetDeletedById = "Product.get_deleted_by_id.sql";
         public const string Restore = "Product.restore.sql";
     }
 
@@ -64,9 +62,7 @@ public static class SqlKeys
 
     public static class Topping
     {
-        public const string Get = "Topping.get.sql";
         public const string GetAll = "Topping.get_all.sql";
-        public const string GetDeleted = "Topping.get_deleted.sql";
         public const string Insert = "Topping.insert.sql";
         public const string Restore = "Topping.restore.sql";
         public const string Update = "Topping.update.sql";

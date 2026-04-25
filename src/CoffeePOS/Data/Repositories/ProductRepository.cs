@@ -14,48 +14,13 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
     private static readonly string SqlInsert = SqlFileLoader.Load(SqlKeys.Product.Insert);
     private static readonly string SqlUpdate = SqlFileLoader.Load(SqlKeys.Product.Update);
     private static readonly string SqlSoftDelete = SqlFileLoader.Load(SqlKeys.Product.SoftDelete);
-    private static readonly string SqlGetDeleted = SqlFileLoader.Load(SqlKeys.Product.GetDeleted);
-    private static readonly string SqlGetDeletedById = SqlFileLoader.Load(SqlKeys.Product.GetDeletedById);
     private static readonly string SqlRestore = SqlFileLoader.Load(SqlKeys.Product.Restore);
 
     public async Task<List<ProductDetailDto>> GetAllProductsAsync()
-    {
-        var dict = new Dictionary<int, ProductDetailDto>();
-        using var conn = await dataSource.OpenConnectionAsync();
-
-        using var cmd = new NpgsqlCommand(SqlGetAll, conn);
-        using var reader = await cmd.ExecuteReaderAsync();
-
-        while (await reader.ReadAsync())
-        {
-            int id = reader.GetRequired<int>("id");
-            if (!dict.TryGetValue(id, out var product))
-            {
-                product = MapProductFromReader(reader);
-                dict.Add(id, product);
-            }
-            MapAndAddSize(reader, product);
-        }
-        return [.. dict.Values];
-    }
+        => await GetProductsByDeletedStateAsync(isDeleted: false);
 
     public async Task<ProductDetailDto?> GetProductByIdAsync(int productId)
-    {
-        using var conn = await dataSource.OpenConnectionAsync();
-
-        using var cmd = new NpgsqlCommand(SqlGetById, conn);
-        cmd.Parameters.Add(new NpgsqlParameter<int>("id", productId));
-
-        using var reader = await cmd.ExecuteReaderAsync();
-        ProductDetailDto? product = null;
-
-        while (await reader.ReadAsync())
-        {
-            product ??= MapProductFromReader(reader);
-            MapAndAddSize(reader, product);
-        }
-        return product;
-    }
+        => await GetProductByIdAndDeletedStateAsync(productId, isDeleted: false);
 
     public async Task AddProductAsync(UpsertProductDto command)
     {
@@ -95,11 +60,30 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
     }
 
     public async Task<List<ProductDetailDto>> GetDeletedProductsAsync()
+        => await GetProductsByDeletedStateAsync(isDeleted: true);
+
+    public async Task<ProductDetailDto?> GetDeletedProductByIdAsync(int productId)
+    {
+        return await GetProductByIdAndDeletedStateAsync(productId, isDeleted: true);
+    }
+
+    public async Task<bool> RestoreProductAsync(int productId)
+    {
+        using var conn = await dataSource.OpenConnectionAsync();
+        using var cmd = new NpgsqlCommand(SqlRestore, conn);
+        cmd.Parameters.Add(new NpgsqlParameter<int>("id", productId));
+        return await cmd.ExecuteNonQueryAsync() > 0;
+    }
+
+    #region Helpers
+
+    private async Task<List<ProductDetailDto>> GetProductsByDeletedStateAsync(bool isDeleted)
     {
         var dict = new Dictionary<int, ProductDetailDto>();
-        using var conn = await dataSource.OpenConnectionAsync();
 
-        using var cmd = new NpgsqlCommand(SqlGetDeleted, conn);
+        using var conn = await dataSource.OpenConnectionAsync();
+        using var cmd = new NpgsqlCommand(SqlGetAll, conn);
+        cmd.Parameters.Add(new NpgsqlParameter<bool>("is_deleted", isDeleted));
         using var reader = await cmd.ExecuteReaderAsync();
 
         while (await reader.ReadAsync())
@@ -112,15 +96,16 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
             }
             MapAndAddSize(reader, product);
         }
+
         return [.. dict.Values];
     }
 
-    public async Task<ProductDetailDto?> GetDeletedProductByIdAsync(int productId)
+    private async Task<ProductDetailDto?> GetProductByIdAndDeletedStateAsync(int productId, bool isDeleted)
     {
         using var conn = await dataSource.OpenConnectionAsync();
-
-        using var cmd = new NpgsqlCommand(SqlGetDeletedById, conn);
+        using var cmd = new NpgsqlCommand(SqlGetById, conn);
         cmd.Parameters.Add(new NpgsqlParameter<int>("id", productId));
+        cmd.Parameters.Add(new NpgsqlParameter<bool>("is_deleted", isDeleted));
 
         using var reader = await cmd.ExecuteReaderAsync();
         ProductDetailDto? product = null;
@@ -130,18 +115,9 @@ public class ProductRepository(NpgsqlDataSource dataSource) : IProductRepository
             product ??= MapProductFromReader(reader);
             MapAndAddSize(reader, product);
         }
+
         return product;
     }
-
-    public async Task<bool> RestoreProductAsync(int productId)
-    {
-        using var conn = await dataSource.OpenConnectionAsync();
-        using var cmd = new NpgsqlCommand(SqlRestore, conn);
-        cmd.Parameters.Add(new NpgsqlParameter<int>("id", productId));
-        return await cmd.ExecuteNonQueryAsync() > 0;
-    }
-
-    #region Helpers
 
     private static ProductDetailDto MapProductFromReader(DbDataReader reader)
     {

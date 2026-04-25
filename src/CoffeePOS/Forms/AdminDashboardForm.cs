@@ -57,6 +57,9 @@ public partial class AdminDashboardForm : Window
             case "ManageCategories":
                 NavigateTo<UC_ManageCategories>(routeTag);
                 break;
+            case "ManageToppings":
+                NavigateTo<UC_ManageToppings>(routeTag);
+                break;
             case "ManageUsers":
                 NavigateTo<UC_ManageUsers>(routeTag);
                 break;
