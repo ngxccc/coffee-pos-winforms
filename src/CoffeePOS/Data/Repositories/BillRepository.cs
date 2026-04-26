@@ -24,9 +24,9 @@ public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
         try
         {
             using var cmdBill = new NpgsqlCommand(SqlInsertBill, conn, tx);
-            cmdBill.Parameters.Add(new NpgsqlParameter<int>("b", command.BuzzerNumber));
-            cmdBill.Parameters.Add(new NpgsqlParameter<int>("u", command.CreatedByUserId));
-            cmdBill.Parameters.Add(new NpgsqlParameter<decimal>("total", command.TotalAmount));
+            cmdBill.Parameters.Add(new NpgsqlParameter<int>("buzzer_number", command.BuzzerNumber));
+            cmdBill.Parameters.Add(new NpgsqlParameter<int>("user_id", command.CreatedByUserId));
+            cmdBill.Parameters.Add(new NpgsqlParameter<decimal>("total_amount", command.TotalAmount));
 
             int billId = (await cmdBill.ExecuteScalarAsync())
                 .GetRequiredIntFromScalar("BillRepository.ProcessFullOrderAsync bill id");
@@ -37,12 +37,13 @@ public class BillRepository(NpgsqlDataSource dataSource) : IBillRepository
             {
                 var batchCommand = new NpgsqlBatchCommand(SqlInsertBillDetail);
 
-                batchCommand.Parameters.Add(new NpgsqlParameter<int>("b", billId));
-                batchCommand.Parameters.Add(new NpgsqlParameter<int>("p", item.ProductId));
-                batchCommand.Parameters.Add(new NpgsqlParameter<string>("n", item.ProductName));
-                batchCommand.Parameters.Add(new NpgsqlParameter<int>("q", item.Quantity));
+                batchCommand.Parameters.Add(new NpgsqlParameter<int>("bill_id", billId));
+                batchCommand.Parameters.Add(new NpgsqlParameter<int>("product_id", item.ProductId));
+                batchCommand.Parameters.Add(new NpgsqlParameter<string>("product_name", item.ProductName));
+                batchCommand.Parameters.Add(new NpgsqlParameter<int>("quantity", item.Quantity));
+                batchCommand.Parameters.Add(new NpgsqlParameter<BillOrderType>("order_type", item.OrderType));
                 batchCommand.Parameters.Add(new NpgsqlParameter<decimal>("base_price", item.Price));
-                batchCommand.Parameters.Add(new NpgsqlParameter<string>("note", item.Note ?? string.Empty));
+                batchCommand.Parameters.Add(new NpgsqlParameter<string>("note", item.Note));
 
                 batch.BatchCommands.Add(batchCommand);
             }

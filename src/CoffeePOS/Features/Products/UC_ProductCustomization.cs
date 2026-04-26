@@ -3,6 +3,7 @@ using CoffeePOS.Forms.Core;
 using CoffeePOS.Services.Contracts.Queries;
 using CoffeePOS.Shared.Dtos.Bill;
 using CoffeePOS.Shared.Dtos.Product;
+using CoffeePOS.Shared.Enums;
 using CoffeePOS.Shared.Helpers;
 
 namespace CoffeePOS.Features.Products;
@@ -27,7 +28,7 @@ public partial class UC_ProductCustomization : UserControl, IValidatableComponen
 
         InitializeComponent();
 
-        BindSizes();
+        BindSegments();
         WireEvents();
     }
 
@@ -37,9 +38,10 @@ public partial class UC_ProductCustomization : UserControl, IValidatableComponen
         _existingItem = existingItem;
     }
 
-    private void BindSizes()
+    private void BindSegments()
     {
         _segSize.Items.Clear();
+        _segOrderType.Items.Clear();
 
         if (_product.Sizes == null || _product.Sizes.Count == 0)
         {
@@ -63,7 +65,16 @@ public partial class UC_ProductCustomization : UserControl, IValidatableComponen
             });
         }
 
+        foreach (var ot in Enum.GetValues<BillOrderType>())
+            _segOrderType.Items.Add(new SegmentedItem
+            {
+                ID = ot.ToString(),
+                Text = ot == BillOrderType.DineIn ? "Tại quán" : "Mang đi",
+                Tag = ot
+            });
+
         _segSize.SelectIndex = 0;
+        _segOrderType.SelectIndex = 0;
         _currentSizeAdjustment = _product.Sizes[0].PriceAdjustment;
     }
 
@@ -148,14 +159,25 @@ public partial class UC_ProductCustomization : UserControl, IValidatableComponen
         if (_existingItem.SizeName == "S") _segSize.SelectIndex = 0;
         else if (_existingItem.SizeName == "M") _segSize.SelectIndex = 1;
         else if (_existingItem.SizeName == "L") _segSize.SelectIndex = 2;
+        else if (_existingItem.SizeName == "XL") _segSize.SelectIndex = 3;
 
         _numQuantity.Value = _existingItem.Quantity;
         if (!string.IsNullOrWhiteSpace(_existingItem.Note))
         {
-            _cboNote.SelectedValue = [.. _existingItem.Note
-            .Split([','], StringSplitOptions.RemoveEmptyEntries)
-            .Select(n => n.Trim())
-            .Cast<object>()];
+            if (_existingItem.Note.Contains("[Mang đi]")) _segOrderType.SelectIndex = 1;
+            else _segOrderType.SelectIndex = 0;
+
+            string cleanNote = _existingItem.Note
+                .Replace("[Mang đi]", "")
+                .Replace("[Tại quán]", "")
+                .Replace("-", "");
+
+            var notes = cleanNote
+                .Split([','], StringSplitOptions.RemoveEmptyEntries)
+                .Select(n => n.Trim())
+                .Where(n => !string.IsNullOrEmpty(n));
+
+            _cboNote.SelectedValue = [.. notes.Cast<object>()];
         }
     }
 
@@ -164,14 +186,26 @@ public partial class UC_ProductCustomization : UserControl, IValidatableComponen
     public CartItemDto GetPayload()
     {
         string size = _segSize?.Items[_segSize.SelectIndex]?.ID ?? "M";
+        string? selectedId = _segOrderType.Items[_segOrderType.SelectIndex]?.ID;
+
+        if (!Enum.TryParse(selectedId, out BillOrderType orderType))
+        {
+            orderType = BillOrderType.DineIn;
+        }
+
         int qty = (int)_numQuantity.Value;
         decimal basePrice = _basePrice + _currentSizeAdjustment;
         var selectedToppings = _allToppings.Where(t => t.IsSelected).ToList();
-        string noteText = "";
+        string orderTypeTag = _segOrderType.SelectIndex == 1 ? "[Mang đi]" : "[Tại bàn]";
+        string finalNote = orderTypeTag;
+
         if (_cboNote.SelectedValue != null)
         {
             var notes = _cboNote.SelectedValue.Cast<string>().Where(n => !string.IsNullOrWhiteSpace(n));
-            noteText = string.Join(", ", notes);
+            if (notes.Any())
+            {
+                finalNote = $"{orderTypeTag} - {string.Join(", ", notes)}";
+            }
         }
 
         return new CartItemDto
@@ -183,7 +217,8 @@ public partial class UC_ProductCustomization : UserControl, IValidatableComponen
             ImageUrl = _product.ImageUrl,
             Toppings = selectedToppings,
             Quantity = qty,
-            Note = noteText
+            Note = finalNote,
+            OrderType = orderType
         };
     }
 }

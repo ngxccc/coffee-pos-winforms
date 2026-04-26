@@ -10,6 +10,7 @@ public partial class UC_ProductCustomization
     private System.ComponentModel.IContainer components = null!;
 
     private AntdUI.Segmented _segSize = null!;
+    private AntdUI.Segmented _segOrderType = null!;
     private AntdUI.InputNumber _numQuantity = null!;
     private AntdUI.Label _lblTotalPrice = null!;
     private AntdUI.Table _tableToppings = null!;
@@ -23,11 +24,11 @@ public partial class UC_ProductCustomization
 
     private void InitializeComponent()
     {
-        Dock = DockStyle.Fill;
-        BackColor = UiTheme.Surface;
-        Size = LogicalToDeviceUnits(new Size(450, 620));
-
         SuspendLayout();
+
+        AutoScaleMode = AutoScaleMode.Dpi;
+        BackColor = UiTheme.Surface;
+        Size = new Size(450, 650);
 
         AntdUI.StackPanel mainLayout = new()
         {
@@ -70,9 +71,22 @@ public partial class UC_ProductCustomization
             Bordered = false,
             Padding = new Padding(0),
             MultipleRows = true,
-            Height = 300,
+            Height = 250,
             MaximumSize = new Size(500, 400),
             AutoSizeColumnsMode = ColumnsMode.Fill
+        };
+
+        var lblOrderTypeTitle = CreateSectionLabel("HÌNH THỨC");
+        _segOrderType = new AntdUI.Segmented
+        {
+            Height = 40,
+            Font = new Font("Segoe UI", 11F, FontStyle.Bold),
+            ForeActive = UiTheme.BrandPrimary,
+            BackActive = UiTheme.SurfaceAlt,
+            Radius = 8,
+            Full = true,
+            Gap = 5,
+            Padding = new Padding(0, 0, 0, 10),
         };
 
         var lblNoteTitle = CreateSectionLabel("GHI CHÚ");
@@ -82,7 +96,7 @@ public partial class UC_ProductCustomization
             Dock = DockStyle.Top,
             Height = 40,
             AllowClear = true,
-            Font = new Font("Segoe UI", 11F),
+            Font = UiTheme.BodyFont,
             Margin = new Padding(0, 0, 0, 10),
         };
         _cboNote.Items.AddRange(new object[] {
@@ -123,14 +137,23 @@ public partial class UC_ProductCustomization
 
         mainLayout.Controls.Add(_numQuantity);
         mainLayout.Controls.Add(lblQtyTitle);
+
         mainLayout.Controls.Add(_cboNote);
         mainLayout.Controls.Add(lblNoteTitle);
+
+        mainLayout.Controls.Add(_segOrderType);
+        mainLayout.Controls.Add(lblOrderTypeTitle);
+
         mainLayout.Controls.Add(_lblTotalPrice);
+
         mainLayout.Controls.Add(divider1);
+
         mainLayout.Controls.Add(_tableToppings);
         mainLayout.Controls.Add(lblToppingTitle);
+
         mainLayout.Controls.Add(pnlSizes);
         mainLayout.Controls.Add(lblSizeTitle);
+
         mainLayout.Controls.Add(new AntdUI.Divider());
 
         Controls.Add(mainLayout);

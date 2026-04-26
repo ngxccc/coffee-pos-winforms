@@ -129,13 +129,14 @@ public partial class UC_Billing : UserControl
 
     public List<CreateBillItemDto> GetCartItems()
     {
-        return [.. _cartItems.Select(item => new CreateBillItemDto(
-            item.ProductId,
-            item.DisplayName,
-            item.Quantity,
-            GetUnitPrice(item),
-            item.Note
-        ))];
+        return [.. _cartItems.Select(item => new CreateBillItemDto {
+            ProductId = item.ProductId,
+            ProductName = item.DisplayName,
+            Quantity = item.Quantity,
+            Price = GetUnitPrice(item),
+            Note = item.Note,
+            OrderType = item.OrderType
+        })];
     }
 
     // --- PRIVATE HELPERS ---
