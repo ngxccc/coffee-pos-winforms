@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS bill_details (
   product_id INT,
   product_name VARCHAR(200),
   quantity INT DEFAULT 1,
+  order_type bill_order_type DEFAULT 'dine_in' NOT NULL,
   base_price DECIMAL(18, 2) NOT NULL DEFAULT 0,
   size_name product_size DEFAULT 'M',
   note VARCHAR(255),
