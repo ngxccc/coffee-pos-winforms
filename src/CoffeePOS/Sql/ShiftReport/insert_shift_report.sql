@@ -3,9 +3,10 @@ INSERT INTO shift_reports (
     start_time,
     end_time,
     total_bills,
+    starting_cash,
     expected_cash,
     actual_cash,
-    variance,
+    difference,
     note
   )
 VALUES (
@@ -13,9 +14,10 @@ VALUES (
     @start_time,
     @end_time,
     @total_bills,
+    @starting_cash,
     @expected_cash,
     @actual_cash,
-    @variance,
+    @difference,
     @note
   )
 RETURNING id;

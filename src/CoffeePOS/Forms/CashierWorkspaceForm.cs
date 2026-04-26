@@ -70,7 +70,8 @@ public partial class CashierWorkspaceForm : Window
     protected override void OnLoad(EventArgs e)
     {
         base.OnLoad(e);
-        AntdUI.Message.info(this, $"Chào mừng {_session.CurrentUser!.FullName} đến với ca làm việc của mình!"); _lblUserInfo.Text = $"Ca trực: {_session.CurrentUser?.FullName ?? "N/A"}";
+        MessageBoxHelper.Info($"Chào mừng {_session.CurrentUser!.FullName} đến với ca làm việc của mình!", owner: this, type: FeedbackType.Message);
+        _lblUserInfo.Text = $"Ca trực: {_session.CurrentUser?.FullName ?? "N/A"}";
     }
 
     private void WireEvents()
@@ -525,10 +526,17 @@ public partial class CashierWorkspaceForm : Window
 
             try
             {
-                var command = new SaveShiftReportDto(
-                    _session.CurrentUser!.Id, _session.LoginTime!.Value, payload.EndTime,
-                    payload.TotalBills, payload.ExpectedCash, payload.ActualCash,
-                    payload.Variance, payload.Note);
+                var command = new UpsertShiftReportDto(
+                    _session.CurrentUser!.Id,
+                    _session.LoginTime!.Value,
+                    payload.EndTime,
+                    payload.TotalBills,
+                    payload.StartingCash,
+                    payload.ExpectedCash,
+                    payload.ActualCash,
+                    payload.Difference,
+                    payload.Note
+                );
 
                 await _shiftReportService.SaveReportAsync(command);
 
@@ -540,7 +548,7 @@ public partial class CashierWorkspaceForm : Window
                     TotalBills = payload.TotalBills,
                     ExpectedCash = payload.ExpectedCash,
                     ActualCash = payload.ActualCash,
-                    Variance = payload.Variance,
+                    Variance = payload.Difference,
                     Note = payload.Note
                 });
 

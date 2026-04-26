@@ -24,6 +24,7 @@ public static class SqlKeys
     {
         public const string GetShiftSummary = "ShiftReport.get_shift_summary.sql";
         public const string InsertShiftReport = "ShiftReport.insert_shift_report.sql";
+        public const string GetAllShiftReports = "ShiftReport.get_all_shift_reports.sql";
     }
 
     public static class User

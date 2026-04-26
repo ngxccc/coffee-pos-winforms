@@ -66,6 +66,9 @@ public partial class AdminDashboardForm : Window
             case "ManageBills":
                 NavigateTo<UC_ManageBills>(routeTag);
                 break;
+            case "ManageShiftReports":
+                NavigateTo<UC_ManageShiftReports>(routeTag);
+                break;
         }
     }
 

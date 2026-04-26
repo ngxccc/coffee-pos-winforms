@@ -90,6 +90,8 @@ public static class DependencyInjectionSetup
         services.AddTransient<UC_ToppingEditor>();
         services.AddTransient<UC_ManageToppings>();
 
+        services.AddTransient<UC_ManageShiftReports>();
+
         return services;
     }
 }

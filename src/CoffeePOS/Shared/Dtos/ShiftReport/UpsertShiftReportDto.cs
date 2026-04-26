@@ -1,12 +1,13 @@
 namespace CoffeePOS.Shared.Dtos.ShiftReport;
 
-public record SaveShiftReportDto(
+public record UpsertShiftReportDto(
     int UserId,
     DateTime StartTime,
     DateTime EndTime,
     int TotalBills,
+    decimal StartingCash,
     decimal ExpectedCash,
     decimal ActualCash,
-    decimal Variance,
-    string Note
+    decimal Difference,
+    string? Note
 );

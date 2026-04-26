@@ -9,6 +9,7 @@ public class ShiftReportRepository(NpgsqlDataSource dataSource) : IShiftReportRe
 {
     private static readonly string SqlGetShiftSummary = SqlFileLoader.Load(SqlKeys.ShiftReport.GetShiftSummary);
     private static readonly string SqlInsertShiftReport = SqlFileLoader.Load(SqlKeys.ShiftReport.InsertShiftReport);
+    private static readonly string SqlGetAllShiftReports = SqlFileLoader.Load(SqlKeys.ShiftReport.GetAllShiftReports);
 
     public async Task<(int TotalBills, decimal ExpectedCash)> GetShiftSummaryAsync(int userId, DateTime startTime, DateTime endTime)
     {
@@ -30,20 +31,47 @@ public class ShiftReportRepository(NpgsqlDataSource dataSource) : IShiftReportRe
         return (0, 0);
     }
 
-    public async Task SaveReportAsync(SaveShiftReportDto command)
+    public async Task InsertReportAsync(UpsertShiftReportDto dto)
     {
         using var conn = await dataSource.OpenConnectionAsync();
 
         using var cmd = new NpgsqlCommand(SqlInsertShiftReport, conn);
-        cmd.Parameters.Add(new NpgsqlParameter<int>("user_id", command.UserId));
-        cmd.Parameters.Add(new NpgsqlParameter<DateTime>("start_time", command.StartTime));
-        cmd.Parameters.Add(new NpgsqlParameter<DateTime>("end_time", command.EndTime));
-        cmd.Parameters.Add(new NpgsqlParameter<int>("total_bills", command.TotalBills));
-        cmd.Parameters.Add(new NpgsqlParameter<decimal>("expected_cash", command.ExpectedCash));
-        cmd.Parameters.Add(new NpgsqlParameter<decimal>("actual_cash", command.ActualCash));
-        cmd.Parameters.Add(new NpgsqlParameter<decimal>("variance", command.Variance));
-        cmd.Parameters.Add(new NpgsqlParameter<string?>("note", string.IsNullOrWhiteSpace(command.Note) ? null : command.Note));
+        cmd.Parameters.Add(new NpgsqlParameter<int>("user_id", dto.UserId));
+        cmd.Parameters.Add(new NpgsqlParameter<DateTime>("start_time", dto.StartTime));
+        cmd.Parameters.Add(new NpgsqlParameter<DateTime>("end_time", dto.EndTime));
+        cmd.Parameters.Add(new NpgsqlParameter<int>("total_bills", dto.TotalBills));
+        cmd.Parameters.Add(new NpgsqlParameter<decimal>("starting_cash", dto.StartingCash));
+        cmd.Parameters.Add(new NpgsqlParameter<decimal>("expected_cash", dto.ExpectedCash));
+        cmd.Parameters.Add(new NpgsqlParameter<decimal>("actual_cash", dto.ActualCash));
+        cmd.Parameters.Add(new NpgsqlParameter<decimal>("difference", dto.Difference));
+        cmd.Parameters.Add(new NpgsqlParameter<string?>("note", string.IsNullOrWhiteSpace(dto.Note) ? null : dto.Note));
 
         await cmd.ExecuteNonQueryAsync();
+    }
+
+    public async Task<List<ShiftReportDto>> GetAllShiftReportsAsync()
+    {
+        var result = new List<ShiftReportDto>();
+
+        await using var conn = await dataSource.OpenConnectionAsync();
+        await using var cmd = new NpgsqlCommand(SqlGetAllShiftReports, conn);
+        await using var reader = await cmd.ExecuteReaderAsync();
+
+        while (await reader.ReadAsync())
+        {
+            result.Add(new ShiftReportDto(
+                reader.GetRequired<int>("id"),
+                reader.GetRequired<string>("cashier_name"),
+                reader.GetRequired<DateTime>("start_time"),
+                reader.GetRequired<DateTime>("end_time"),
+                reader.GetRequired<int>("total_bills"),
+                reader.GetRequired<decimal>("starting_cash"),
+                reader.GetRequired<decimal>("expected_cash"),
+                reader.GetRequired<decimal>("actual_cash"),
+                reader.GetRequired<decimal>("difference"),
+                reader.GetNullable<string>("note")
+            ));
+        }
+        return result;
     }
 }

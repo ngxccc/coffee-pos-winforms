@@ -2,7 +2,6 @@ using System.Drawing;
 using System.Windows.Forms;
 using AntdUI;
 using CoffeePOS.Shared.Helpers;
-using LiveChartsCore.SkiaSharpView.WinForms;
 
 namespace CoffeePOS.Features.Admin;
 

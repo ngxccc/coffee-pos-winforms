@@ -69,6 +69,7 @@ public partial class UC_Sidebar : UserControl
             AddMenuItem("Danh mục", "ManageCategories", SvgAssets.Tags);
             AddMenuItem("Topping", "ManageToppings", SvgAssets.Topping);
             AddMenuItem("Nhân sự", "ManageUsers", SvgAssets.Users);
+            AddMenuItem("Chốt ca", "ManageShiftReports", SvgAssets.Repost);
         }
 
         AddMenuItem("Cá nhân", "Profiles", SvgAssets.User);

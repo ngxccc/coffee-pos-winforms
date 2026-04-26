@@ -16,4 +16,5 @@ public readonly struct SvgAssets
     public const string Search = "SearchOutlined";
     public const string ProductSize = "FontSizeOutlined";
     public const string Topping = "ExperimentOutlined";
+    public const string Repost = "ReconciliationOutlined";
 }
