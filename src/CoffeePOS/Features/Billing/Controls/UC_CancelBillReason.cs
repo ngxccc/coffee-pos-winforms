@@ -14,8 +14,11 @@ public partial class UC_CancelBillReason : UserControl, IValidatableComponent<st
     {
         if (string.IsNullOrWhiteSpace(_txtReason.Text))
         {
-            MessageBoxHelper.Warning("Vui lòng nhập lý do hủy đơn!", owner: this);
-            _txtReason.Focus();
+            Invoke(() =>
+            {
+                MessageBoxHelper.Warning("Vui lòng nhập lý do hủy đơn!", owner: this, type: FeedbackType.Message);
+                _txtReason.Focus();
+            });
             return false;
         }
         return true;
