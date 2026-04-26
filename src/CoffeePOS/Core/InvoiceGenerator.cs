@@ -77,18 +77,25 @@ public static class InvoiceGenerator
 
             foreach (var item in details)
             {
-                column.Item().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).PaddingBottom(5).Row(row =>
+                column.Item().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).PaddingBottom(5).Column(itemCol =>
                 {
-                    row.RelativeItem(3).Text(item.ProductName);
-                    row.RelativeItem(1).AlignRight().Text(item.Quantity.ToString());
-                    row.RelativeItem(2).AlignRight().Text($"{item.Price:N0}đ");
-                    row.RelativeItem(3).AlignRight().Text($"{item.Quantity * item.Price:N0}đ");
-                });
+                    itemCol.Item().Row(row =>
+                    {
+                        row.RelativeItem(3).Text(item.ProductName);
+                        row.RelativeItem(1).AlignRight().Text(item.Quantity.ToString());
+                        row.RelativeItem(2).AlignRight().Text($"{item.Price:N0}đ");
+                        row.RelativeItem(3).AlignRight().Text($"{item.Quantity * item.Price:N0}đ");
+                    });
 
-                if (!string.IsNullOrWhiteSpace(item.Note))
-                {
-                    column.Item().PaddingLeft(10).Text($"- Ghi chú: {item.Note}").FontSize(9).FontColor(Colors.Grey.Darken2).Italic();
-                }
+                    if (!string.IsNullOrWhiteSpace(item.Note))
+                    {
+                        var subLines = item.Note.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+                        foreach (var line in subLines)
+                        {
+                            itemCol.Item().PaddingLeft(15).Text(line).FontSize(9).FontColor(Colors.Grey.Darken2).Italic();
+                        }
+                    }
+                });
             }
         });
     }

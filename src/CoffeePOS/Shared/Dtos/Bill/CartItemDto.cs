@@ -17,13 +17,7 @@ public record CartItemDto
     {
         get
         {
-            string name = $"{ProductName} ({SizeName})";
-            if (Toppings.Count > 0)
-            {
-                string toppingStr = string.Join(" + ", Toppings.Select(t => t.Name));
-                name += $" + {toppingStr}";
-            }
-            return name;
+            return $"{ProductName} ({SizeName})";
         }
     }
     public int Quantity { get; set; } = 1;

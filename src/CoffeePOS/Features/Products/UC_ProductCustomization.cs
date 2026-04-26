@@ -153,7 +153,6 @@ public partial class UC_ProductCustomization : UserControl, IValidatableComponen
 
     private void LoadState()
     {
-        // WHY: Map existing item properties back to UI components for editing mode
         if (_existingItem == null) return;
 
         if (_existingItem.SizeName == "S") _segSize.SelectIndex = 0;
@@ -167,10 +166,12 @@ public partial class UC_ProductCustomization : UserControl, IValidatableComponen
             if (_existingItem.Note.Contains("[Mang đi]")) _segOrderType.SelectIndex = 1;
             else _segOrderType.SelectIndex = 0;
 
-            string cleanNote = _existingItem.Note
-                .Replace("[Mang đi]", "")
-                .Replace("[Tại quán]", "")
-                .Replace("-", "");
+            var rawNotes = _existingItem.Note
+                .Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                .Where(line => !line.StartsWith('+') && !line.Contains("[Mang đi]") && !line.Contains("[Tại bàn]"))
+                .Select(line => line.Replace("*", "").Trim());
+
+            string cleanNote = string.Join(", ", rawNotes);
 
             var notes = cleanNote
                 .Split([','], StringSplitOptions.RemoveEmptyEntries)
@@ -196,17 +197,26 @@ public partial class UC_ProductCustomization : UserControl, IValidatableComponen
         int qty = (int)_numQuantity.Value;
         decimal basePrice = _basePrice + _currentSizeAdjustment;
         var selectedToppings = _allToppings.Where(t => t.IsSelected).ToList();
+
         string orderTypeTag = _segOrderType.SelectIndex == 1 ? "[Mang đi]" : "[Tại bàn]";
-        string finalNote = orderTypeTag;
+
+        var noteLines = new List<string> { orderTypeTag };
 
         if (_cboNote.SelectedValue != null)
         {
             var notes = _cboNote.SelectedValue.Cast<string>().Where(n => !string.IsNullOrWhiteSpace(n));
             if (notes.Any())
             {
-                finalNote = $"{orderTypeTag} - {string.Join(", ", notes)}";
+                noteLines.Add($"* {string.Join(", ", notes)}");
             }
         }
+
+        foreach (var t in selectedToppings)
+        {
+            noteLines.Add($"+ {t.Name}");
+        }
+
+        string finalNote = string.Join("\n", noteLines);
 
         return new CartItemDto
         {
