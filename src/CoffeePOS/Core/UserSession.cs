@@ -2,25 +2,13 @@ using CoffeePOS.Shared.Dtos.User;
 
 namespace CoffeePOS.Core;
 
-public interface IUserSession
-{
-    AuthUserDto? CurrentUser { get; }
-    bool IsLoggedIn { get; }
-    DateTime? LoginTime { get; }
-
-    event Action? OnUserUpdated;
-
-    void Login(AuthUserDto user);
-    void Logout();
-}
-
 public class UserSession : IUserSession
 {
     public AuthUserDto? CurrentUser { get; private set; }
     public DateTime? LoginTime { get; private set; }
     public bool IsLoggedIn => CurrentUser != null;
     public event Action? OnUserUpdated;
-
+    public decimal StartingCash { get; private set; }
 
     public void Login(AuthUserDto user)
     {
@@ -32,6 +20,12 @@ public class UserSession : IUserSession
     {
         CurrentUser = null;
         LoginTime = null;
+        StartingCash = 0;
+    }
+
+    public void SetStartingCash(decimal amount)
+    {
+        StartingCash = amount;
     }
 
     public void UpdateProfile(AuthUserDto updatedUser)

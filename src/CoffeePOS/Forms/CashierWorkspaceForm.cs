@@ -70,8 +70,32 @@ public partial class CashierWorkspaceForm : Window
     protected override void OnLoad(EventArgs e)
     {
         base.OnLoad(e);
-        MessageBoxHelper.Info($"Chào mừng {_session.CurrentUser!.FullName} đến với ca làm việc của mình!", owner: this, type: FeedbackType.Message);
-        _lblUserInfo.Text = $"Ca trực: {_session.CurrentUser?.FullName ?? "N/A"}";
+
+        var startingCashControl = new UC_StartingCash();
+
+        var config = new Modal.Config(this, "KHAI BÁO TIỀN VỐN ĐẦU CA", startingCashControl)
+        {
+            Font = UiTheme.BodyFont,
+            MaskClosable = false,
+            CancelText = null,
+            OkText = "Bắt đầu Ca làm việc",
+            OnOk = (cfg) =>
+            {
+                if (!startingCashControl.ValidateInput()) return false;
+
+                _session.SetStartingCash(startingCashControl.GetPayload());
+
+                Invoke(() =>
+                {
+                    MessageBoxHelper.Info($"Chào mừng {_session.CurrentUser!.FullName} đến với ca làm việc của mình!", owner: this, type: FeedbackType.Message);
+                    _lblUserInfo.Text = $"Ca trực: {_session.CurrentUser?.FullName ?? "N/A"}";
+                });
+
+                return true;
+            }
+        };
+
+        AntdUI.Modal.open(config);
     }
 
     private void WireEvents()
@@ -295,7 +319,17 @@ public partial class CashierWorkspaceForm : Window
 
                     drawerShell.OnSaved += (cartItemPayload) =>
                     {
-                        if (_mainSplitter.SplitPanelState == false) _mainSplitter.SplitPanelState = true;
+                        if (_mainSplitter.SplitPanelState == false)
+                        {
+                            _mainSplitter.SplitPanelState = true;
+
+                            int targetBillingWidth = 380;
+
+                            // WHY: SplitterDistance tính từ trái sang, nên phải lấy tổng Width trừ đi phần bên phải
+                            // PERF: Sử dụng Math.Clamp để tránh văng Exception nếu màn hình quá bé
+                            int calculatedDistance = _mainSplitter.Width - targetBillingWidth;
+                            _mainSplitter.SplitterDistance = Math.Clamp(calculatedDistance, _mainSplitter.Panel1MinSize, _mainSplitter.Width - _mainSplitter.Panel2MinSize);
+                        }
                         _ucBilling.AddItem(cartItemPayload);
                     };
 
@@ -370,7 +404,7 @@ public partial class CashierWorkspaceForm : Window
 
         var shiftControl = _formFactory.CreateControl<UC_ShiftReportFields>();
 
-        var config = new Modal.Config(this, "CHỐT CA LÀM VIỆC", shiftControl)
+        var config = new Modal.Config(this, "", shiftControl)
         {
             Font = UiTheme.BodyFont,
             OkText = "Xác nhận chốt ca",

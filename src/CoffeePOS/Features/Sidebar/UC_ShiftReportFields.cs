@@ -30,7 +30,7 @@ public record ShiftReportPayload
 
 public partial class UC_ShiftReportFields : UserControl, IValidatableComponent<ShiftReportPayload>
 {
-    private readonly IUserSession _session;
+    private readonly IUserSession _userSession;
     private readonly IShiftReportQueryService _shiftReportQueryService;
 
     private int _totalBills;
@@ -40,13 +40,14 @@ public partial class UC_ShiftReportFields : UserControl, IValidatableComponent<S
 
     public UC_ShiftReportFields(IUserSession session, IShiftReportQueryService shiftReportQueryService)
     {
-        _session = session;
+        _userSession = session;
         _shiftReportQueryService = shiftReportQueryService;
         _endTime = DateTime.Now;
 
         InitializeComponent();
 
-        _lblHeader.Text = $"Nhân viên: {_session.CurrentUser?.FullName}";
+        _lblHeader.Text = $"Nhân viên: {_userSession.CurrentUser?.FullName}";
+        _numStartingCash.Value = _userSession.StartingCash;
     }
 
     protected override async void OnLoad(EventArgs e)
@@ -70,8 +71,11 @@ public partial class UC_ShiftReportFields : UserControl, IValidatableComponent<S
 
         if (payload.Difference != 0 && string.IsNullOrWhiteSpace(payload.Note))
         {
-            MessageBoxHelper.Warning("Phát hiện lệch tiền. Bắt buộc nhập ghi chú (VD: Rớt tiền, trả tiền rác...).", owner: this, type: FeedbackType.Message);
-            _txtNote.Focus();
+            Invoke(() =>
+            {
+                MessageBoxHelper.Warning("Phát hiện lệch tiền. Bắt buộc nhập ghi chú (VD: Rớt tiền, trả tiền rác...).", owner: this, type: FeedbackType.Message);
+                _txtNote.Focus();
+            });
             return false;
         }
 
@@ -85,9 +89,10 @@ public partial class UC_ShiftReportFields : UserControl, IValidatableComponent<S
             EndTime = _endTime,
             TotalBills = _totalBills,
             ExpectedCash = _expectedCash,
-            StartingCash = _numStartingCash.Value,
+            StartingCash = _userSession.StartingCash,
             ActualCash = _numActualCash.Value,
             Note = _txtNote.Text.Trim()
+
         };
     }
 
@@ -96,7 +101,7 @@ public partial class UC_ShiftReportFields : UserControl, IValidatableComponent<S
         try
         {
             _endTime = DateTime.Now;
-            var (TotalBills, ExpectedCash) = await _shiftReportQueryService.GetShiftSummaryAsync(_session.CurrentUser!.Id, _session.LoginTime!.Value, _endTime);
+            var (TotalBills, ExpectedCash) = await _shiftReportQueryService.GetShiftSummaryAsync(_userSession.CurrentUser!.Id, _userSession.LoginTime!.Value, _endTime);
             _totalBills = TotalBills;
             _expectedCash = ExpectedCash;
 

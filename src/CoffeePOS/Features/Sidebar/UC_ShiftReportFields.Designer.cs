@@ -27,11 +27,11 @@ public partial class UC_ShiftReportFields
 
         AutoScaleMode = AutoScaleMode.Dpi;
         BackColor = Color.White;
-        Size = new Size(400, 520);
+        Size = new Size(400, 470);
 
         AntdUI.Divider divTitle = new()
         {
-            Text = "BÁO CÁO CA LÀM VIỆC",
+            Text = "CHỐT CA LÀM VIỆC",
             Font = new Font("Segoe UI", 14F, FontStyle.Bold),
             ForeColor = UiTheme.BrandPrimary,
             ColorSplit = UiTheme.BrandPrimary,
@@ -43,7 +43,6 @@ public partial class UC_ShiftReportFields
         {
             Dock = DockStyle.Fill,
             Vertical = true,
-            Padding = new Padding(15),
         };
 
         _lblHeader = new AntdUI.Label
@@ -69,7 +68,7 @@ public partial class UC_ShiftReportFields
             Font = UiTheme.BodyFont,
             ForeColor = UiTheme.TextPrimary,
             AutoSize = true,
-            Margin = new Padding(0, 0, 0, 15)
+            Padding = new Padding(0, 0, 0, 15)
         };
 
         AntdUI.Label lblStartingTitle = new()
@@ -88,7 +87,8 @@ public partial class UC_ShiftReportFields
             Maximum = 1000000000,
             Value = 500000,
             ThousandsSeparator = true,
-            Margin = new Padding(0, 0, 0, 10)
+            Margin = new Padding(0, 0, 0, 10),
+            Enabled = false
         };
 
         AntdUI.Label lblActualTitle = new()
@@ -122,7 +122,7 @@ public partial class UC_ShiftReportFields
         {
             Multiline = true,
             Font = UiTheme.BodyFont,
-            Height = 60,
+            Height = 100,
             AllowClear = true
         };
 

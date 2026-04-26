@@ -64,7 +64,6 @@ public partial class CashierWorkspaceForm
             Panel1MinSize = 0,
             Panel2MinSize = 0,
             CollapsePanel = AntdUI.Splitter.ADCollapsePanel.Panel2,
-            SplitterDistance = 860,
             SplitPanelState = false,
             SplitterSize = 60,
         };
