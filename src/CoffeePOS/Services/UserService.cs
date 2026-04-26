@@ -56,6 +56,9 @@ public class UserService(IUserRepository userRepo) : IUserService
         if (command.TargetUserId <= 0)
             throw new ArgumentException("Người dùng không hợp lệ!");
 
+        if (command.Role != UserRole.Admin)
+            throw new AggregateException("Không thể thay đổi thông tin admin khác");
+
         string username = command.Username.Trim();
         string fullName = command.FullName.Trim();
 
@@ -89,10 +92,13 @@ public class UserService(IUserRepository userRepo) : IUserService
         await userRepo.UpdatePasswordAsync(command.TargetUserId, newHash);
     }
 
-    public async Task SetUserActiveStatusAsync(int adminId, int targetUserId, bool isActive)
+    public async Task SetUserActiveStatusAsync(int adminId, int targetUserId, UserRole userRole, bool isActive)
     {
         if (targetUserId <= 0)
             throw new ArgumentException("Người dùng không hợp lệ!");
+
+        if (userRole != UserRole.Admin)
+            throw new AggregateException("Không thể khoá tài khoản admin khác");
 
         if (!isActive && adminId == targetUserId)
             throw new InvalidOperationException("Không thể tự khóa tài khoản của chính bạn!");

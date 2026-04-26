@@ -4,6 +4,7 @@ using CoffeePOS.Features.Admin.Controls;
 using CoffeePOS.Services.Contracts.Commands;
 using CoffeePOS.Services.Contracts.Queries;
 using CoffeePOS.Shared.Dtos.User;
+using CoffeePOS.Shared.Enums;
 using CoffeePOS.Shared.Helpers;
 
 namespace CoffeePOS.Features.Admin;
@@ -62,11 +63,23 @@ public partial class UC_ManageUsers : UserControl
                 Fixed = true,
                 Render = (value, record, rowIndex) =>
                 {
-                    var u = (UserGridDto)record;
-                    return new CellButton[] {
-                        new("edit", "Cập nhật", TTypeMini.Primary),
-                        new("toggle", u.IsActive ? "Khóa" : "Mở khóa", u.IsActive ? TTypeMini.Error : TTypeMini.Success)
-                    };
+                    if (record is not UserGridDto user) return null;
+
+                    var buttons = new List<CellButton>();
+
+                    bool isAnotherAdmin = user.Role == UserRole.Admin && user.Id != _session.CurrentUser?.Id;
+
+                    if (!isAnotherAdmin)
+                    {
+                        buttons.Add(new("edit", "Sửa", TTypeMini.Primary));
+                    }
+
+                    if (user.Id != _session.CurrentUser?.Id && !isAnotherAdmin)
+                    {
+                        buttons.Add(new("toggle_status", user.IsActive ? "Khóa" : "Mở", user.IsActive ? TTypeMini.Error : TTypeMini.Success));
+                    }
+
+                    return buttons.ToArray();
                 }
             }
         ];
@@ -118,7 +131,7 @@ public partial class UC_ManageUsers : UserControl
         if (e.Record is not UserGridDto selectedUser) return;
 
         if (e.Btn.Id == "edit") HandleEditUser(selectedUser);
-        if (e.Btn.Id == "toggle") HandleToggleStatus(selectedUser);
+        if (e.Btn.Id == "toggle_status") HandleToggleStatus(selectedUser);
     }
 
     private void HandleAddUser(object? sender, EventArgs e)
@@ -218,7 +231,7 @@ public partial class UC_ManageUsers : UserControl
 
         try
         {
-            await _userService.SetUserActiveStatusAsync(_session.CurrentUser!.Id, selectedUser.Id, nextState);
+            await _userService.SetUserActiveStatusAsync(_session.CurrentUser!.Id, selectedUser.Id, selectedUser.Role, nextState);
             MessageBoxHelper.Success($"Đã {actionText} thành công!", owner: this, type: FeedbackType.Message);
             await LoadDataAsync();
         }
