@@ -41,7 +41,8 @@ public static class MessageBoxHelper
             .SetOk("ĐỒNG Ý", TTypeMini.Warn)
             .SetCancel("KHÔNG")
             .SetMaskClosable(false)
-            .SetKeyboard(false);
+            .SetKeyboard(false)
+            .SetFont(UiTheme.BodyFont);
 
         var result = Modal.open(config);
         return result == DialogResult.OK || result == DialogResult.Yes;
@@ -103,11 +104,8 @@ public static class MessageBoxHelper
     private static Modal.Config BuildConfig(string title, string message, TType icon, IWin32Window? owner)
     {
         if (owner is Control control) owner = control.FindForm();
-        if (owner is Form form) return new Modal.Config(form, title, message, icon)
-        {
-            Font = UiTheme.BodyFont
-        };
-        return new Modal.Config(title, message, icon) { Font = UiTheme.BodyFont };
+        if (owner is Form form) return new Modal.Config(form, title, message, icon);
+        return new Modal.Config(title, message, icon);
     }
 
     private static TTypeMini GetOkType(TType icon) => icon switch
